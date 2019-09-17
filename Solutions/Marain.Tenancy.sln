@@ -1,0 +1,54 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 16
+VisualStudioVersion = 16.0.29102.190
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "DevOps", "DevOps", "{D29CABE7-467E-4CF6-B44B-3C58AB76145A}"
+	ProjectSection(SolutionItems) = preProject
+		..\azure-pipelines.yml = ..\azure-pipelines.yml
+	EndProjectSection
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Marain.Tenancy.OpenApi.Service", "Marain.Tenancy.OpenApi.Service\Marain.Tenancy.OpenApi.Service.csproj", "{CFD86B72-E715-4C79-A5B5-A86648617581}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Marain.Tenancy.Host.Functions", "Marain.Tenancy.Host.Functions\Marain.Tenancy.Host.Functions.csproj", "{5029BF20-64FE-438A-B8BC-DC6E1E1EAFAB}"
+EndProject
+Project("{151D2E53-A2C4-4D7D-83FE-D05416EBD58E}") = "Marain.Tenancy.Deployment", "Marain.Tenancy.Deployment\Marain.Tenancy.Deployment.deployproj", "{26CB64DE-C80A-455A-BFB0-31F31F6390C5}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Marain.Tenancy.Hosting.AspNetCore", "Marain.Tenancy.Hosting.AspNetCore\Marain.Tenancy.Hosting.AspNetCore.csproj", "{0C707677-C357-42A6-915D-A88B635B7BCF}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Marain.Tenancy.Specs", "Marain.Tenancy.Specs\Marain.Tenancy.Specs.csproj", "{141B9215-FD7C-4922-9EEB-E8FBA0D7C489}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{CFD86B72-E715-4C79-A5B5-A86648617581}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{CFD86B72-E715-4C79-A5B5-A86648617581}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{CFD86B72-E715-4C79-A5B5-A86648617581}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{CFD86B72-E715-4C79-A5B5-A86648617581}.Release|Any CPU.Build.0 = Release|Any CPU
+		{5029BF20-64FE-438A-B8BC-DC6E1E1EAFAB}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{5029BF20-64FE-438A-B8BC-DC6E1E1EAFAB}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{5029BF20-64FE-438A-B8BC-DC6E1E1EAFAB}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{5029BF20-64FE-438A-B8BC-DC6E1E1EAFAB}.Release|Any CPU.Build.0 = Release|Any CPU
+		{26CB64DE-C80A-455A-BFB0-31F31F6390C5}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{26CB64DE-C80A-455A-BFB0-31F31F6390C5}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{26CB64DE-C80A-455A-BFB0-31F31F6390C5}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{26CB64DE-C80A-455A-BFB0-31F31F6390C5}.Release|Any CPU.Build.0 = Release|Any CPU
+		{0C707677-C357-42A6-915D-A88B635B7BCF}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{0C707677-C357-42A6-915D-A88B635B7BCF}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{0C707677-C357-42A6-915D-A88B635B7BCF}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{0C707677-C357-42A6-915D-A88B635B7BCF}.Release|Any CPU.Build.0 = Release|Any CPU
+		{141B9215-FD7C-4922-9EEB-E8FBA0D7C489}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{141B9215-FD7C-4922-9EEB-E8FBA0D7C489}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{141B9215-FD7C-4922-9EEB-E8FBA0D7C489}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{141B9215-FD7C-4922-9EEB-E8FBA0D7C489}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {4DFBD0C0-BF8C-450C-B6CD-5C22FC2CC03C}
+	EndGlobalSection
+EndGlobal

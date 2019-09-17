@@ -1,0 +1,177 @@
+﻿openapi: '3.0.0'
+info:
+  version: 1.0.0
+  title: Tenancy Service
+servers:
+  - url: https://tenancy.marain.io
+paths:
+  /{tenantId}/marain/tenant/children:
+    post:
+      tags:
+        - Tenancy
+      summary: Create a child tenant
+      description: Creates a child tenant of the parent tenant
+      operationId: createChildTenant
+      parameters:
+        - $ref: '#/components/parameters/tenantId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TenantWithPostExample'
+      responses:
+        '200':
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TenantWithGetExample'
+        '403':
+          description: Forbidden
+    get:
+      tags:
+        - Tenancy
+      summary: Get all child tenants of the current tenant
+      description: Get all child tenants of the current tenant
+      operationId: getChildren
+      parameters:
+        - $ref: '#/components/parameters/tenantId'
+        - $ref: '#/components/parameters/continuationToken'
+      responses:
+        '200':
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                  $ref: '#/components/schemas/Tenants'
+        '403':
+          description: Forbidden
+  /{tenantId}/marain/tenant:
+    put:
+      tags:
+        - Tenancy
+      summary: Update a tenant
+      description: Updates the tenant
+      operationId: updateTenant
+      parameters:
+        - $ref: '#/components/parameters/tenantId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TenantWithPostExample'
+      responses:
+        '200':
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TenantWithGetExample'
+        '403':
+          description: Forbidden
+  /{tenantId}/marain/tenant/children/{childTenantId}:
+    delete:
+      tags:
+        - Tenancy
+      summary: Delete a child tenant by ID
+      description: Deletes a child tenant of the parent tenant by ID
+      operationId: deleteChildTenant
+      parameters:
+        - $ref: '#/components/parameters/childTenantId'
+        - $ref: '#/components/parameters/tenantId'
+      responses:
+        '200':
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TenantWithGetExample'
+        '403':
+          description: Forbidden
+        '404':
+          description: Invalid childTenantId for the tenantId
+components:
+  schemas:
+    Tenant:
+      type: object
+      properties:
+        id:
+          type: string
+      required:
+        - id
+    Tenants:
+      type: object
+      properties:
+        tenants:
+          type: array 
+          items:
+            $ref: '#/components/schemas/Tenant'
+      required:
+        - id
+    TenantWithGetExample:
+      allOf:
+        - $ref: '#/components/schemas/Tenant'
+        - example:
+            contentType: application/vnd.marain.tenancy.tenant
+            id: RootTenant/C29222E2-46D7-47CE-91C0-1482BFA246D4
+    TenantWithPostExample:
+      allOf:
+        - $ref: '#/components/schemas/Tenant'
+        - example:
+            id: Mike
+    ProblemDetails:
+      required:
+        - status
+        - detail
+      properties:
+        status:
+          type: integer
+          format: int32
+        detail:
+          type: string
+        title:
+          type: string
+        instance:
+          type: string
+          format: url
+        type: 
+          type: string
+          format: url
+        validationErrors: 
+          type: array
+          items:
+            anyOf:
+              - type: array
+              - type: boolean
+              - type: integer
+              - type: number
+              - type: object
+              - type: string
+      additionalProperties: true
+  parameters:
+    tenantId:
+      name: tenantId
+      in: path
+      x-ms-parameter-location: method
+      description: The tenant within which the request should operate
+      required: true
+      schema:
+        type: string
+    childTenantId:
+      name: childTenantId
+      in: path
+      x-ms-parameter-location: method
+      description: The child tenant within the current tenant.
+      required: true
+      schema:
+        type: string
+    continuationToken:
+      name: continuationToken
+      in: query
+      x-ms-parameter-location: method
+      description: A continuation token for an operation where more data is available
+      required: false
+      schema:
+        type: string
