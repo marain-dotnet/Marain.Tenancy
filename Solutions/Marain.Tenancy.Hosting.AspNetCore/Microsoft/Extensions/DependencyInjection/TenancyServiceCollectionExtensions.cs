@@ -6,6 +6,8 @@ namespace Marain.Tenancy.OpenApi
 {
     using System;
     using System.Linq;
+    using Corvus.Tenancy;
+    using Marain.Tenancy.OpenApi.Mappers;
     using Menes;
     using Microsoft.Extensions.DependencyInjection;
 
@@ -28,6 +30,9 @@ namespace Marain.Tenancy.OpenApi
             {
                 return services;
             }
+
+            // This has to be done first to ensure that the HalDocumentConverter beats the ContentConverter
+            services.AddHalDocumentMapper<ITenant, TenantMapper>();
 
             services.AddLogging();
             services.AddRootTenant();

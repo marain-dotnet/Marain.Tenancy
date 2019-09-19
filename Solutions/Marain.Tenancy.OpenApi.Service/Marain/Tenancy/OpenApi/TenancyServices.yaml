@@ -29,6 +29,23 @@ paths:
                 $ref: '#/components/schemas/Tenant'
         '403':
           description: Forbidden
+    get:
+      tags:
+        - Tenancy
+      summary: Update a tenant
+      description: Gets the tenant
+      operationId: getTenant
+      parameters:
+        - $ref: '#/components/parameters/tenantId'
+      responses:
+        '200':
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Tenant'
+        '403':
+          description: Forbidden
   /{tenantId}/marain/tenant/children:
     get:
       tags:
