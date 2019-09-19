@@ -5,48 +5,6 @@ info:
 servers:
   - url: https://tenancy.marain.io
 paths:
-  /{tenantId}/marain/tenant/children:
-    post:
-      tags:
-        - Tenancy
-      summary: Create a child tenant
-      description: Creates a child tenant of the parent tenant
-      operationId: createChildTenant
-      parameters:
-        - $ref: '#/components/parameters/tenantId'
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/Tenant'
-      responses:
-        '200':
-          description: Successful operation
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Tenant'
-        '403':
-          description: Forbidden
-    get:
-      tags:
-        - Tenancy
-      summary: Get all child tenants of the current tenant
-      description: Get all child tenants of the current tenant
-      operationId: getChildren
-      parameters:
-        - $ref: '#/components/parameters/tenantId'
-        - $ref: '#/components/parameters/continuationToken'
-      responses:
-        '200':
-          description: Successful operation
-          content:
-            application/json:
-              schema:
-                  $ref: '#/components/schemas/Tenants'
-        '403':
-          description: Forbidden
   /{tenantId}/marain/tenant:
     put:
       tags:
@@ -71,7 +29,42 @@ paths:
                 $ref: '#/components/schemas/Tenant'
         '403':
           description: Forbidden
+  /{tenantId}/marain/tenant/children:
+    get:
+      tags:
+        - Tenancy
+      summary: Get all child tenants of the current tenant
+      description: Get all child tenants of the current tenant
+      operationId: getChildren
+      parameters:
+        - $ref: '#/components/parameters/tenantId'
+        - $ref: '#/components/parameters/continuationToken'
+      responses:
+        '200':
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                  $ref: '#/components/schemas/ChildTenants'
+        '403':
+          description: Forbidden
   /{tenantId}/marain/tenant/children/{childTenantId}:
+    post:
+      tags:
+        - Tenancy
+      summary: Create a child tenant
+      description: Creates a child tenant of the parent tenant
+      operationId: createChildTenant
+      parameters:
+        - $ref: '#/components/parameters/tenantId'
+        - $ref: '#/components/parameters/childTenantId'
+      responses:
+        '201':
+          description: Successful operation
+        '403':
+          description: Forbidden
+        '409':
+          description: A child tenant with this ID was already created.
     delete:
       tags:
         - Tenancy
@@ -79,8 +72,8 @@ paths:
       description: Deletes a child tenant of the parent tenant by ID
       operationId: deleteChildTenant
       parameters:
-        - $ref: '#/components/parameters/childTenantId'
         - $ref: '#/components/parameters/tenantId'
+        - $ref: '#/components/parameters/childTenantId'
       responses:
         '200':
           description: Successful operation
@@ -198,15 +191,11 @@ components:
         required:
           - id
           - contentType
-    Tenants:
-      type: object
-      properties:
-        tenants:
-          type: array 
-          items:
-            $ref: '#/components/schemas/Tenant'
-      required:
-        - id
+    ChildTenants:
+      description: A resource containing links for the child tenants.
+      allOf:
+      - $ref: '#/components/schemas/Resource'
+      - type: object
     ProblemDetails:
       required:
         - status
