@@ -29,23 +29,35 @@ paths:
                 $ref: '#/components/schemas/Tenant'
         '403':
           description: Forbidden
+        '404':
+          description: Not found
     get:
       tags:
         - Tenancy
-      summary: Update a tenant
+      summary: Gets a tenant
       description: Gets the tenant
       operationId: getTenant
       parameters:
         - $ref: '#/components/parameters/tenantId'
+        - $ref: '#/components/parameters/ifNoneMatch'
       responses:
         '200':
           description: Successful operation
+          headers:
+            ETag:
+              description: The etag for the updated tenant
+              schema:
+                type: string
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/Tenant'
+        '304':
+          description: Not modified
         '403':
           description: Forbidden
+        '404':
+          description: Not found
   /{tenantId}/marain/tenant/children:
     get:
       tags:
@@ -56,16 +68,16 @@ paths:
       parameters:
         - $ref: '#/components/parameters/tenantId'
         - $ref: '#/components/parameters/continuationToken'
+        - $ref: '#/components/parameters/maxItems'
       responses:
         '200':
           description: Successful operation
           content:
             application/json:
               schema:
-                  $ref: '#/components/schemas/ChildTenants'
+                $ref: '#/components/schemas/ChildTenants'
         '403':
           description: Forbidden
-  /{tenantId}/marain/tenant/children/{childTenantId}:
     post:
       tags:
         - Tenancy
@@ -74,14 +86,21 @@ paths:
       operationId: createChildTenant
       parameters:
         - $ref: '#/components/parameters/tenantId'
-        - $ref: '#/components/parameters/childTenantId'
       responses:
         '201':
           description: Successful operation
+          headers:
+            Location:
+              description: The location of the created tenant
+              schema:
+                type: string
         '403':
           description: Forbidden
+        '404':
+          description: Tenant not found
         '409':
           description: A child tenant with this ID was already created.
+  /{tenantId}/marain/tenant/children/{tenantId}:
     delete:
       tags:
         - Tenancy
@@ -101,7 +120,7 @@ paths:
         '403':
           description: Forbidden
         '404':
-          description: Invalid childTenantId for the tenantId
+          description: Tenant not found.
 components:
   schemas:
     Link:
@@ -210,7 +229,7 @@ components:
           - contentType
     ChildTenants:
       description: A resource containing links for the child tenants.
-      allOf:
+      anyOf:
       - $ref: '#/components/schemas/Resource'
       - type: object
     ProblemDetails:
@@ -243,6 +262,14 @@ components:
               - type: string
       additionalProperties: true
   parameters:
+    ifNoneMatch:
+      name: If-None-Match
+      in: header
+      x-ms-parameter-location: method
+      description: The ETag of the last known version.
+      required: false
+      schema:
+        type: string
     tenantId:
       name: tenantId
       in: path
@@ -267,3 +294,11 @@ components:
       required: false
       schema:
         type: string
+    maxItems:
+      name: maxItems
+      in: query
+      x-ms-parameter-location: method
+      description: The maximum number of items to return in the request. Fewer than this number may be returned.
+      required: false
+      schema:
+        type: integer

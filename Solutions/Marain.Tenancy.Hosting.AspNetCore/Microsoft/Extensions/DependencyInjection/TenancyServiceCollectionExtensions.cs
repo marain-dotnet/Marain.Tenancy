@@ -33,6 +33,7 @@ namespace Marain.Tenancy.OpenApi
 
             // This has to be done first to ensure that the HalDocumentConverter beats the ContentConverter
             services.AddHalDocumentMapper<ITenant, TenantMapper>();
+            services.AddHalDocumentMapper<TenantCollectionResult, TenantCollectionResultMapper>();
 
             services.AddLogging();
             services.AddRootTenant();
