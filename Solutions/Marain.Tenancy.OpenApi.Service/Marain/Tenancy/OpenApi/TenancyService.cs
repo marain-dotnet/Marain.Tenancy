@@ -227,15 +227,17 @@ namespace Marain.Tenancy.OpenApi
                 try
                 {
                     ITenant result = await this.tenantProvider.GetTenantAsync(tenantId, etag).ConfigureAwait(false);
-                    string resultETag = result.ETag ?? GetETag(result);
                     OpenApiResult okResult = this.OkResult(this.tenantMapper.Map(result), "application/json");
-                    okResult.Results.Add("ETag", resultETag);
+                    if (!string.IsNullOrEmpty(result.ETag))
+                    {
+                        okResult.Results.Add("ETag", result.ETag);
+                    }
 
                     return okResult;
                 }
                 catch (TenantNotModifiedException)
                 {
-                    return this.NotImplementedResult();
+                    return this.NotModifiedResult();
                 }
                 catch (TenantNotFoundException)
                 {
