@@ -5,6 +5,7 @@
 namespace Marain.Tenancy.OpenApi
 {
     using System;
+    using System.Collections.Generic;
     using System.Net;
     using System.Security.Cryptography;
     using System.Text;
@@ -162,10 +163,28 @@ namespace Marain.Tenancy.OpenApi
                 {
                     TenantCollectionResult result = await this.tenantProvider.GetChildrenAsync(tenantId, maxItems ?? 20, continuationToken).ConfigureAwait(false);
                     HalDocument document = this.tenantCollectionResultMapper.Map(result);
-                    OpenApiWebLink link = maxItems.HasValue
-                        ? this.linkResolver.Resolve(GetChildrenOperationId, "next", ("tenantId", tenantId), ("continuationToken", result.ContinuationToken), ("maxItems", maxItems))
-                        : this.linkResolver.Resolve(GetChildrenOperationId, "next", ("tenantId", tenantId), ("continuationToken", result.ContinuationToken));
-                    document.AddLink("next", link);
+                    if (result.ContinuationToken != null)
+                    {
+                        OpenApiWebLink link = maxItems.HasValue
+                            ? this.linkResolver.Resolve(GetChildrenOperationId, "next", ("tenantId", tenantId), ("continuationToken", result.ContinuationToken), ("maxItems", maxItems))
+                            : this.linkResolver.Resolve(GetChildrenOperationId, "next", ("tenantId", tenantId), ("continuationToken", result.ContinuationToken));
+                        document.AddLink("next", link);
+                    }
+
+                    var values = new List<(string, object)> { ("tenantId", tenantId) };
+                    if (maxItems.HasValue)
+                    {
+                        values.Add(("maxItems", maxItems));
+                    }
+
+                    if (!string.IsNullOrEmpty(continuationToken))
+                    {
+                        values.Add(("continuationToken", continuationToken));
+                    }
+
+                    OpenApiWebLink selfLink = this.linkResolver.Resolve(GetChildrenOperationId, "self", values.ToArray());
+                    document.AddLink("self", selfLink);
+
                     return this.OkResult(document, "application/json");
                 }
                 catch (TenantNotFoundException)

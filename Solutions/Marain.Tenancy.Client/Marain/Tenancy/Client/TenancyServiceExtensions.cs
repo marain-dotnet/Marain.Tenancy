@@ -60,7 +60,7 @@ namespace Marain.Tenancy.Client
             }
 
             /// <summary>
-            /// Update a tenant
+            /// Gets a tenant
             /// </summary>
             /// <remarks>
             /// Gets the tenant
@@ -71,13 +71,16 @@ namespace Marain.Tenancy.Client
             /// <param name='tenantId'>
             /// The tenant within which the request should operate
             /// </param>
-            public static Tenant GetTenant(this ITenancyService operations, string tenantId)
+            /// <param name='ifNoneMatch'>
+            /// The ETag of the last known version.
+            /// </param>
+            public static Tenant GetTenant(this ITenancyService operations, string tenantId, string ifNoneMatch = default(string))
             {
-                return operations.GetTenantAsync(tenantId).GetAwaiter().GetResult();
+                return operations.GetTenantAsync(tenantId, ifNoneMatch).GetAwaiter().GetResult();
             }
 
             /// <summary>
-            /// Update a tenant
+            /// Gets a tenant
             /// </summary>
             /// <remarks>
             /// Gets the tenant
@@ -87,13 +90,16 @@ namespace Marain.Tenancy.Client
             /// </param>
             /// <param name='tenantId'>
             /// The tenant within which the request should operate
+            /// </param>
+            /// <param name='ifNoneMatch'>
+            /// The ETag of the last known version.
             /// </param>
             /// <param name='cancellationToken'>
             /// The cancellation token.
             /// </param>
-            public static async Task<Tenant> GetTenantAsync(this ITenancyService operations, string tenantId, CancellationToken cancellationToken = default(CancellationToken))
+            public static async Task<Tenant> GetTenantAsync(this ITenancyService operations, string tenantId, string ifNoneMatch = default(string), CancellationToken cancellationToken = default(CancellationToken))
             {
-                using (var _result = await operations.GetTenantWithHttpMessagesAsync(tenantId, null, cancellationToken).ConfigureAwait(false))
+                using (var _result = await operations.GetTenantWithHttpMessagesAsync(tenantId, ifNoneMatch, null, cancellationToken).ConfigureAwait(false))
                 {
                     return _result.Body;
                 }
@@ -114,9 +120,13 @@ namespace Marain.Tenancy.Client
             /// <param name='continuationToken'>
             /// A continuation token for an operation where more data is available
             /// </param>
-            public static ChildTenants GetChildren(this ITenancyService operations, string tenantId, string continuationToken = default(string))
+            /// <param name='maxItems'>
+            /// The maximum number of items to return in the request. Fewer than this
+            /// number may be returned.
+            /// </param>
+            public static object GetChildren(this ITenancyService operations, string tenantId, string continuationToken = default(string), int? maxItems = default(int?))
             {
-                return operations.GetChildrenAsync(tenantId, continuationToken).GetAwaiter().GetResult();
+                return operations.GetChildrenAsync(tenantId, continuationToken, maxItems).GetAwaiter().GetResult();
             }
 
             /// <summary>
@@ -134,12 +144,16 @@ namespace Marain.Tenancy.Client
             /// <param name='continuationToken'>
             /// A continuation token for an operation where more data is available
             /// </param>
+            /// <param name='maxItems'>
+            /// The maximum number of items to return in the request. Fewer than this
+            /// number may be returned.
+            /// </param>
             /// <param name='cancellationToken'>
             /// The cancellation token.
             /// </param>
-            public static async Task<ChildTenants> GetChildrenAsync(this ITenancyService operations, string tenantId, string continuationToken = default(string), CancellationToken cancellationToken = default(CancellationToken))
+            public static async Task<object> GetChildrenAsync(this ITenancyService operations, string tenantId, string continuationToken = default(string), int? maxItems = default(int?), CancellationToken cancellationToken = default(CancellationToken))
             {
-                using (var _result = await operations.GetChildrenWithHttpMessagesAsync(tenantId, continuationToken, null, cancellationToken).ConfigureAwait(false))
+                using (var _result = await operations.GetChildrenWithHttpMessagesAsync(tenantId, continuationToken, maxItems, null, cancellationToken).ConfigureAwait(false))
                 {
                     return _result.Body;
                 }
@@ -157,12 +171,9 @@ namespace Marain.Tenancy.Client
             /// <param name='tenantId'>
             /// The tenant within which the request should operate
             /// </param>
-            /// <param name='childTenantId'>
-            /// The child tenant within the current tenant.
-            /// </param>
-            public static void CreateChildTenant(this ITenancyService operations, string tenantId, string childTenantId)
+            public static CreateChildTenantHeaders CreateChildTenant(this ITenancyService operations, string tenantId)
             {
-                operations.CreateChildTenantAsync(tenantId, childTenantId).GetAwaiter().GetResult();
+                return operations.CreateChildTenantAsync(tenantId).GetAwaiter().GetResult();
             }
 
             /// <summary>
@@ -177,15 +188,15 @@ namespace Marain.Tenancy.Client
             /// <param name='tenantId'>
             /// The tenant within which the request should operate
             /// </param>
-            /// <param name='childTenantId'>
-            /// The child tenant within the current tenant.
-            /// </param>
             /// <param name='cancellationToken'>
             /// The cancellation token.
             /// </param>
-            public static async Task CreateChildTenantAsync(this ITenancyService operations, string tenantId, string childTenantId, CancellationToken cancellationToken = default(CancellationToken))
+            public static async Task<CreateChildTenantHeaders> CreateChildTenantAsync(this ITenancyService operations, string tenantId, CancellationToken cancellationToken = default(CancellationToken))
             {
-                (await operations.CreateChildTenantWithHttpMessagesAsync(tenantId, childTenantId, null, cancellationToken).ConfigureAwait(false)).Dispose();
+                using (var _result = await operations.CreateChildTenantWithHttpMessagesAsync(tenantId, null, cancellationToken).ConfigureAwait(false))
+                {
+                    return _result.Headers;
+                }
             }
 
             /// <summary>

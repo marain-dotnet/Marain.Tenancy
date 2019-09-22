@@ -418,7 +418,7 @@ namespace Marain.Tenancy.Client
             HttpStatusCode _statusCode = _httpResponse.StatusCode;
             cancellationToken.ThrowIfCancellationRequested();
             string _responseContent = null;
-            if ((int)_statusCode != 200 && (int)_statusCode != 403)
+            if ((int)_statusCode != 200 && (int)_statusCode != 403 && (int)_statusCode != 404)
             {
                 var ex = new HttpOperationException(string.Format("Operation returned an invalid status code '{0}'", _statusCode));
                 if (_httpResponse.Content != null) {
@@ -470,13 +470,16 @@ namespace Marain.Tenancy.Client
         }
 
         /// <summary>
-        /// Update a tenant
+        /// Gets a tenant
         /// </summary>
         /// <remarks>
         /// Gets the tenant
         /// </remarks>
         /// <param name='tenantId'>
         /// The tenant within which the request should operate
+        /// </param>
+        /// <param name='ifNoneMatch'>
+        /// The ETag of the last known version.
         /// </param>
         /// <param name='customHeaders'>
         /// Headers that will be added to request.
@@ -499,7 +502,7 @@ namespace Marain.Tenancy.Client
         /// <return>
         /// A response object containing the response body and response headers.
         /// </return>
-        public async Task<HttpOperationResponse<Tenant>> GetTenantWithHttpMessagesAsync(string tenantId, Dictionary<string, List<string>> customHeaders = null, CancellationToken cancellationToken = default(CancellationToken))
+        public async Task<HttpOperationResponse<Tenant,GetTenantHeaders>> GetTenantWithHttpMessagesAsync(string tenantId, string ifNoneMatch = default(string), Dictionary<string, List<string>> customHeaders = null, CancellationToken cancellationToken = default(CancellationToken))
         {
             if (tenantId == null)
             {
@@ -513,6 +516,7 @@ namespace Marain.Tenancy.Client
                 _invocationId = ServiceClientTracing.NextInvocationId.ToString();
                 Dictionary<string, object> tracingParameters = new Dictionary<string, object>();
                 tracingParameters.Add("tenantId", tenantId);
+                tracingParameters.Add("ifNoneMatch", ifNoneMatch);
                 tracingParameters.Add("cancellationToken", cancellationToken);
                 ServiceClientTracing.Enter(_invocationId, this, "GetTenant", tracingParameters);
             }
@@ -526,6 +530,14 @@ namespace Marain.Tenancy.Client
             _httpRequest.Method = new HttpMethod("GET");
             _httpRequest.RequestUri = new System.Uri(_url);
             // Set Headers
+            if (ifNoneMatch != null)
+            {
+                if (_httpRequest.Headers.Contains("If-None-Match"))
+                {
+                    _httpRequest.Headers.Remove("If-None-Match");
+                }
+                _httpRequest.Headers.TryAddWithoutValidation("If-None-Match", ifNoneMatch);
+            }
 
 
             if (customHeaders != null)
@@ -562,7 +574,7 @@ namespace Marain.Tenancy.Client
             HttpStatusCode _statusCode = _httpResponse.StatusCode;
             cancellationToken.ThrowIfCancellationRequested();
             string _responseContent = null;
-            if ((int)_statusCode != 200 && (int)_statusCode != 403)
+            if ((int)_statusCode != 200 && (int)_statusCode != 304 && (int)_statusCode != 403 && (int)_statusCode != 404)
             {
                 var ex = new HttpOperationException(string.Format("Operation returned an invalid status code '{0}'", _statusCode));
                 if (_httpResponse.Content != null) {
@@ -585,7 +597,7 @@ namespace Marain.Tenancy.Client
                 throw ex;
             }
             // Create Result
-            var _result = new HttpOperationResponse<Tenant>();
+            var _result = new HttpOperationResponse<Tenant,GetTenantHeaders>();
             _result.Request = _httpRequest;
             _result.Response = _httpResponse;
             // Deserialize Response
@@ -606,6 +618,19 @@ namespace Marain.Tenancy.Client
                     throw new SerializationException("Unable to deserialize the response.", _responseContent, ex);
                 }
             }
+            try
+            {
+                _result.Headers = _httpResponse.GetHeadersAsJson().ToObject<GetTenantHeaders>(JsonSerializer.Create(DeserializationSettings));
+            }
+            catch (JsonException ex)
+            {
+                _httpRequest.Dispose();
+                if (_httpResponse != null)
+                {
+                    _httpResponse.Dispose();
+                }
+                throw new SerializationException("Unable to deserialize the headers.", _httpResponse.GetHeadersAsJson().ToString(), ex);
+            }
             if (_shouldTrace)
             {
                 ServiceClientTracing.Exit(_invocationId, _result);
@@ -624,6 +649,10 @@ namespace Marain.Tenancy.Client
         /// </param>
         /// <param name='continuationToken'>
         /// A continuation token for an operation where more data is available
+        /// </param>
+        /// <param name='maxItems'>
+        /// The maximum number of items to return in the request. Fewer than this
+        /// number may be returned.
         /// </param>
         /// <param name='customHeaders'>
         /// Headers that will be added to request.
@@ -646,7 +675,7 @@ namespace Marain.Tenancy.Client
         /// <return>
         /// A response object containing the response body and response headers.
         /// </return>
-        public async Task<HttpOperationResponse<ChildTenants>> GetChildrenWithHttpMessagesAsync(string tenantId, string continuationToken = default(string), Dictionary<string, List<string>> customHeaders = null, CancellationToken cancellationToken = default(CancellationToken))
+        public async Task<HttpOperationResponse<object>> GetChildrenWithHttpMessagesAsync(string tenantId, string continuationToken = default(string), int? maxItems = default(int?), Dictionary<string, List<string>> customHeaders = null, CancellationToken cancellationToken = default(CancellationToken))
         {
             if (tenantId == null)
             {
@@ -661,6 +690,7 @@ namespace Marain.Tenancy.Client
                 Dictionary<string, object> tracingParameters = new Dictionary<string, object>();
                 tracingParameters.Add("tenantId", tenantId);
                 tracingParameters.Add("continuationToken", continuationToken);
+                tracingParameters.Add("maxItems", maxItems);
                 tracingParameters.Add("cancellationToken", cancellationToken);
                 ServiceClientTracing.Enter(_invocationId, this, "GetChildren", tracingParameters);
             }
@@ -672,6 +702,10 @@ namespace Marain.Tenancy.Client
             if (continuationToken != null)
             {
                 _queryParameters.Add(string.Format("continuationToken={0}", System.Uri.EscapeDataString(continuationToken)));
+            }
+            if (maxItems != null)
+            {
+                _queryParameters.Add(string.Format("maxItems={0}", System.Uri.EscapeDataString(SafeJsonConvert.SerializeObject(maxItems, SerializationSettings).Trim('"'))));
             }
             if (_queryParameters.Count > 0)
             {
@@ -742,7 +776,7 @@ namespace Marain.Tenancy.Client
                 throw ex;
             }
             // Create Result
-            var _result = new HttpOperationResponse<ChildTenants>();
+            var _result = new HttpOperationResponse<object>();
             _result.Request = _httpRequest;
             _result.Response = _httpResponse;
             // Deserialize Response
@@ -751,7 +785,7 @@ namespace Marain.Tenancy.Client
                 _responseContent = await _httpResponse.Content.ReadAsStringAsync().ConfigureAwait(false);
                 try
                 {
-                    _result.Body = SafeJsonConvert.DeserializeObject<ChildTenants>(_responseContent, DeserializationSettings);
+                    _result.Body = SafeJsonConvert.DeserializeObject<object>(_responseContent, DeserializationSettings);
                 }
                 catch (JsonException ex)
                 {
@@ -779,9 +813,6 @@ namespace Marain.Tenancy.Client
         /// <param name='tenantId'>
         /// The tenant within which the request should operate
         /// </param>
-        /// <param name='childTenantId'>
-        /// The child tenant within the current tenant.
-        /// </param>
         /// <param name='customHeaders'>
         /// Headers that will be added to request.
         /// </param>
@@ -800,15 +831,11 @@ namespace Marain.Tenancy.Client
         /// <return>
         /// A response object containing the response body and response headers.
         /// </return>
-        public async Task<HttpOperationResponse> CreateChildTenantWithHttpMessagesAsync(string tenantId, string childTenantId, Dictionary<string, List<string>> customHeaders = null, CancellationToken cancellationToken = default(CancellationToken))
+        public async Task<HttpOperationHeaderResponse<CreateChildTenantHeaders>> CreateChildTenantWithHttpMessagesAsync(string tenantId, Dictionary<string, List<string>> customHeaders = null, CancellationToken cancellationToken = default(CancellationToken))
         {
             if (tenantId == null)
             {
                 throw new ValidationException(ValidationRules.CannotBeNull, "tenantId");
-            }
-            if (childTenantId == null)
-            {
-                throw new ValidationException(ValidationRules.CannotBeNull, "childTenantId");
             }
             // Tracing
             bool _shouldTrace = ServiceClientTracing.IsEnabled;
@@ -818,15 +845,13 @@ namespace Marain.Tenancy.Client
                 _invocationId = ServiceClientTracing.NextInvocationId.ToString();
                 Dictionary<string, object> tracingParameters = new Dictionary<string, object>();
                 tracingParameters.Add("tenantId", tenantId);
-                tracingParameters.Add("childTenantId", childTenantId);
                 tracingParameters.Add("cancellationToken", cancellationToken);
                 ServiceClientTracing.Enter(_invocationId, this, "CreateChildTenant", tracingParameters);
             }
             // Construct URL
             var _baseUrl = BaseUri.AbsoluteUri;
-            var _url = new System.Uri(new System.Uri(_baseUrl + (_baseUrl.EndsWith("/") ? "" : "/")), "{tenantId}/marain/tenant/children/{childTenantId}").ToString();
+            var _url = new System.Uri(new System.Uri(_baseUrl + (_baseUrl.EndsWith("/") ? "" : "/")), "{tenantId}/marain/tenant/children").ToString();
             _url = _url.Replace("{tenantId}", System.Uri.EscapeDataString(tenantId));
-            _url = _url.Replace("{childTenantId}", System.Uri.EscapeDataString(childTenantId));
             // Create HTTP transport objects
             var _httpRequest = new HttpRequestMessage();
             HttpResponseMessage _httpResponse = null;
@@ -869,7 +894,7 @@ namespace Marain.Tenancy.Client
             HttpStatusCode _statusCode = _httpResponse.StatusCode;
             cancellationToken.ThrowIfCancellationRequested();
             string _responseContent = null;
-            if ((int)_statusCode != 201 && (int)_statusCode != 403 && (int)_statusCode != 409)
+            if ((int)_statusCode != 201 && (int)_statusCode != 403 && (int)_statusCode != 404 && (int)_statusCode != 409)
             {
                 var ex = new HttpOperationException(string.Format("Operation returned an invalid status code '{0}'", _statusCode));
                 if (_httpResponse.Content != null) {
@@ -892,9 +917,22 @@ namespace Marain.Tenancy.Client
                 throw ex;
             }
             // Create Result
-            var _result = new HttpOperationResponse();
+            var _result = new HttpOperationHeaderResponse<CreateChildTenantHeaders>();
             _result.Request = _httpRequest;
             _result.Response = _httpResponse;
+            try
+            {
+                _result.Headers = _httpResponse.GetHeadersAsJson().ToObject<CreateChildTenantHeaders>(JsonSerializer.Create(DeserializationSettings));
+            }
+            catch (JsonException ex)
+            {
+                _httpRequest.Dispose();
+                if (_httpResponse != null)
+                {
+                    _httpResponse.Dispose();
+                }
+                throw new SerializationException("Unable to deserialize the headers.", _httpResponse.GetHeadersAsJson().ToString(), ex);
+            }
             if (_shouldTrace)
             {
                 ServiceClientTracing.Exit(_invocationId, _result);
@@ -959,7 +997,7 @@ namespace Marain.Tenancy.Client
             }
             // Construct URL
             var _baseUrl = BaseUri.AbsoluteUri;
-            var _url = new System.Uri(new System.Uri(_baseUrl + (_baseUrl.EndsWith("/") ? "" : "/")), "{tenantId}/marain/tenant/children/{childTenantId}").ToString();
+            var _url = new System.Uri(new System.Uri(_baseUrl + (_baseUrl.EndsWith("/") ? "" : "/")), "{tenantId}/marain/tenant/children/{tenantId}").ToString();
             _url = _url.Replace("{tenantId}", System.Uri.EscapeDataString(tenantId));
             _url = _url.Replace("{childTenantId}", System.Uri.EscapeDataString(childTenantId));
             // Create HTTP transport objects

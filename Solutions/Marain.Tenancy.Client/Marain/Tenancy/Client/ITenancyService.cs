@@ -60,7 +60,7 @@ namespace Marain.Tenancy.Client
         Task<HttpOperationResponse<Tenant>> UpdateTenantWithHttpMessagesAsync(string tenantId, Tenant body, Dictionary<string, List<string>> customHeaders = null, CancellationToken cancellationToken = default(CancellationToken));
 
         /// <summary>
-        /// Update a tenant
+        /// Gets a tenant
         /// </summary>
         /// <remarks>
         /// Gets the tenant
@@ -68,13 +68,16 @@ namespace Marain.Tenancy.Client
         /// <param name='tenantId'>
         /// The tenant within which the request should operate
         /// </param>
+        /// <param name='ifNoneMatch'>
+        /// The ETag of the last known version.
+        /// </param>
         /// <param name='customHeaders'>
         /// The headers that will be added to request.
         /// </param>
         /// <param name='cancellationToken'>
         /// The cancellation token.
         /// </param>
-        Task<HttpOperationResponse<Tenant>> GetTenantWithHttpMessagesAsync(string tenantId, Dictionary<string, List<string>> customHeaders = null, CancellationToken cancellationToken = default(CancellationToken));
+        Task<HttpOperationResponse<Tenant,GetTenantHeaders>> GetTenantWithHttpMessagesAsync(string tenantId, string ifNoneMatch = default(string), Dictionary<string, List<string>> customHeaders = null, CancellationToken cancellationToken = default(CancellationToken));
 
         /// <summary>
         /// Get all child tenants of the current tenant
@@ -88,13 +91,17 @@ namespace Marain.Tenancy.Client
         /// <param name='continuationToken'>
         /// A continuation token for an operation where more data is available
         /// </param>
+        /// <param name='maxItems'>
+        /// The maximum number of items to return in the request. Fewer than
+        /// this number may be returned.
+        /// </param>
         /// <param name='customHeaders'>
         /// The headers that will be added to request.
         /// </param>
         /// <param name='cancellationToken'>
         /// The cancellation token.
         /// </param>
-        Task<HttpOperationResponse<ChildTenants>> GetChildrenWithHttpMessagesAsync(string tenantId, string continuationToken = default(string), Dictionary<string, List<string>> customHeaders = null, CancellationToken cancellationToken = default(CancellationToken));
+        Task<HttpOperationResponse<object>> GetChildrenWithHttpMessagesAsync(string tenantId, string continuationToken = default(string), int? maxItems = default(int?), Dictionary<string, List<string>> customHeaders = null, CancellationToken cancellationToken = default(CancellationToken));
 
         /// <summary>
         /// Create a child tenant
@@ -105,16 +112,13 @@ namespace Marain.Tenancy.Client
         /// <param name='tenantId'>
         /// The tenant within which the request should operate
         /// </param>
-        /// <param name='childTenantId'>
-        /// The child tenant within the current tenant.
-        /// </param>
         /// <param name='customHeaders'>
         /// The headers that will be added to request.
         /// </param>
         /// <param name='cancellationToken'>
         /// The cancellation token.
         /// </param>
-        Task<HttpOperationResponse> CreateChildTenantWithHttpMessagesAsync(string tenantId, string childTenantId, Dictionary<string, List<string>> customHeaders = null, CancellationToken cancellationToken = default(CancellationToken));
+        Task<HttpOperationHeaderResponse<CreateChildTenantHeaders>> CreateChildTenantWithHttpMessagesAsync(string tenantId, Dictionary<string, List<string>> customHeaders = null, CancellationToken cancellationToken = default(CancellationToken));
 
         /// <summary>
         /// Delete a child tenant by ID
