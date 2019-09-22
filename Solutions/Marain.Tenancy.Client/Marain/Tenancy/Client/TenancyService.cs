@@ -997,7 +997,7 @@ namespace Marain.Tenancy.Client
             }
             // Construct URL
             var _baseUrl = BaseUri.AbsoluteUri;
-            var _url = new System.Uri(new System.Uri(_baseUrl + (_baseUrl.EndsWith("/") ? "" : "/")), "{tenantId}/marain/tenant/children/{tenantId}").ToString();
+            var _url = new System.Uri(new System.Uri(_baseUrl + (_baseUrl.EndsWith("/") ? "" : "/")), "{tenantId}/marain/tenant/children/{childTenantId}").ToString();
             _url = _url.Replace("{tenantId}", System.Uri.EscapeDataString(tenantId));
             _url = _url.Replace("{childTenantId}", System.Uri.EscapeDataString(childTenantId));
             // Create HTTP transport objects
