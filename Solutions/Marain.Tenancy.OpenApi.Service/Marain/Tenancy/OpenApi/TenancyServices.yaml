@@ -100,7 +100,7 @@ paths:
           description: Tenant not found
         '409':
           description: A child tenant with this ID was already created.
-  /{tenantId}/marain/tenant/children/{tenantId}:
+  /{tenantId}/marain/tenant/children/{childTenantId}:
     delete:
       tags:
         - Tenancy

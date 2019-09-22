@@ -31,6 +31,7 @@ namespace Marain.Tenancy.OpenApi.Mappers
         /// <inheritdoc/>
         public void ConfigureLinkMap(IOpenApiLinkOperationMap links)
         {
+            links.Map(Tenant.RegisteredContentType, "delete", TenancyService.DeleteChildTenantOperationId);
         }
 
         /// <inheritdoc/>
@@ -39,7 +40,9 @@ namespace Marain.Tenancy.OpenApi.Mappers
             HalDocument response = this.halDocumentFactory.CreateHalDocument();
             foreach (string tenantId in input.Tenants)
             {
-                response.AddLink("tenants", this.linkResolver.Resolve(TenancyService.GetTenantOperationId, "self", ("tenantId", tenantId)));
+                string parentId = tenantId.GetParentId();
+                response.AddLink("getTenant", this.linkResolver.Resolve(TenancyService.GetTenantOperationId, "self", ("tenantId", tenantId)));
+                response.AddLink("deleteTenant", this.linkResolver.Resolve(TenancyService.DeleteChildTenantOperationId, "delete", ("tenantId", parentId), ("childTenantId", tenantId)));
             }
 
             return response;

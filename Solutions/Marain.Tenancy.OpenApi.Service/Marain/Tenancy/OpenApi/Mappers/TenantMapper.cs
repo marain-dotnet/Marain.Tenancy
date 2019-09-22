@@ -32,6 +32,7 @@ namespace Marain.Tenancy.OpenApi.Mappers
         public void ConfigureLinkMap(IOpenApiLinkOperationMap links)
         {
             links.Map(Tenant.RegisteredContentType, "self", TenancyService.GetTenantOperationId);
+            links.Map(Tenant.RegisteredContentType, "children", TenancyService.GetChildrenOperationId);
         }
 
         /// <inheritdoc/>
@@ -39,6 +40,7 @@ namespace Marain.Tenancy.OpenApi.Mappers
         {
             HalDocument response = this.halDocumentFactory.CreateHalDocumentFrom(input);
             response.ResolveAndAdd(this.linkResolver, input, "self", ("tenantId", input.Id));
+            response.ResolveAndAdd(this.linkResolver, input, "children", ("tenantId", input.Id));
 
             return response;
         }
