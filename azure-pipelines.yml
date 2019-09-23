@@ -27,3 +27,9 @@ jobs:
         displayName: 'Set Azure Connection String Environment Variable'
         env:
           ENDJIN_AZURESTORAGECONNECTIONSTRING: $(Endjin_AzureStorageConnectionString)
+      - task: Npm@1
+        displayName: 'Install Latest Azure Functions V2 Runtime'
+        inputs:
+          command: custom
+          verbose: false
+          customCommand: 'install -g azure-functions-core-tools --unsafe-perm true'
