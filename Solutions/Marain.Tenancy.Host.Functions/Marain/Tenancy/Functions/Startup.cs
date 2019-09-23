@@ -26,8 +26,8 @@ namespace Marain.Tenancy.ControlHost
             LoggerConfiguration loggerConfig = new LoggerConfiguration()
                     .Enrich.FromLogContext()
                     .MinimumLevel.Debug()
-                    .WriteTo.Logger(lc => lc.Filter.ByExcluding(Matching.FromSource("Menes")).WriteTo.Console().MinimumLevel.Debug())
-                    .WriteTo.Logger(lc => lc.Filter.ByIncludingOnly(Matching.FromSource("Menes")).WriteTo.Console().MinimumLevel.Debug());
+                    .WriteTo.Logger(lc => lc.WriteTo.Console().MinimumLevel.Debug())
+                    .WriteTo.Logger(lc => lc.WriteTo.Debug().MinimumLevel.Debug());
 
             Log.Logger = loggerConfig.CreateLogger();
 

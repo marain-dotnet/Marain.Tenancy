@@ -6,8 +6,6 @@ namespace Marain.Tenancy.OpenApi
 {
     using System;
     using System.Collections.Generic;
-    using System.Security.Cryptography;
-    using System.Text;
     using System.Threading.Tasks;
     using Corvus.Extensions.Json;
     using Corvus.Tenancy;
@@ -19,7 +17,8 @@ namespace Marain.Tenancy.OpenApi
     using Menes.Links;
     using Microsoft.ApplicationInsights;
     using Microsoft.ApplicationInsights.DataContracts;
-    using Newtonsoft.Json.Linq;
+    using Microsoft.ApplicationInsights.Extensibility;
+    using Microsoft.Extensions.Logging;
 
     /// <summary>
     ///     Handles claim permissions requests.
@@ -65,6 +64,7 @@ namespace Marain.Tenancy.OpenApi
         private readonly IOpenApiWebLinkResolver linkResolver;
         private readonly IJsonSerializerSettingsProvider serializerSettingsProvider;
         private readonly TelemetryClient telemetryClient;
+        private readonly ILogger<TenancyService> logger;
 #pragma warning restore IDE0052
 
         /// <summary>
@@ -76,13 +76,15 @@ namespace Marain.Tenancy.OpenApi
         /// <param name="linkResolver">The link resolver.</param>
         /// <param name="serializerSettingsProvider">The serializer settings provider.</param>
         /// <param name="telemetryClient">A <see cref="TelemetryClient"/> to log telemetry.</param>
+        /// <param name="logger">The logger for the service.</param>
         public TenancyService(
             ITenantProvider tenantProvider,
             TenantMapper tenantMapper,
             TenantCollectionResultMapper tenantCollectionResultMapper,
             IOpenApiWebLinkResolver linkResolver,
             IJsonSerializerSettingsProvider serializerSettingsProvider,
-            TelemetryClient telemetryClient)
+            TelemetryClient telemetryClient,
+            ILogger<TenancyService> logger)
         {
             this.tenantProvider = tenantProvider ?? throw new ArgumentNullException(nameof(tenantProvider));
             this.tenantMapper = tenantMapper ?? throw new ArgumentNullException(nameof(tenantMapper));
@@ -90,6 +92,7 @@ namespace Marain.Tenancy.OpenApi
             this.linkResolver = linkResolver ?? throw new ArgumentNullException(nameof(linkResolver));
             this.serializerSettingsProvider = serializerSettingsProvider ?? throw new ArgumentNullException(nameof(serializerSettingsProvider));
             this.telemetryClient = telemetryClient ?? throw new ArgumentNullException(nameof(telemetryClient));
+            this.logger = logger ?? throw new ArgumentNullException(nameof(logger));
         }
 
         /// <summary>
@@ -327,13 +330,15 @@ namespace Marain.Tenancy.OpenApi
 
             if (childTenantId.GetParentId() != tenantId)
             {
-                return this.NotFoundResult();
+                this.logger.LogError($"The discovered parent tenant ID {childTenantId.GetParentId()} of the child {childTenantId} does not match the specified parent {tenantId}");
+                throw new OpenApiNotFoundException();
             }
 
-            using (this.telemetryClient.StartOperation<RequestTelemetry>(GetTenantOperationId))
+            using (IOperationHolder<RequestTelemetry> opHolder = this.telemetryClient.StartOperation<RequestTelemetry>(DeleteChildTenantOperationId))
             {
                 try
                 {
+                    this.logger.LogInformation($"Attempting to delete {childTenantId}");
                     await this.tenantProvider.DeleteTenantAsync(childTenantId).ConfigureAwait(false);
                     return this.OkResult();
                 }
@@ -345,15 +350,6 @@ namespace Marain.Tenancy.OpenApi
                 {
                     return this.ConflictResult();
                 }
-            }
-        }
-
-        private static string GetETag(ITenant result)
-        {
-            string propertiesString = ((JObject)result.Properties).ToString();
-            using (var hash = MD5.Create())
-            {
-                return "\"" + Convert.ToBase64String(hash.ComputeHash(Encoding.UTF8.GetBytes(propertiesString))) + "\"";
             }
         }
     }

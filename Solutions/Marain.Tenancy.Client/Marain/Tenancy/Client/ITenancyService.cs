@@ -57,7 +57,7 @@ namespace Marain.Tenancy.Client
         /// <param name='cancellationToken'>
         /// The cancellation token.
         /// </param>
-        Task<HttpOperationResponse<Tenant>> UpdateTenantWithHttpMessagesAsync(string tenantId, Tenant body, Dictionary<string, List<string>> customHeaders = null, CancellationToken cancellationToken = default(CancellationToken));
+        Task<HttpOperationResponse<object>> UpdateTenantWithHttpMessagesAsync(string tenantId, object body, Dictionary<string, List<string>> customHeaders = null, CancellationToken cancellationToken = default(CancellationToken));
 
         /// <summary>
         /// Gets a tenant
@@ -77,7 +77,7 @@ namespace Marain.Tenancy.Client
         /// <param name='cancellationToken'>
         /// The cancellation token.
         /// </param>
-        Task<HttpOperationResponse<Tenant,GetTenantHeaders>> GetTenantWithHttpMessagesAsync(string tenantId, string ifNoneMatch = default(string), Dictionary<string, List<string>> customHeaders = null, CancellationToken cancellationToken = default(CancellationToken));
+        Task<HttpOperationResponse<object,GetTenantHeaders>> GetTenantWithHttpMessagesAsync(string tenantId, string ifNoneMatch = default(string), Dictionary<string, List<string>> customHeaders = null, CancellationToken cancellationToken = default(CancellationToken));
 
         /// <summary>
         /// Get all child tenants of the current tenant
@@ -138,7 +138,7 @@ namespace Marain.Tenancy.Client
         /// <param name='cancellationToken'>
         /// The cancellation token.
         /// </param>
-        Task<HttpOperationResponse<Tenant>> DeleteChildTenantWithHttpMessagesAsync(string tenantId, string childTenantId, Dictionary<string, List<string>> customHeaders = null, CancellationToken cancellationToken = default(CancellationToken));
+        Task<HttpOperationResponse> DeleteChildTenantWithHttpMessagesAsync(string tenantId, string childTenantId, Dictionary<string, List<string>> customHeaders = null, CancellationToken cancellationToken = default(CancellationToken));
 
         /// <summary>
         /// View swagger definition for this API

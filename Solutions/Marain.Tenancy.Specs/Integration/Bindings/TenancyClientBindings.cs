@@ -14,13 +14,13 @@ namespace Marain.Tenancy.Specs.Integration.Bindings
     /// Bindings for the integration tests for <see cref="TenancyService"/>.
     /// </summary>
     [Binding]
-    public static class TenancyApiBindings
+    public static class TenancyClientBindings
     {
         /// <summary>
         /// Configures the DI container before tests start.
         /// </summary>
         /// <param name="featureContext">The SpecFlow test context.</param>
-        [BeforeFeature("@tenancyApi", Order = ContainerBeforeFeatureOrder.PopulateServiceCollection)]
+        [BeforeFeature("@withTenancyClient", Order = ContainerBeforeFeatureOrder.PopulateServiceCollection)]
         public static void SetupFeature(FeatureContext featureContext)
         {
             ContainerBindings.ConfigureServices(
@@ -29,6 +29,7 @@ namespace Marain.Tenancy.Specs.Integration.Bindings
                 {
                     var configData = new Dictionary<string, string>
                     {
+                        { "TenancyServiceBaseUri", "http://localhost:7071" },
                     };
                     IConfigurationRoot config = new ConfigurationBuilder()
                         .AddInMemoryCollection(configData)
@@ -36,7 +37,7 @@ namespace Marain.Tenancy.Specs.Integration.Bindings
                         .AddJsonFile("local.settings.json", true, true)
                         .Build();
                     serviceCollection.AddSingleton(config);
-                    serviceCollection.AddTenancyApi(config);
+                    serviceCollection.AddTenantProviderServiceClient(config);
                 });
         }
     }

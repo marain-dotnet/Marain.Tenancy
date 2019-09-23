@@ -27,6 +27,8 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Tenant'
+        '400':
+          description: Bad request
         '403':
           description: Forbidden
         '404':
@@ -54,6 +56,8 @@ paths:
                 $ref: '#/components/schemas/Tenant'
         '304':
           description: Not modified
+        '400':
+          description: Bad request
         '403':
           description: Forbidden
         '404':
@@ -76,6 +80,10 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ChildTenants'
+        '400':
+          description: Bad request
+        '404':
+          description: Not found
         '403':
           description: Forbidden
     post:
@@ -94,6 +102,8 @@ paths:
               description: The location of the created tenant
               schema:
                 type: string
+        '400':
+          description: Bad request
         '403':
           description: Forbidden
         '404':
@@ -113,10 +123,8 @@ paths:
       responses:
         '200':
           description: Successful operation
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Tenant'
+        '400':
+          description: Bad request
         '403':
           description: Forbidden
         '404':
@@ -210,7 +218,7 @@ components:
               additionalProperties: false
       additionalProperties: true
     Tenant:
-      allOf:
+      anyOf:
       - $ref: '#/components/schemas/Resource'
       - type: object
         properties:

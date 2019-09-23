@@ -20,6 +20,8 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Marain.Tenancy.Specs", "Mar
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Marain.Tenancy.Client", "Marain.Tenancy.Client\Marain.Tenancy.Client.csproj", "{E2682002-CE47-4189-AEAD-AB3F6EFC4E49}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Marain.Tenancy.ClientTenantProvider", "Marain.Tenancy.ClientTenantProvider\Marain.Tenancy.ClientTenantProvider.csproj", "{97382102-88AF-405C-9992-9E743634458A}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -50,6 +52,10 @@ Global
 		{E2682002-CE47-4189-AEAD-AB3F6EFC4E49}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{E2682002-CE47-4189-AEAD-AB3F6EFC4E49}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{E2682002-CE47-4189-AEAD-AB3F6EFC4E49}.Release|Any CPU.Build.0 = Release|Any CPU
+		{97382102-88AF-405C-9992-9E743634458A}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{97382102-88AF-405C-9992-9E743634458A}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{97382102-88AF-405C-9992-9E743634458A}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{97382102-88AF-405C-9992-9E743634458A}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
