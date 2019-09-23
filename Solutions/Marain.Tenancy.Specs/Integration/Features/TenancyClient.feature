@@ -1,5 +1,6 @@
 ﻿@setupContainer
 @withTenancyClient
+@useTenancyFunction
 
 Feature: TenancyClient
 	In order to use Marain Tenant services
@@ -11,6 +12,7 @@ Scenario: Get a tenant that does not exist
 	Then it should throw a TenantNotFoundException
 
 Scenario: Get a tenant with an etag retrieved from a created tenant
+	
 	Given I create a child tenant called "ChildTenant1" for the root tenant
 	And I get the tenant id of the tenant called "ChildTenant1" and call it "ChildTenantId"
 	And I get the ETag of the tenant called "ChildTenant1" and call it "ChildTenantETag"

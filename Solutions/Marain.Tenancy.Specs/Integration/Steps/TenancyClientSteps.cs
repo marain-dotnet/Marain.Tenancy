@@ -1,4 +1,4 @@
-﻿namespace Marain.Operations.Specs.Integration.Steps
+﻿namespace Marain.Tenancy.Specs.Integration.Steps
 {
     using System;
     using System.Linq;
