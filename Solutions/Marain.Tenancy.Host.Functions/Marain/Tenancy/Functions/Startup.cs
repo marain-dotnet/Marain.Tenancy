@@ -10,8 +10,7 @@ namespace Marain.Tenancy.ControlHost
     using Microsoft.Azure.WebJobs.Hosting;
     using Microsoft.Extensions.Configuration;
     using Microsoft.Extensions.DependencyInjection;
-    using Serilog;
-    using Serilog.Filters;
+    using Microsoft.Extensions.Logging;
 
     /// <summary>
     /// Startup code for the Function.
@@ -23,13 +22,25 @@ namespace Marain.Tenancy.ControlHost
         {
             IServiceCollection services = builder.Services;
 
-            LoggerConfiguration loggerConfig = new LoggerConfiguration()
-                    .Enrich.FromLogContext()
-                    .MinimumLevel.Debug()
-                    .WriteTo.Logger(lc => lc.WriteTo.Console().MinimumLevel.Debug())
-                    .WriteTo.Logger(lc => lc.WriteTo.Debug().MinimumLevel.Debug());
-
-            Log.Logger = loggerConfig.CreateLogger();
+            services.AddLogging(logging =>
+            {
+#if DEBUG
+                // Ensure you enable the required logging level in host.json
+                // e.g:
+                //
+                // "logging": {
+                //    "fileLoggingMode": "debugOnly",
+                //    "logLevel": {
+                //
+                //    // For all functions
+                //    "Function": "Debug",
+                //
+                //    // Default settings, e.g. for host
+                //    "default": "Debug"
+                // }
+                logging.AddConsole();
+#endif
+            });
 
             IConfigurationRoot root = Configure(services);
 
