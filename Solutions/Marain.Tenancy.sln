@@ -20,7 +20,7 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Marain.Tenancy.Specs", "Mar
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Marain.Tenancy.Client", "Marain.Tenancy.Client\Marain.Tenancy.Client.csproj", "{E2682002-CE47-4189-AEAD-AB3F6EFC4E49}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Marain.Tenancy.ClientTenantProvider", "Marain.Tenancy.ClientTenantProvider\Marain.Tenancy.ClientTenantProvider.csproj", "{97382102-88AF-405C-9992-9E743634458A}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Marain.Tenancy.ClientTenantProvider", "Marain.Tenancy.ClientTenantProvider\Marain.Tenancy.ClientTenantProvider.csproj", "{97382102-88AF-405C-9992-9E743634458A}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

@@ -2,25 +2,28 @@
   "$schema": "https://schema.management.azure.com/schemas/2015-01-01/deploymentTemplate.json#",
   "contentVersion": "1.0.0.0",
   "parameters": {
-    "prefix": {
+    "marainPrefix": {
       "type": "string"
     },
     "appName": {
       "type": "string"
     },
-    "environment": {
+    "environmentSuffix": {
       "type": "string"
     },
-    "functionsAppPackageFolder": {
+    "tenancyStorageSku": {
       "type": "string",
-      "minLength": 1
+      "defaultValue": "Standard_LRS",
+      "allowedValues": [
+        "Standard_LRS",
+        "Standard_ZRS",
+        "Standard_GRS",
+        "Standard_RAGRS",
+        "Premium_LRS"
+      ]
     },
-    "functionsAppPackageFileName": {
-      "type": "string",
-      "minLength": 1,
-      "metadata": {
-        "description": "Name of the webdeploy package for host function"
-      }
+    "appInsightsInstrumentationKey": {
+      "type": "string"
     },
     "functionEasyAuthAadClientId": {
       "type": "string",
@@ -29,60 +32,57 @@
         "description": "Enable EasyAuth for AAD using the specified Client ID/App ID"
       }
     },
-    "functionEasyAuthAadClientSecret": {
-      "type": "string",
-      "defaultValue": "",
-      "metadata": {
-        "description": "The client secret with which to"
-      }
-    },
     "_artifactsLocation": {
       "type": "string"
     },
     "_artifactsLocationSasToken": {
       "type": "securestring"
-    },
-    "isDeveloperEnvironment": {
-      "type": "bool",
-      "defaultValue": "false",
-      "metadata": {
-        "description": "If true, only resources needed to support a developer environment will be deployed."
-      }
     }
   },
   "variables": {
-    "defaultName": "[concat(parameters('prefix'), parameters('appName'), parameters('environment'))]",
-    "functionsAppName": "[concat(parameters('prefix'), parameters('appName'), parameters('environment'))]",
-    "appInsightsName": "[variables('defaultName')]",
+    "resourceNameRoot": "[concat(parameters('marainPrefix'), parameters('environmentSuffix'))]",
+    "defaultName": "[concat(variables('resourceNameRoot'), parameters('appName'))]",
+    "tenancyStorageName": "[substring(concat(variables('resourceNameRoot'), parameters('appName'), uniqueString(resourceGroup().id)), 0, 24)]",
+    "tenancyStorageKeySecretName": "TenancyStorageAccountKey",
+    "functionsAppName": "[variables('defaultName')]",
+    "keyVaultName": "[substring(concat(variables('resourceNameRoot'), parameters('appName'), uniqueString(resourceGroup().id)), 0, 24)]",
+    "keyVaultDiagnosticStorageAccountName": "[substring(concat(variables('resourceNameRoot'), parameters('appName'), 'kvdiag', uniqueString(resourceGroup().id)), 0, 24)]",
     "tenantId": "[subscription().tenantID]",
     "subscriptionId": "[subscription().subscriptionID]",
     "tagValues": {
-      "prefix": "[parameters('prefix')]",
+      "prefix": "[parameters('marainPrefix')]",
       "appName": "[parameters('appName')]",
-      "environment": "[parameters('environment')]"
+      "environment": "[parameters('environmentSuffix')]"
     }
   },
   "resources": [
     {
-      "name": "app-insights",
+      "name": "tenant-root-storage",
       "type": "Microsoft.Resources/deployments",
       "apiVersion": "2016-09-01",
-      "dependsOn": [],
+      "dependsOn": [
+        "functions-app"
+      ],
       "properties": {
         "mode": "Incremental",
         "templateLink": {
-          "uri": "[concat(parameters('_artifactsLocation'), '/Templates/app-insights.json', parameters('_artifactsLocationSasToken'))]",
+          "uri": "[concat(parameters('_artifactsLocation'), '/Templates/storage.json', parameters('_artifactsLocationSasToken'))]",
           "contentVersion": "1.0.0.0"
         },
         "parameters": {
-          "appName": {
-            "value": "[variables('appInsightsName')]"
+          "storageAccountName": {
+            "value": "[variables('tenancyStorageName')]"
           },
-          "appType": {
-            "value": "web"
+          "storageAccountType": {
+            "value": "[parameters('tenancyStorageSku')]"
           },
-          "appLocation": {
+          "storageAccountLocation": {
             "value": "[resourceGroup().location]"
+          },
+          "storageAccountOwnerPrincipalIds": {
+            "value": [
+              "[reference('functions-app').outputs.servicePrincipalId.value]"
+            ]
           },
           "tagValues": {
             "value": "[variables('tagValues')]"
@@ -106,34 +106,42 @@
             "value": "[variables('tenantId')]"
           },
           "keyVaultName": {
-            "value": "[variables('defaultName')]"
+            "value": "[variables('keyVaultName')]"
           },
-          "diagnosticsStorageAccountName":  {
-            "value": "[variables('defaultName')]"
+          "diagnosticsStorageAccountName": {
+            "value": "[variables('keyVaultDiagnosticStorageAccountName')]"
           }
         }
       }
     },
     {
-      "name": "cosmos-db",
+      "name": "key-vault-secret-storage-key",
       "type": "Microsoft.Resources/deployments",
       "apiVersion": "2016-09-01",
-      "dependsOn": [],
+      "dependsOn": [
+        "tenant-root-storage",
+        "key-vault"
+      ],
       "properties": {
         "mode": "Incremental",
         "templateLink": {
-          "uri": "[concat(parameters('_artifactsLocation'), '/Templates/cosmos-db.json', parameters('_artifactsLocationSasToken'))]",
+          "uri": "[concat(parameters('_artifactsLocation'), '/Templates/key-vault-secret.json', parameters('_artifactsLocationSasToken'))]",
           "contentVersion": "1.0.0.0"
         },
         "parameters": {
-          "accountName": {
-            "value": "[variables('defaultName')]"
+          "keyVaultName": {
+            "value": "[variables('keyVaultName')]"
+          },
+          "secretName": {
+            "value": "[variables('tenancyStorageKeySecretName')]"
+          },
+          "contentValue": {
+            "value": "[reference('tenant-root-storage', '2016-09-01').outputs.storageAccountKey.value]"
           }
         }
       }
     },
     {
-      "condition": "[not(parameters('isDeveloperEnvironment'))]",
       "name": "functions-app",
       "type": "Microsoft.Resources/deployments",
       "apiVersion": "2016-09-01",
@@ -146,8 +154,6 @@
         },
         "parameters": {
           "functionsAppName": { "value": "[variables('functionsAppName')]" },
-          "functionsAppPackageFolder": { "value": "[parameters('functionsAppPackageFolder')]" },
-          "functionsAppPackageFileName": { "value": "[parameters('functionsAppPackageFileName')]" },
           "easyAuthAadClientId": { "value": "[parameters('functionEasyAuthAadClientId')]" },
           "_artifactsLocation": { "value": "[parameters('_artifactsLocation')]" },
           "_artifactsLocationSasToken": { "value": "[parameters('_artifactsLocationSasToken')]" }
@@ -155,7 +161,6 @@
       }
     },
     {
-      "condition": "[not(parameters('isDeveloperEnvironment'))]",
       "name": "functions-app-settings",
       "type": "Microsoft.Resources/deployments",
       "apiVersion": "2016-09-01",
@@ -170,21 +175,67 @@
         },
         "parameters": {
           "storageAccountConnectionString": { "value": "[reference('functions-app', '2016-09-01').outputs.storageAccountConnectionString.value]" },
+          "runFromPackage": { "value": "1" },
           "functionsAppName": { "value": "[variables('functionsAppName')]" },
           "tenantId": { "value": "[variables('tenantId')]" },
           "subscriptionId": { "value": "[variables('subscriptionId')]" },
-          "applicationInsightsInstrumentationKey": { "value": "[reference('app-insights').outputs.instrumentationKey.value]" },
-          "keyVaultName": { "value": "[variables('defaultName')]" },
-          "cosmosDbName": { "value": "[variables('defaultName')]" }
+          "applicationInsightsInstrumentationKey": { "value": "[parameters('appInsightsInstrumentationKey')]" },
+          "keyVaultName": { "value": "[variables('keyVaultName')]" },
+          "storageAccountName": { "value": "[variables('tenancyStorageName')]" },
+          "storageAccountKeyName": { "value": "[variables('tenancyStorageKeySecretName')]" }
+        }
+      }
+    },
+    {
+      "name": "function-key-vault-access",
+      "type": "Microsoft.Resources/deployments",
+      "apiVersion": "2016-09-01",
+      "dependsOn": [
+        "functions-app",
+        "key-vault"
+      ],
+      "properties": {
+        "mode": "Incremental",
+        "templateLink": {
+          "uri": "[concat(parameters('_artifactsLocation'), '/Templates/key-vault-access-policy.json', parameters('_artifactsLocationSasToken'))]",
+          "contentVersion": "1.0.0.0"
+        },
+        "parameters": {
+          "keyVaultName": {
+            "value": "[variables('keyVaultName')]"
+          },
+          "objectName": {
+            "value": "[variables('functionsAppName')]"
+          },
+          "objectResourceGroup": {
+            "value": "[resourceGroup().name]"
+          },
+          "objectResourceType": {
+            "value": "Microsoft.Web/sites"
+          },
+          "permissions": {
+            "value": {
+              "secrets": [
+                "get"
+              ]
+            }
+          }
         }
       }
     }
   ],
   "outputs": {
-    "applicationInsightsInstrumentationKey": {
+    "tenancyStorageAccountName": {
       "type": "string",
-      "value": "[reference('app-insights').outputs.instrumentationKey.value]"
+      "value": "[variables('tenancyStorageName')]"
+    },
+    "keyVaultName": {
+      "type": "string",
+      "value": "[variables('keyVaultName')]"
+    },
+    "functionServicePrincipalId": {
+      "type": "string",
+      "value": "[reference('functions-app').outputs.servicePrincipalId.value]"
     }
   }
 }
-

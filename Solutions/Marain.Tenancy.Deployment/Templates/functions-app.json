@@ -8,14 +8,14 @@
     },
     "functionsAppPackageFolder": {
       "type": "string",
-      "minLength": 1,
+      "defaultValue": "",
       "metadata": {
         "description": "WebDeploy package location. This path is relative to the artifactsLocation parameter"
       }
     },
     "functionsAppPackageFileName": {
       "type": "string",
-      "minLength": 1,
+      "defaultValue": "",
       "metadata": {
         "description": "Name of the webdeploy package"
       }
@@ -47,7 +47,7 @@
     }
   },
   "variables": {
-    "storageAccountName": "[parameters('functionsAppName')]",
+    "storageAccountName": "[substring(concat(parameters('functionsAppName'), 'func', uniqueString(resourceGroup().id)), 0, 24)]",
     "hostingPlanName": "[parameters('functionsAppName')]",
     "storageAccountid": "[concat(resourceGroup().id,'/providers/','Microsoft.Storage/storageAccounts/', variables('storageAccountName'))]",
     "packageUri": "[concat(parameters('_artifactsLocation'), '/', parameters('functionsAppPackageFolder'), '/', parameters('functionsAppPackageFileName'), parameters('_artifactsLocationSasToken'))]"
@@ -101,10 +101,6 @@
             {
               "name": "WEBSITE_CONTENTSHARE",
               "value": "[toLower(parameters('functionsAppName'))]"
-            },
-            {
-              "name": "FUNCTIONS_EXTENSION_VERSION",
-              "value": "beta"
             }
           ]
         }
@@ -114,6 +110,7 @@
           "name": "MSDeploy",
           "type": "Extensions",
           "apiVersion": "2015-02-01",
+          "condition": "[not(empty(parameters('functionsAppPackageFileName')))]",
           "dependsOn": [
             "[concat('Microsoft.Web/sites/', parameters('functionsAppName'))]"
           ],
@@ -160,6 +157,10 @@
     "storageAccountConnectionString": {
       "type": "string",
       "value": "[concat('DefaultEndpointsProtocol=https;AccountName=', variables('storageAccountName'), ';AccountKey=', listKeys(variables('storageAccountid'),'2015-05-01-preview').key1)]"
+    },
+    "servicePrincipalId": {
+      "type": "string",
+      "value": "[reference(concat(resourceId('Microsoft.Web/sites', parameters('functionsAppName')), '/providers/Microsoft.ManagedIdentity/Identities/default'), '2018-11-30').principalId]"
     }
   }
 }

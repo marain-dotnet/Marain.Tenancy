@@ -16,9 +16,26 @@
     "storageAccountName": {
       "type": "string",
       "minLength": 1
+    },
+    "storageAccountLocation": {
+      "type": "string",
+      "defaultValue": "[resourceGroup().location]"
+    },
+    "storageAccountOwnerPrincipalIds": {
+      "type": "array",
+      "defaultValue": []
+    },
+    "tagValues": {
+      "type": "object",
+      "defaultValue": {}
     }
   },
   "variables": {
+    "ownerRoleId": "[concat('/subscriptions/', subscription().subscriptionId, '/providers/Microsoft.Authorization/roleDefinitions/', '8e3af657-a8ff-443c-a75c-2fe8c4bcb635')]",
+    "localTags": {
+      "displayName": "storageAccountName"
+    },
+    "tags": "[union(parameters('tagValues'), variables('localTags'))]"
   },
   "resources": [
     {
@@ -29,13 +46,28 @@
       "sku": {
         "name": "[parameters('storageAccountType')]"
       },
-      "dependsOn": [ ],
-      "tags": {
-        "displayName": "storageAccountName"
-      },
+      "dependsOn": [],
+      "tags": "[variables('tags')]",
       "kind": "Storage"
-    }
+    },
 
+    {
+      "type": "Microsoft.Storage/storageAccounts/providers/roleAssignments",
+      "name": "[concat(parameters('storageAccountName'), '/Microsoft.Authorization/', parameters('storageAccountOwnerPrincipalIds')[copyIndex()])]",
+      "location": "[resourceGroup().location]",
+      "apiVersion": "2018-07-01",
+      "copy": {
+        "name": "ownerscopy",
+        "count": "[length(parameters('storageAccountOwnerPrincipalIds'))]"
+      },
+      "dependsOn": [
+        "[parameters('storageAccountName')]"
+      ],
+      "properties": {
+        "roleDefinitionId": "[variables('ownerRoleId')]",
+        "principalId": "[parameters('storageAccountOwnerPrincipalIds')[copyIndex()]]"
+      }
+    } 
   ],
   "outputs": {
     "storageAccountKey": {
