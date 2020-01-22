@@ -33,3 +33,28 @@ jobs:
           command: custom
           verbose: false
           customCommand: 'install -g azure-functions-core-tools --unsafe-perm true'
+
+    # We want to include the deployment project in the assets. Currently this is experimental,
+    # and once we're done, probably some of this is going to move into the common templates.
+    # But the basic idea is that our release assets should include the deployment project,
+    # enabling Marain.Instance to perform infrastructure deployment.
+    # Now... the GitHub release is going to include every single file we put in Release,
+    # so we don't just want to copy the whole Deployment project folder over - we'll end
+    # up with an asset in the GitHub for every file in that project. So I think we need to
+    # ZIP it up.
+    # Something we can't currently do is set labels on GitHub release assets.
+    postPack:
+      - task: ArchiveFiles@2
+        displayName: 'ZIP Azure Deployment Project'
+        inputs:
+        rootFolderOrFile: '$(Build.SourcesDirectory)/Marain.Tenancy.Deployment'
+        includeRootFolder: false
+        archiveType: 'zip'
+        archiveFile: '$(Build.ArtifactStagingDirectory)/Marain.Deployment.Azure/Marain.Tenancy.Deployment.zip' 
+        # This next task could move into the build.and.release.yaml template
+      - task: CopyFiles@2
+        displayName: 'Copy Azure Deployment ZIPs to Release Folder'
+        inputs:
+          SourceFolder: '$(Build.ArtifactStagingDirectory)/Marain.Deployment.Azure'
+          Contents: '*.zip'
+          TargetFolder: '$(Build.ArtifactStagingDirectory)/Release/Marain.Deployment.Azure'
