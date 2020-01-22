@@ -47,7 +47,7 @@ jobs:
       - task: ArchiveFiles@2
         displayName: 'ZIP Azure Deployment Project'
         inputs:
-          rootFolderOrFile: '$(Build.SourcesDirectory)/Marain.Tenancy.Deployment'
+          rootFolderOrFile: '$(Build.SourcesDirectory)/Solutions/Marain.Tenancy.Deployment'
           includeRootFolder: false
           archiveType: 'zip'
           archiveFile: '$(Build.ArtifactStagingDirectory)/Marain.Deployment.Azure/Marain.Tenancy.Deployment.zip'
