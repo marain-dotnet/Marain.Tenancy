@@ -43,15 +43,14 @@ jobs:
     # up with an asset in the GitHub for every file in that project. So I think we need to
     # ZIP it up.
     # Something we can't currently do is set labels on GitHub release assets.
-    postPack:
+    postPackx:
       - task: ArchiveFiles@2
         displayName: 'ZIP Azure Deployment Project'
         inputs:
-        rootFolderOrFile: '$(Build.SourcesDirectory)/Marain.Tenancy.Deployment'
-        includeRootFolder: false
-        archiveType: 'zip'
-        archiveFile: '$(Build.ArtifactStagingDirectory)/Marain.Deployment.Azure/Marain.Tenancy.Deployment.zip' 
-        # This next task could move into the build.and.release.yaml template
+          rootFolderOrFile: '$(Build.SourcesDirectory)/Marain.Tenancy.Deployment'
+          includeRootFolder: false
+          archiveType: 'zip'
+          archiveFile: '$(Build.ArtifactStagingDirectory)/Marain.Deployment.Azure/Marain.Tenancy.Deployment.zip' 
       - task: CopyFiles@2
         displayName: 'Copy Azure Deployment ZIPs to Release Folder'
         inputs:
