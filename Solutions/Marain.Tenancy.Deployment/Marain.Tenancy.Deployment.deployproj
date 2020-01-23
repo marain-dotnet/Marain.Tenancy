@@ -23,6 +23,8 @@
   <Import Condition=" Exists('$(MSBuildExtensionsPath)\Microsoft\VisualStudio\v$(VisualStudioVersion)\Deployment\1.1\DeploymentProject.targets') " Project="$(MSBuildExtensionsPath)\Microsoft\VisualStudio\v$(VisualStudioVersion)\Deployment\1.1\DeploymentProject.targets" />
   <!-- vertag<:>end -->
   <ItemGroup>
+    <None Include="Marain-PostDeploy.ps1" />
+    <None Include="Marain-PreDeploy.ps1" />
     <None Include="Deploy-AzureResourceGroup.ps1" />
     <None Include="deploy.json" />
     <None Include="deploy.ps1" />
