@@ -65,6 +65,7 @@ jobs:
           projects: '$(Build.SourcesDirectory)/Solutions/Marain.Tenancy.Host.Functions/Marain.Tenancy.Host.Functions.csproj'
           arguments: '--configuration $(BuildConfiguration) /p:Version=$(GitVersion.SemVer) --no-build -o $(Build.SourcesDirectory)/Solutions/Marain.Tenancy.Host.Functions/bin/$(BuildConfiguration)/publish/'
           versioningScheme: byBuildNumber
+          publishWebProjects: false 
       - task: ArchiveFiles@2
         displayName: 'Create Run-From-Package ZIP'
         inputs:
