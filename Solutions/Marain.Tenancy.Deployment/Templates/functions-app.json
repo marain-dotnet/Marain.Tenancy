@@ -8,14 +8,14 @@
     },
     "functionsAppPackageFolder": {
       "type": "string",
-      "minLength": 1,
+      "defaultValue": "",
       "metadata": {
         "description": "WebDeploy package location. This path is relative to the artifactsLocation parameter"
       }
     },
     "functionsAppPackageFileName": {
       "type": "string",
-      "minLength": 1,
+      "defaultValue": "",
       "metadata": {
         "description": "Name of the webdeploy package"
       }
@@ -114,6 +114,7 @@
           "name": "MSDeploy",
           "type": "Extensions",
           "apiVersion": "2015-02-01",
+          "condition": "[not(empty(parameters('functionsAppPackageFileName')))]",
           "dependsOn": [
             "[concat('Microsoft.Web/sites/', parameters('functionsAppName'))]"
           ],

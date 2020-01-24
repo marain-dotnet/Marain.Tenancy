@@ -1,84 +1,87 @@
 ﻿<#
-
-.EXAMPLE
-
-.\deploy.ps1 `
-	-Prefix "mar" `
-	-AppName "tenancy" `
-	-Environment "dev" `
-	-FunctionsMsDeployPackagePath "..\Marain.Tenancy.Host.Functions\bin\Release\package\Marain.Tenancy.Host.Functions.zip"
+This is called during Marain.Instance infrastructure deployment after the Marain-ArmDeploy.ps
+script. It is our opportunity to do any deployment work that needs to happen after Azure resources
+have been deployed.
 #>
 
-[CmdletBinding(DefaultParametersetName='None')] 
-param(
-    [string] $Prefix = "mar",
-	[string] $AppName = "tenancy",
-	[ValidateLength(3,12)]
-	[string] $Suffix = "dev",
-	[string] $FunctionsMsDeployPackagePath = "..\Marain.Tenancy.Host.Functions\bin\Release\package\Marain.Tenancy.Host.Functions.zip",	
-	[string] $ResourceGroupLocation = "northeurope",
-	[string] $ArtifactStagingDirectory = ".",
-	[string] $ArtifactStorageContainerName = "stageartifacts",
-	[switch] $IsDeveloperEnvironment,
-	[switch] $UpdateLocalConfigFiles,
-	[switch] $SkipDeployment
-)
+# Marain.Instance expects us to define just this one function.
+Function MarainDeployment([MarainServiceDeploymentContext] $ServiceDeploymentContext) {
 
-Begin{
-	# Setup options and variables
-	$ErrorActionPreference = 'Stop'
-	Set-Location $PSScriptRoot
+	$ServiceDeploymentContext.UploadReleaseAssetAsAppServiceSitePackage(
+		"Marain.Tenancy.Host.Functions.zip",
+		$ServiceDeploymentContext.AppName
+	)
 
-	$Suffix = $Suffix.ToLower()
-	$AppName  = $AppName.ToLower()
-	$Prefix = $Prefix.ToLower()
+# [CmdletBinding(DefaultParametersetName='None')] 
+# param(
+#     [string] $Prefix = "mar",
+# 	[string] $AppName = "tenancy",
+# 	[ValidateLength(3,12)]
+# 	[string] $Suffix = "dev",
+# 	[string] $FunctionsMsDeployPackagePath = "..\Marain.Tenancy.Host.Functions\bin\Release\package\Marain.Tenancy.Host.Functions.zip",	
+# 	[string] $ResourceGroupLocation = "northeurope",
+# 	[string] $ArtifactStagingDirectory = ".",
+# 	[string] $ArtifactStorageContainerName = "stageartifacts",
+# 	[switch] $IsDeveloperEnvironment,
+# 	[switch] $UpdateLocalConfigFiles,
+# 	[switch] $SkipDeployment
+# )
 
-	$ResourceGroupName = $Prefix + "." + $AppName.ToLower() + "." + $Suffix
-	$DefaultName = $Prefix + $AppName.ToLower() + $Suffix
+# Begin{
+# 	# Setup options and variables
+# 	$ErrorActionPreference = 'Stop'
+# 	Set-Location $PSScriptRoot
 
-	$ArtifactStorageResourceGroupName = $ResourceGroupName + ".artifacts";
-	$ArtifactStorageAccountName = $Prefix + $AppName + $Suffix + "ar"
-	$ArtifactStagingDirectory = [System.IO.Path]::GetFullPath([System.IO.Path]::Combine($PSScriptRoot, $ArtifactStagingDirectory))
+# 	$Suffix = $Suffix.ToLower()
+# 	$AppName  = $AppName.ToLower()
+# 	$Prefix = $Prefix.ToLower()
 
-	$FunctionsMsDeployPackageFolderName = "MsDeploy";
+# 	$ResourceGroupName = $Prefix + "." + $AppName.ToLower() + "." + $Suffix
+# 	$DefaultName = $Prefix + $AppName.ToLower() + $Suffix
 
-	$FunctionsAppPackageFileName = [System.IO.Path]::GetFileName($FunctionsMsDeployPackagePath)
+# 	$ArtifactStorageResourceGroupName = $ResourceGroupName + ".artifacts";
+# 	$ArtifactStorageAccountName = $Prefix + $AppName + $Suffix + "ar"
+# 	$ArtifactStagingDirectory = [System.IO.Path]::GetFullPath([System.IO.Path]::Combine($PSScriptRoot, $ArtifactStagingDirectory))
 
-	$CosmosDbName = $DefaultName
-	$KeyVaultName = $DefaultName
-}
+# 	$FunctionsMsDeployPackageFolderName = "MsDeploy";
 
-Process{
+# 	$FunctionsAppPackageFileName = [System.IO.Path]::GetFileName($FunctionsMsDeployPackagePath)
 
-	#.\Scripts\Grant-CurrentAadUserKeyVaultSecretAccess `
-	#	-ResourceGroupName $ResourceGroupName `
-	#	-KeyVaultName $KeyVaultName
+# 	$CosmosDbName = $DefaultName
+# 	$KeyVaultName = $DefaultName
+# }
 
-	.\Scripts\Add-CosmosAccessKeyToKeyVault `
-		-ResourceGroupName $ResourceGroupName `
-		-KeyVaultName $KeyVaultName `
-		-CosmosDbName $CosmosDbName `
-		-SecretName 'tenancystorecosmosdbkey'
+# Process{
 
-	Write-Host 'Grant the function access to the KV'
+# 	#.\Scripts\Grant-CurrentAadUserKeyVaultSecretAccess `
+# 	#	-ResourceGroupName $ResourceGroupName `
+# 	#	-KeyVaultName $KeyVaultName
 
-	$FunctionAppName = $Prefix + $AppName.ToLower() + $Suffix
+# 	.\Scripts\Add-CosmosAccessKeyToKeyVault `
+# 		-ResourceGroupName $ResourceGroupName `
+# 		-KeyVaultName $KeyVaultName `
+# 		-CosmosDbName $CosmosDbName `
+# 		-SecretName 'tenancystorecosmosdbkey'
 
-	.\Scripts\Grant-KeyVaultSecretGetToMsi `
-		-ResourceGroupName $ResourceGroupName `
-		-KeyVaultName $KeyVaultName `
-		-AppName $FunctionAppName
+# 	Write-Host 'Grant the function access to the KV'
 
-	Write-Host 'Revoking KV secret access to current user'
+# 	$FunctionAppName = $Prefix + $AppName.ToLower() + $Suffix
 
-	.\Scripts\Revoke-CurrentAadUserKeyVaultSecretAccess `
-		-ResourceGroupName $ResourceGroupName `
-		-KeyVaultName $KeyVaultName
-}
+# 	.\Scripts\Grant-KeyVaultSecretGetToMsi `
+# 		-ResourceGroupName $ResourceGroupName `
+# 		-KeyVaultName $KeyVaultName `
+# 		-AppName $FunctionAppName
 
-End{
-	Write-Host -ForegroundColor Green "`n######################################################################`n"
-	Write-Host -ForegroundColor Green "Deployment finished"
-	Write-Host -ForegroundColor Green "`n######################################################################`n"
+# 	Write-Host 'Revoking KV secret access to current user'
+
+# 	.\Scripts\Revoke-CurrentAadUserKeyVaultSecretAccess `
+# 		-ResourceGroupName $ResourceGroupName `
+# 		-KeyVaultName $KeyVaultName
+# }
+
+# End{
+# 	Write-Host -ForegroundColor Green "`n######################################################################`n"
+# 	Write-Host -ForegroundColor Green "Deployment finished"
+# 	Write-Host -ForegroundColor Green "`n######################################################################`n"
 }
 

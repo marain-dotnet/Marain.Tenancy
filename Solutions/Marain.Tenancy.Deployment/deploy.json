@@ -11,17 +11,6 @@
     "environmentSuffix": {
       "type": "string"
     },
-    "functionsAppPackageFolder": {
-      "type": "string",
-      "minLength": 1
-    },
-    "functionsAppPackageFileName": {
-      "type": "string",
-      "minLength": 1,
-      "metadata": {
-        "description": "Name of the webdeploy package for host function"
-      }
-    },
     "functionEasyAuthAadClientId": {
       "type": "string",
       "defaultValue": "",
@@ -139,8 +128,6 @@
         },
         "parameters": {
           "functionsAppName": { "value": "[variables('functionsAppName')]" },
-          "functionsAppPackageFolder": { "value": "[parameters('functionsAppPackageFolder')]" },
-          "functionsAppPackageFileName": { "value": "[parameters('functionsAppPackageFileName')]" },
           "easyAuthAadClientId": { "value": "[parameters('functionEasyAuthAadClientId')]" },
           "_artifactsLocation": { "value": "[parameters('_artifactsLocation')]" },
           "_artifactsLocationSasToken": { "value": "[parameters('_artifactsLocationSasToken')]" }
@@ -163,6 +150,7 @@
         },
         "parameters": {
           "storageAccountConnectionString": { "value": "[reference('functions-app', '2016-09-01').outputs.storageAccountConnectionString.value]" },
+          "runFromPackage": { "value": "1" },
           "functionsAppName": { "value": "[variables('functionsAppName')]" },
           "tenantId": { "value": "[variables('tenantId')]" },
           "subscriptionId": { "value": "[variables('subscriptionId')]" },

@@ -5,15 +5,19 @@
     "storageAccountConnectionString": {
       "type": "string"
     },
+    "runFromPackage": {
+      "type": "string",
+      "defaultValue": ""
+    },
     "functionsAppName": {
       "type": "string",
       "minLength": 1
     },
-    "keyVaultName":  {
+    "keyVaultName": {
       "type": "string",
       "minLength": 1
     },
-    "cosmosDbName":  {
+    "cosmosDbName": {
       "type": "string",
       "minLength": 1
     },
@@ -45,6 +49,7 @@
       "properties": {
         "WEBSITE_CONTENTAZUREFILECONNECTIONSTRING": "[parameters('storageAccountConnectionString')]",
         "WEBSITE_CONTENTSHARE": "[toLower(parameters('functionsAppName'))]",
+        "WEBSITE_RUN_FROM_PACKAGE": "[parameters('runFromPackage')]",
         "AzureConfigurationStorage": "[parameters('storageAccountConnectionString')]",
         "APPINSIGHTS_INSTRUMENTATIONKEY": "[parameters('applicationInsightsInstrumentationKey')]",
         "FUNCTIONS_EXTENSION_VERSION": "beta",

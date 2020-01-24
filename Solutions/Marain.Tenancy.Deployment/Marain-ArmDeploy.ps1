@@ -10,8 +10,6 @@ Function MarainDeployment([MarainServiceDeploymentContext] $ServiceDeploymentCon
 	# don't want to be creating a storage account per service just to support this.
 	$TemplateParameters = @{
 		appName="tenancy"
-		functionsAppPackageFolder="MsDeploy"
-		functionsAppPackageFileName="Marain.Tenancy.Host.Functions.zip"
 		functionEasyAuthAadClientId=$ServiceDeploymentContext.Variables["TenancyAppId"]
 	}
 	$InstanceResourceGroupName = $InstanceDeploymentContext.MakeResourceGroupName("tenancy")
