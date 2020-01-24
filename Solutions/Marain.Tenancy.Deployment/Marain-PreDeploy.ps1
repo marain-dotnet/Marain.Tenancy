@@ -10,12 +10,13 @@ use it directly.)
 #>
 
 # Marain.Instance expects us to define just this one function.
-Function MarainDeployment([MarainInstanceDeploymentContext] $deployContext) {
+Function MarainDeployment([MarainServiceDeploymentContext] $ServiceDeploymentContext) {
 
-    $AppUri = "https://" + $deployContext.AppName + ".azurewebsites.net/"
+    $AppUri = "https://" + $ServiceDeploymentContext.AppName + ".azurewebsites.net/"
     $EasyAuthCallbackTail = ".auth/login/aad/callback"
-    $ReplyUrls = ($AppUri + $EasyAuthCallbackTail), ($PublicFacingRootUri + $EasyAuthCallbackTail)
-    $app = $deployContext.FindOrCreateApp($deployContext.AppName, $AppUri, $ReplyUrls)
+    $ReplyUrls = ($AppUri + $EasyAuthCallbackTail), ($ServiceDeploymentContext.PublicFacingServiceRootUri + $EasyAuthCallbackTail)
+    $app = $ServiceDeploymentContext.FindOrCreateAzureAdApp($ServiceDeploymentContext.AppName, $AppUri, $ReplyUrls)
+    $ServiceDeploymentContext.Variables["TenancyAppId"] = $app.AppId
 
     $GraphApiAppId = "00000002-0000-0000-c000-000000000000"
     $SignInAndReadProfileScopeId = "311a71cc-e848-46a1-bdf8-97ff7156d8e6"

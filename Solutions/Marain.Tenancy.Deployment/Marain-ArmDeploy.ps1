@@ -1,120 +1,30 @@
 ﻿<#
-This is called during Marain.Instance infrastructure deployment prior to the Marain-ArmDeploy.ps
-script. It is our opportunity to perform initialization that needs to complete before any Azure
-resources are created.
-
-We create the Azure AD Application that the Tenancy function will use to authenticate incoming
-requests. (Currently, this application is used with Azure Easy Auth, but the application could also
-use it directly.)
-
+This is called during Marain.Instance infrastructure deployment after the Marain-PreDeploy.ps
+script. It is our opportunity to create Azure resources.
 #>
+
 # Marain.Instance expects us to define just this one function.
-Function MarainDeployment([MarainInstanceDeploymentContext] $deployContext) {
+Function MarainDeployment([MarainServiceDeploymentContext] $ServiceDeploymentContext) {
 
-# [CmdletBinding(DefaultParametersetName='None')] 
-# param(
-#     [string] $Prefix = "mar",
-# 	[string] $AppName = "tenancy",
-# 	[ValidateLength(3,12)]
-# 	[string] $Suffix = "dev",
-# 	[string] $FunctionsMsDeployPackagePath = "..\Marain.Tenancy.Host.Functions\bin\Release\package\Marain.Tenancy.Host.Functions.zip",	
-# 	[string] $ResourceGroupLocation = "northeurope",
-# 	[string] $ArtifactStagingDirectory = ".",
-# 	[string] $ArtifactStorageContainerName = "stageartifacts",
-# 	[switch] $IsDeveloperEnvironment,
-# 	[switch] $UpdateLocalConfigFiles,
-# 	[switch] $SkipDeployment
-# )
-
-# Begin{
-# 	# Setup options and variables
-# 	$ErrorActionPreference = 'Stop'
-	# TODO: does this actually work when we've been dot sourced?
-
-	Set-Location $PSScriptRoot
-
-	# $Suffix = $Suffix.ToLower()
-	# $AppName  = $AppName.ToLower()
-	# $Prefix = $Prefix.ToLower()
-
-	$ResourceGroupName = $deployContext.Prefix + "." + $deployContext.Suffix + "." + $deployContext.AppName
-	$DefaultName = $Prefix + $AppName.ToLower() + $Suffix
-
-	# $ArtifactStorageResourceGroupName = $ResourceGroupName + ".artifacts";
-	# $ArtifactStorageAccountName = $Prefix + $AppName + $Suffix + "ar"
-	# $ArtifactStagingDirectory = [System.IO.Path]::GetFullPath([System.IO.Path]::Combine($PSScriptRoot, $ArtifactStagingDirectory))
-
-	# $FunctionsMsDeployPackageFolderName = "MsDeploy";
-
-	# $FunctionsAppPackageFileName = [System.IO.Path]::GetFileName($FunctionsMsDeployPackagePath)
-
-	# $CosmosDbName = $DefaultName
-	# $KeyVaultName = $DefaultName
-
-		# # Create resource group and artifact storage account
-		# Write-Host "`nStep1: Creating resource group $ResourceGroupName and artifact storage account $ArtifactStorageAccountName" -ForegroundColor Green
-		# try {
-		# 	.\Scripts\Create-StorageAccount.ps1 `
-		# 		-ResourceGroupName $ArtifactStorageResourceGroupName `
-		# 		-ResourceGroupLocation $ResourceGroupLocation `
-		# 		-StorageAccountName $ArtifactStorageAccountName
-		# }
-		# catch{
-		# 	throw $_
-		# }
-
-		# # Copy msbuild package to artifact directory
-		# if ($IsDeveloperEnvironment) {
-		# 	Write-Host "`nStep2: Skipping function msdeploy package copy as we are deploying a developer environment only"  -ForegroundColor Green
-		# } else {
-		# 	Write-Host "`nStep2: Coping functions msdeploy packages to artifact directory $FunctionsMsDeployPackageFolderName"  -ForegroundColor Green
-		# 	try {
-		# 		Copy-Item -Path $FunctionsMsDeployPackagePath -Destination (New-Item -Type directory -Force "$FunctionsMsDeployPackageFolderName") -Force -Recurse
-		# 	}
-		# 	catch{
-		# 		throw $_
-		# 	}
-		# }
-
-	# Deploy main ARM template
-	Write-Host "`nStep4: Deploying main resources template"  -ForegroundColor Green
-	try{
-		$parameters = New-Object -TypeName Hashtable
-
-		$parameters["prefix"] = $Prefix
-		$parameters["appName"] = $AppName
-		$parameters["environment"] = $Suffix
-
-		$parameters["functionEasyAuthAadClientId"] = $EasyAuthAppAd.AppId
-
-		$parameters["functionsAppPackageFileName"] = $FunctionsAppPackageFileName
-
-		$parameters["functionsAppPackageFolder"] = $FunctionsMsDeployPackageFolderName
-
-		$parameters["isDeveloperEnvironment"] = $IsDeveloperEnvironment.IsPresent
-
-		$TemplateFilePath = [System.IO.Path]::Combine($ArtifactStagingDirectory, "deploy.json")
-
-		$str = $parameters | Out-String
-		Write-Host $str
-
-		Write-Host $ArtifactStagingDirectory
-
-		$deploymentResult = .\Deploy-AzureResourceGroup.ps1 `
-			-UploadArtifacts `
-			-ResourceGroupLocation $ResourceGroupLocation `
-			-ResourceGroupName $ResourceGroupName `
-			-StorageAccountName $ArtifactStorageAccountName `
-			-ArtifactStagingDirectory $ArtifactStagingDirectory `
-			-StorageContainerName $ArtifactStorageContainerName `
-			-TemplateParameters $parameters `
-			-TemplateFile $TemplateFilePath
+	# TODO: deployment package folder should be in shared infrastructure storage account. We
+	# don't want to be creating a storage account per service just to support this.
+	$TemplateParameters = @{
+		appName="tenancy"
+		functionsAppPackageFolder="MsDeploy"
+		functionsAppPackageFileName="Marain.Tenancy.Host.Functions.zip"
+		functionEasyAuthAadClientId=$ServiceDeploymentContext.Variables["TenancyAppId"]
 	}
-	catch{
-		throw $_
-	}
+	$InstanceResourceGroupName = $InstanceDeploymentContext.MakeResourceGroupName("tenancy")
+	$ServiceDeploymentContext.InstanceContext.DeployArmTemplate(
+		$PSScriptRoot,
+		"deploy.json",
+		$TemplateParameters,
+		$InstanceResourceGroupName)
 
-	Write-Host "`nStep 5: Applying configuration"
+	# TODO: is there anything that comes (or should come) out of the deployment that we need
+	# to feed in anywhere else? E.g., we can't know the Managed Identity identifiers until
+	# after ARM deployment completes, and it may be necessary to add the relevant service
+	# principals to app roles in some cases (although probably not for tenancy).
 
 	# Write-Host 'Granting KV secret access to current user'
 

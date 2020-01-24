@@ -58,3 +58,18 @@ jobs:
           SourceFolder: '$(Build.ArtifactStagingDirectory)/Marain.Deployment.Azure'
           Contents: '*.zip'
           TargetFolder: '$(Build.ArtifactStagingDirectory)/Release/Marain.Deployment.Azure'
+      - task: DotNetCoreCLI@2
+        displayName: 'Create Run-From-Package contents'
+        inputs:
+          command: 'publish'
+          projects: '$(Build.SourcesDirectory)/Solutions/Marain.Tenancy.Host.Functions/Marain.Tenancy.Host.Functions.csproj'
+          arguments: '--configuration $(BuildConfiguration) /p:Version=$(GitVersion.SemVer) --no-build -o $(Build.SourcesDirectory)/Solutions/Marain.Tenancy.Host.Functions/bin/$(BuildConfiguration)/publish/'
+          versioningScheme: byBuildNumber
+      - task: ArchiveFiles@2
+        displayName: 'Create Run-From-Package ZIP'
+        inputs:
+          rootFolderOrFile: '$(Build.SourcesDirectory)/Solutions/Marain.Tenancy.Host.Functions/bin/$(BuildConfiguration)/publish/'
+          includeRootFolder: false
+          archiveType: 'zip'
+          archiveFile: '$(Build.ArtifactStagingDirectory)/Release/Marain.Deployment.Functions/Marain.Tenancy.Host.Functions.zip'
+          replaceExistingArchive: true

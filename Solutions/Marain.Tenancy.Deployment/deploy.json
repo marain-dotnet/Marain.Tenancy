@@ -2,13 +2,13 @@
   "$schema": "https://schema.management.azure.com/schemas/2015-01-01/deploymentTemplate.json#",
   "contentVersion": "1.0.0.0",
   "parameters": {
-    "prefix": {
+    "marainPrefix": {
       "type": "string"
     },
     "appName": {
       "type": "string"
     },
-    "environment": {
+    "environmentSuffix": {
       "type": "string"
     },
     "functionsAppPackageFolder": {
@@ -29,13 +29,6 @@
         "description": "Enable EasyAuth for AAD using the specified Client ID/App ID"
       }
     },
-    "functionEasyAuthAadClientSecret": {
-      "type": "string",
-      "defaultValue": "",
-      "metadata": {
-        "description": "The client secret with which to"
-      }
-    },
     "_artifactsLocation": {
       "type": "string"
     },
@@ -44,22 +37,22 @@
     },
     "isDeveloperEnvironment": {
       "type": "bool",
-      "defaultValue": "false",
+      "defaultValue": false,
       "metadata": {
         "description": "If true, only resources needed to support a developer environment will be deployed."
       }
     }
   },
   "variables": {
-    "defaultName": "[concat(parameters('prefix'), parameters('appName'), parameters('environment'))]",
-    "functionsAppName": "[concat(parameters('prefix'), parameters('appName'), parameters('environment'))]",
+    "defaultName": "[concat(parameters('marainPrefix'), parameters('appName'), parameters('environmentSuffix'))]",
+    "functionsAppName": "[concat(parameters('marainPrefix'), parameters('appName'), parameters('environmentSuffix'))]",
     "appInsightsName": "[variables('defaultName')]",
     "tenantId": "[subscription().tenantID]",
     "subscriptionId": "[subscription().subscriptionID]",
     "tagValues": {
-      "prefix": "[parameters('prefix')]",
+      "prefix": "[parameters('marainPrefix')]",
       "appName": "[parameters('appName')]",
-      "environment": "[parameters('environment')]"
+      "environment": "[parameters('environmentSuffix')]"
     }
   },
   "resources": [
