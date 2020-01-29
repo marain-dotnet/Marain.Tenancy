@@ -6,6 +6,7 @@
 
 namespace Marain.Tenancy.ControlHost
 {
+    using System;
     using Microsoft.Azure.WebJobs;
     using Microsoft.Azure.WebJobs.Hosting;
     using Microsoft.Extensions.Configuration;
@@ -23,17 +24,24 @@ namespace Marain.Tenancy.ControlHost
         {
             IServiceCollection services = builder.Services;
 
-            LoggerConfiguration loggerConfig = new LoggerConfiguration()
-                    .Enrich.FromLogContext()
-                    .MinimumLevel.Debug()
-                    .WriteTo.Logger(lc => lc.WriteTo.Console().MinimumLevel.Debug())
-                    .WriteTo.Logger(lc => lc.WriteTo.Debug().MinimumLevel.Debug());
-
-            Log.Logger = loggerConfig.CreateLogger();
+            services.AddLogging();
 
             IConfigurationRoot root = Configure(services);
 
-            services.AddTenancyApi(root, config => config.Documents.AddSwaggerEndpoint());
+            services.AddTenancyApi(root, config =>
+            {
+                if (config == null)
+                {
+                    throw new ArgumentNullException(nameof(config), "AddTenancyApi callback: config");
+                }
+
+                if (config.Documents == null)
+                {
+                    throw new ArgumentNullException(nameof(config.Documents), "AddTenancyApi callback: config.Documents");
+                }
+
+                config.Documents.AddSwaggerEndpoint();
+            });
         }
 
         private static IConfigurationRoot Configure(IServiceCollection services)
