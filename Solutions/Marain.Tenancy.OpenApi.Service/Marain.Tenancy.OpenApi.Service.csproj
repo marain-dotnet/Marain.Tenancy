@@ -13,8 +13,6 @@
     </PackageReleaseNotes>
   </PropertyGroup>
   
-  <Import Project="..\Common.NetStandard_2_0.proj" />
-
   <ItemGroup>
     <None Remove="Marain\Tenancy\OpenApi\TenancyServices.yaml" />
   </ItemGroup>
@@ -25,6 +23,10 @@
 
   <ItemGroup>
     <PackageReference Include="Corvus.Azure.Storage.Tenancy" Version="0.20.0" />
+    <PackageReference Include="Endjin.RecommendedPractices" Version="0.1.0">
+      <PrivateAssets>all</PrivateAssets>
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+    </PackageReference>
     <PackageReference Include="Menes.Abstractions" Version="0.9.0" />
     <PackageReference Include="Microsoft.ApplicationInsights" Version="2.11.0" />
     <PackageReference Include="Microsoft.Extensions.Configuration.Abstractions" Version="2.2.0" />
