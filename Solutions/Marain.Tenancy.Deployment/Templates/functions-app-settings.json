@@ -17,7 +17,11 @@
       "type": "string",
       "minLength": 1
     },
-    "cosmosDbName": {
+    "storageAccountName": {
+      "type": "string",
+      "minLength": 1
+    },
+    "storageAccountKeyName": {
       "type": "string",
       "minLength": 1
     },
@@ -52,15 +56,17 @@
         "WEBSITE_RUN_FROM_PACKAGE": "[parameters('runFromPackage')]",
         "AzureConfigurationStorage": "[parameters('storageAccountConnectionString')]",
         "APPINSIGHTS_INSTRUMENTATIONKEY": "[parameters('applicationInsightsInstrumentationKey')]",
-        "FUNCTIONS_EXTENSION_VERSION": "beta",
+        "FUNCTIONS_EXTENSION_VERSION": "~3",
         "FUNCTIONS_WORKER_RUNTIME": "dotnet",
         "SubscriptionId": "[parameters('subscriptionId')]",
         "TenantId": "[parameters('tenantId')]",
         "AzureWebJobsDashboard": "[parameters('storageAccountConnectionString')]",
         "AzureWebJobsStorage": "[parameters('storageAccountConnectionString')]",
         "AzureServicesAuthConnectionString": "",
-        "KeyVaultName": "[parameters('keyVaultName')]",
-        "CosmosDbAccountUri": "[concat('https://', parameters('cosmosDbName'), '.documents.azure.com:443/')]"
+
+        "TenantCloudBlobContainerFactoryOptions:RootTenantBlobStorageConfiguration:AccountName": "[parameters('storageAccountName')]",
+        "TenantCloudBlobContainerFactoryOptions:RootTenantBlobStorageConfiguration:KeyVaultName": "[parameters('keyVaultName')]",
+        "TenantCloudBlobContainerFactoryOptions:RootTenantBlobStorageConfiguration:AccountKeySecretName": "[parameters('storageAccountKeyName')]"
       }
     }
   ],

@@ -30,7 +30,7 @@ namespace Marain.Tenancy.Specs.Integration.Bindings
             IConfigurationRoot config = ContainerBindings.GetServiceProvider(featureContext).GetRequiredService<IConfigurationRoot>();
             featureContext.CopyToFunctionConfigurationEnvironmentVariables(config);
 
-            return functionsController.StartFunctionsInstance(featureContext, null, "Marain.Tenancy.Host.Functions", 7071);
+            return functionsController.StartFunctionsInstance(featureContext, null, "Marain.Tenancy.Host.Functions", 7071, "netcoreapp3.1");
         }
 
         /// <summary>

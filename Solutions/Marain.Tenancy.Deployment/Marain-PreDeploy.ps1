@@ -18,6 +18,12 @@ Function MarainDeployment([MarainServiceDeploymentContext] $ServiceDeploymentCon
     $app = $ServiceDeploymentContext.FindOrCreateAzureAdApp($ServiceDeploymentContext.AppName, $AppUri, $ReplyUrls)
     $ServiceDeploymentContext.Variables["TenancyAppId"] = $app.AppId
 
+    $Principal = Get-AzAdServicePrincipal -ApplicationId $app.AppId
+    if (-not $Principal)
+    {
+        New-AzAdServicePrincipal -ApplicationId $app.AppId -DisplayName $ServiceDeploymentContext.AppName
+    }
+
     $GraphApiAppId = "00000002-0000-0000-c000-000000000000"
     $SignInAndReadProfileScopeId = "311a71cc-e848-46a1-bdf8-97ff7156d8e6"
     $app.EnsureRequiredResourceAccessContains($GraphApiAppId, @([ResourceAccessDescriptor]::new($SignInAndReadProfileScopeId, "Scope")))

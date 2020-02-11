@@ -1,17 +1,20 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk" ToolsVersion="Current">
   <PropertyGroup>
-    <TargetFramework>netcoreapp2.1</TargetFramework>
-  </PropertyGroup>
-  <PropertyGroup>
+    <TargetFramework>netcoreapp3.1</TargetFramework>
     <IsPackable>false</IsPackable>
   </PropertyGroup>
-  <Import Project="..\Common.NetCoreApp_2_1.proj" />
+
   <PropertyGroup>
-    <AzureFunctionsVersion>v2</AzureFunctionsVersion>
+    <AzureFunctionsVersion>v3</AzureFunctionsVersion>
   </PropertyGroup>
+  
   <ItemGroup>
-    <PackageReference Include="Corvus.Tenancy.Storage.Azure.Blob" Version="0.18.0" />
-    <PackageReference Include="Microsoft.NET.Sdk.Functions" Version="1.0.29" />
+    <PackageReference Include="Corvus.Tenancy.Storage.Azure.Blob" Version="0.20.0" />
+    <PackageReference Include="Endjin.RecommendedPractices" Version="0.1.0">
+      <PrivateAssets>all</PrivateAssets>
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+    </PackageReference>
+    <PackageReference Include="Microsoft.NET.Sdk.Functions" Version="3.0.3" />
     <PackageReference Include="Microsoft.OpenApi.Readers" Version="1.1.4" />
     <PackageReference Include="Microsoft.Extensions.Logging.Console" Version="2.2.0" />
   </ItemGroup>

@@ -23,6 +23,7 @@
   <Import Condition=" Exists('$(MSBuildExtensionsPath)\Microsoft\VisualStudio\v$(VisualStudioVersion)\Deployment\1.1\DeploymentProject.targets') " Project="$(MSBuildExtensionsPath)\Microsoft\VisualStudio\v$(VisualStudioVersion)\Deployment\1.1\DeploymentProject.targets" />
   <!-- vertag<:>end -->
   <ItemGroup>
+    <None Include="Marain-ArmDeploy.ps1" />
     <None Include="Marain-PostDeploy.ps1" />
     <None Include="Marain-PreDeploy.ps1" />
     <None Include="Deploy-AzureResourceGroup.ps1" />
@@ -32,18 +33,17 @@
       <Visible>False</Visible>
     </None>
     <None Include="Run-ScriptWithVstsVariables.ps1" />
-    <None Include="Scripts\Add-CosmosAccessKeyToKeyVault.ps1" />
     <None Include="Scripts\Create-AzureAdApplications.ps1" />
     <None Include="Scripts\Create-StorageAccount.ps1" />
     <None Include="Scripts\Grant-CurrentAadUserKeyVaultSecretAccess.ps1" />
     <None Include="Scripts\Grant-KeyVaultSecretGetToMsi.ps1" />
     <None Include="Scripts\Revoke-CurrentAadUserKeyVaultSecretAccess.ps1" />
     <None Include="Scripts\Update-LocalConfigFiles.ps1" />
-    <None Include="Templates\app-insights.json" />
-    <None Include="Templates\cosmos-db.json" />
     <None Include="Templates\functions-app-settings.json" />
     <None Include="Templates\functions-app.json" />
+    <None Include="Templates\key-vault-secret.json" />
     <None Include="Templates\key-vault.json" />
+    <None Include="Templates\storage.json" />
   </ItemGroup>
   <Target Name="GetReferenceAssemblyPaths" />
 </Project>

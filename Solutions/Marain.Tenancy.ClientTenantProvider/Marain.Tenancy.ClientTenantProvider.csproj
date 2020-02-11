@@ -13,7 +13,7 @@
   </PropertyGroup>
   <Import Project="..\Common.NetStandard_2_0.proj" />
   <ItemGroup>
-    <PackageReference Include="Corvus.Tenancy.Abstractions" Version="0.18.0" />
+    <PackageReference Include="Corvus.Tenancy.Abstractions" Version="0.20.0" />
     <PackageReference Include="Microsoft.AspNetCore.WebUtilities" Version="2.2.0" />
   </ItemGroup>
   <ItemGroup>

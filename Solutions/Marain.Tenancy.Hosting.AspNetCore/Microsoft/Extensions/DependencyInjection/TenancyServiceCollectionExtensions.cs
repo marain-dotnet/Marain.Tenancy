@@ -2,14 +2,14 @@
 // Copyright (c) Endjin Limited. All rights reserved.
 // </copyright>
 
-namespace Marain.Tenancy.OpenApi
+namespace Microsoft.Extensions.DependencyInjection
 {
     using System;
     using System.Linq;
     using Corvus.Tenancy;
+    using Marain.Tenancy.OpenApi;
     using Marain.Tenancy.OpenApi.Mappers;
     using Menes;
-    using Microsoft.Extensions.DependencyInjection;
 
     /// <summary>
     /// Extension methods for configuring DI for the Operations Open API services.
