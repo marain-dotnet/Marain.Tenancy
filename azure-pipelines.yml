@@ -28,11 +28,11 @@ jobs:
         env:
           ENDJIN_AZURESTORAGECONNECTIONSTRING: $(Endjin_AzureStorageConnectionString)
       - task: Npm@1
-        displayName: 'Install Latest Azure Functions V2 Runtime'
+        displayName: 'Install Latest Azure Functions V3 Runtime'
         inputs:
           command: custom
           verbose: false
-          customCommand: 'install -g azure-functions-core-tools --unsafe-perm true'
+          customCommand: 'install -g azure-functions-core-tools@3 --unsafe-perm true'
 
     # We want to include the deployment project in the assets. Currently this is experimental,
     # and once we're done, probably some of this is going to move into the common templates.
