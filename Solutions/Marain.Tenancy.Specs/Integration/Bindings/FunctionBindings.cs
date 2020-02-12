@@ -4,13 +4,8 @@
 
 namespace Marain.Tenancy.Specs.Integration.Bindings
 {
-    using System;
-    using System.Collections.Generic;
-    using System.Diagnostics;
-    using System.Reflection;
     using System.Threading.Tasks;
     using Corvus.SpecFlow.Extensions;
-    using Corvus.SpecFlow.Extensions.Internal;
     using Microsoft.Extensions.Configuration;
     using Microsoft.Extensions.DependencyInjection;
     using TechTalk.SpecFlow;
@@ -48,37 +43,6 @@ namespace Marain.Tenancy.Specs.Integration.Bindings
             if (featureContext.TryGetValue(out FunctionsController functionsController))
             {
                 featureContext.RunAndStoreExceptions(functionsController.TeardownFunctions);
-            }
-        }
-
-        [AfterScenario]
-        public static void ShowErrorsSoFarIfTestFailed(
-            FeatureContext featureContext,
-            ScenarioContext scenarioContext)
-        {
-            if (featureContext.TryGetValue(out FunctionsController functionsController))
-            {
-                FieldInfo fi = typeof(FunctionsController).GetField("output", BindingFlags.Instance | BindingFlags.NonPublic);
-                var output = (IDictionary<Process, FunctionOutputBufferHandler>)fi.GetValue(functionsController);
-
-                foreach (Process p in output.Keys)
-                {
-                    string name =
-                        $"{p.StartInfo.FileName} {p.StartInfo.Arguments}, working directory {p.StartInfo.WorkingDirectory}";
-
-                    Console.WriteLine($"\nStdOut for process {name}:");
-                    Console.WriteLine(output[p].StandardOutputText);
-                    Console.WriteLine();
-
-                    string stdErr = output[p].StandardErrorText;
-
-                    if (!string.IsNullOrEmpty(stdErr))
-                    {
-                        Console.WriteLine($"\nStdErr for process {name}:");
-                        Console.WriteLine(stdErr);
-                        Console.WriteLine();
-                    }
-                }
             }
         }
     }

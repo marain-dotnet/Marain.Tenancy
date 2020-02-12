@@ -12,21 +12,9 @@ use it directly.)
 # Marain.Instance expects us to define just this one function.
 Function MarainDeployment([MarainServiceDeploymentContext] $ServiceDeploymentContext) {
 
-    $AppUri = "https://" + $ServiceDeploymentContext.AppName + ".azurewebsites.net/"
-    $EasyAuthCallbackTail = ".auth/login/aad/callback"
-    $ReplyUrls = ($AppUri + $EasyAuthCallbackTail), ($ServiceDeploymentContext.PublicFacingServiceRootUri + $EasyAuthCallbackTail)
-    $app = $ServiceDeploymentContext.FindOrCreateAzureAdApp($ServiceDeploymentContext.AppName, $AppUri, $ReplyUrls)
-    $ServiceDeploymentContext.Variables["TenancyAppId"] = $app.AppId
-
-    $Principal = Get-AzAdServicePrincipal -ApplicationId $app.AppId
-    if (-not $Principal)
-    {
-        New-AzAdServicePrincipal -ApplicationId $app.AppId -DisplayName $ServiceDeploymentContext.AppName
-    }
-
-    $GraphApiAppId = "00000002-0000-0000-c000-000000000000"
-    $SignInAndReadProfileScopeId = "311a71cc-e848-46a1-bdf8-97ff7156d8e6"
-    $app.EnsureRequiredResourceAccessContains($GraphApiAppId, @([ResourceAccessDescriptor]::new($SignInAndReadProfileScopeId, "Scope")))
+    $app = $ServiceDeploymentContext.DefineAzureAdAppForAppService(
+        "",
+         "TenancyAppId")
 
     $AdminAppRoleId = "7619c293-764c-437b-9a8e-698a26250efd"
     $app.EnsureAppRolesContain(

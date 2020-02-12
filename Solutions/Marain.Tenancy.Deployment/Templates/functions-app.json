@@ -101,10 +101,6 @@
             {
               "name": "WEBSITE_CONTENTSHARE",
               "value": "[toLower(parameters('functionsAppName'))]"
-            },
-            {
-              "name": "FUNCTIONS_EXTENSION_VERSION",
-              "value": "beta"
             }
           ]
         }
