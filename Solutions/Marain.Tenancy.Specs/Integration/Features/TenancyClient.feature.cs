@@ -21,7 +21,7 @@ namespace Marain.Tenancy.Specs.Integration.Features
     [System.Runtime.CompilerServices.CompilerGeneratedAttribute()]
     [NUnit.Framework.TestFixtureAttribute()]
     [NUnit.Framework.DescriptionAttribute("TenancyClient")]
-    [NUnit.Framework.CategoryAttribute("setupContainer")]
+    [NUnit.Framework.CategoryAttribute("perFeatureContainer")]
     [NUnit.Framework.CategoryAttribute("withTenancyClient")]
     [NUnit.Framework.CategoryAttribute("useTenancyFunction")]
     public partial class TenancyClientFeature
@@ -30,7 +30,7 @@ namespace Marain.Tenancy.Specs.Integration.Features
         private TechTalk.SpecFlow.ITestRunner testRunner;
         
         private string[] _featureTags = new string[] {
-                "setupContainer",
+                "perFeatureContainer",
                 "withTenancyClient",
                 "useTenancyFunction"};
         
@@ -43,7 +43,7 @@ namespace Marain.Tenancy.Specs.Integration.Features
             testRunner = TechTalk.SpecFlow.TestRunnerManager.GetTestRunner();
             TechTalk.SpecFlow.FeatureInfo featureInfo = new TechTalk.SpecFlow.FeatureInfo(new System.Globalization.CultureInfo("en-US"), "TenancyClient", "\tIn order to use Marain Tenant services\r\n\tAs a developer\r\n\tI want to be able to a" +
                     "ccess the standard ITenantProvider via the client API.", ProgrammingLanguage.CSharp, new string[] {
-                        "setupContainer",
+                        "perFeatureContainer",
                         "withTenancyClient",
                         "useTenancyFunction"});
             testRunner.OnFeatureStart(featureInfo);
