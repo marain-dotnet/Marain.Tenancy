@@ -120,7 +120,8 @@
       "apiVersion": "2016-09-01",
       "dependsOn": [
         "tenant-root-storage",
-        "key-vault" ],
+        "key-vault"
+      ],
       "properties": {
         "mode": "Incremental",
         "templateLink": {
@@ -182,6 +183,43 @@
           "keyVaultName": { "value": "[variables('keyVaultName')]" },
           "storageAccountName": { "value": "[variables('tenancyStorageName')]" },
           "storageAccountKeyName": { "value": "[variables('tenancyStorageKeySecretName')]" }
+        }
+      }
+    },
+    {
+      "name": "function-key-vault-access",
+      "type": "Microsoft.Resources/deployments",
+      "apiVersion": "2016-09-01",
+      "dependsOn": [
+        "functions-app",
+        "key-vault"
+      ],
+      "properties": {
+        "mode": "Incremental",
+        "templateLink": {
+          "uri": "[concat(parameters('_artifactsLocation'), '/Templates/key-vault-access-policy.json', parameters('_artifactsLocationSasToken'))]",
+          "contentVersion": "1.0.0.0"
+        },
+        "parameters": {
+          "keyVaultName": {
+            "value": "[variables('keyVaultName')]"
+          },
+          "objectName": {
+            "value": "[variables('functionsAppName')]"
+          },
+          "objectResourceGroup": {
+            "value": "[resourceGroup().name]"
+          },
+          "objectResourceType": {
+            "value": "Microsoft.Web/sites"
+          },
+          "permissions": {
+            "value": {
+              "secrets": [
+                "get"
+              ]
+            }
+          }
         }
       }
     }

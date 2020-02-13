@@ -41,6 +41,7 @@
     <None Include="Scripts\Update-LocalConfigFiles.ps1" />
     <None Include="Templates\functions-app-settings.json" />
     <None Include="Templates\functions-app.json" />
+    <None Include="Templates\key-vault-access-policy.json" />
     <None Include="Templates\key-vault-secret.json" />
     <None Include="Templates\key-vault.json" />
     <None Include="Templates\storage.json" />
