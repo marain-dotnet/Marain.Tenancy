@@ -36,7 +36,6 @@ namespace Marain.Tenancy.Specs.Integration.Bindings
                         .AddEnvironmentVariables()
                         .AddJsonFile("local.settings.json", true, true)
                         .Build();
-                    //serviceCollection.AddSingleton(config);
                     serviceCollection.AddSingleton(config.Get<TenantCloudBlobContainerFactoryOptions>());
                     serviceCollection.AddTenancyApiOnBlobStorage();
                 });

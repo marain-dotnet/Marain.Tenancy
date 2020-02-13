@@ -4,14 +4,12 @@
 
 namespace Marain.Tenancy.Functions
 {
-    using System.Globalization;
     using System.Threading.Tasks;
     using Menes;
     using Microsoft.AspNetCore.Http;
     using Microsoft.AspNetCore.Mvc;
     using Microsoft.Azure.WebJobs;
     using Microsoft.Azure.WebJobs.Extensions.Http;
-    using Microsoft.Extensions.Configuration;
     using Microsoft.Extensions.DependencyInjection;
 
     /// <summary>
@@ -25,18 +23,10 @@ namespace Marain.Tenancy.Functions
         /// Initializes a new instance of the <see cref="TenancyHost"/> class.
         /// </summary>
         /// <param name="host">The OpenApi host.</param>
-        /// <param name="config">IConfiguration.</param>
         public TenancyHost(
-            IOpenApiHost<HttpRequest, IActionResult> host,
-            IConfiguration config)
+            IOpenApiHost<HttpRequest, IActionResult> host)
         {
             this.host = host;
-
-            // IDG: temp - debugging why tests are failing on the build server
-            foreach ((string k, string v) in config.AsEnumerable())
-            {
-                System.Console.WriteLine($" {k}: {v}");
-            }
         }
 
         /// <summary>
