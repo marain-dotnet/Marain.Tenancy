@@ -1,6 +1,7 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk" ToolsVersion="Current">
   <PropertyGroup>
     <TargetFramework>netstandard2.0</TargetFramework>
+    <RootNamespace />
   </PropertyGroup>
   <PropertyGroup>
     <PackageLicenseExpression>AGPL-3.0-or-later</PackageLicenseExpression>
@@ -11,9 +12,13 @@
     <PackageReleaseNotes>
     </PackageReleaseNotes>
   </PropertyGroup>
-  <Import Project="..\Common.NetStandard_2_0.proj" />
+
   <ItemGroup>
-    <PackageReference Include="Corvus.Tenancy.Abstractions" Version="0.18.0" />
+    <PackageReference Include="Corvus.Tenancy.Abstractions" Version="0.20.0" />
+    <PackageReference Include="Endjin.RecommendedPractices" Version="0.1.0">
+      <PrivateAssets>all</PrivateAssets>
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+    </PackageReference>
     <PackageReference Include="Microsoft.AspNetCore.WebUtilities" Version="2.2.0" />
   </ItemGroup>
   <ItemGroup>

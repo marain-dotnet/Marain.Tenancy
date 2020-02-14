@@ -5,6 +5,7 @@
 namespace Marain.Tenancy.Specs.Integration.Bindings
 {
     using System.Collections.Generic;
+    using Corvus.Azure.Storage.Tenancy;
     using Corvus.SpecFlow.Extensions;
     using Microsoft.Extensions.Configuration;
     using Microsoft.Extensions.DependencyInjection;
@@ -35,8 +36,8 @@ namespace Marain.Tenancy.Specs.Integration.Bindings
                         .AddEnvironmentVariables()
                         .AddJsonFile("local.settings.json", true, true)
                         .Build();
-                    serviceCollection.AddSingleton(config);
-                    serviceCollection.AddTenancyApi(config);
+                    serviceCollection.AddSingleton(config.Get<TenantCloudBlobContainerFactoryOptions>());
+                    serviceCollection.AddTenancyApiOnBlobStorage();
                 });
         }
     }

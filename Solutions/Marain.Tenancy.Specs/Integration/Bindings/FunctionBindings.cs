@@ -21,8 +21,8 @@ namespace Marain.Tenancy.Specs.Integration.Bindings
         /// </summary>
         /// <param name="featureContext">The current feature context.</param>
         /// <returns>A task that completes when the functions have been started.</returns>
-        [BeforeFeature("useTenancyFunction", Order = 100)]
-        public static Task RunPublicApiFunction(FeatureContext featureContext)
+        [BeforeFeature("useTenancyFunction", Order = ContainerBeforeFeatureOrder.ServiceProviderAvailable)]
+        public static async Task RunPublicApiFunction(FeatureContext featureContext)
         {
             var functionsController = new FunctionsController();
             featureContext.Set(functionsController);
@@ -30,7 +30,7 @@ namespace Marain.Tenancy.Specs.Integration.Bindings
             IConfigurationRoot config = ContainerBindings.GetServiceProvider(featureContext).GetRequiredService<IConfigurationRoot>();
             featureContext.CopyToFunctionConfigurationEnvironmentVariables(config);
 
-            return functionsController.StartFunctionsInstance(featureContext, null, "Marain.Tenancy.Host.Functions", 7071);
+            await functionsController.StartFunctionsInstance(featureContext, null, "Marain.Tenancy.Host.Functions", 7071, "netcoreapp3.1");
         }
 
         /// <summary>

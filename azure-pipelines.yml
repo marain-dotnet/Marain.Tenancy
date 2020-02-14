@@ -23,13 +23,62 @@ jobs:
     solution_to_build: $(Endjin_Solution_To_Build)
     postCustomEnvironmentVariables:
       - powershell: |
-          Write-Host "##vso[task.setvariable variable=RootTenantBlobStorageConfigurationOptions__AccountName]$Env:ENDJIN_AZURESTORAGECONNECTIONSTRING"
+          Write-Host "##vso[task.setvariable variable=TenantCloudBlobContainerFactoryOptions__RootTenantBlobStorageConfiguration__AccountName]$Env:ENDJIN_AZURESTORAGECONNECTIONSTRING"
         displayName: 'Set Azure Connection String Environment Variable'
         env:
           ENDJIN_AZURESTORAGECONNECTIONSTRING: $(Endjin_AzureStorageConnectionString)
       - task: Npm@1
-        displayName: 'Install Latest Azure Functions V2 Runtime'
+        displayName: 'Install Latest Azure Functions V3 Runtime'
         inputs:
           command: custom
           verbose: false
-          customCommand: 'install -g azure-functions-core-tools --unsafe-perm true'
+          customCommand: 'install -g azure-functions-core-tools@3 --unsafe-perm true'
+
+    # We want to include the deployment project in the assets. Currently this is experimental,
+    # and once we're done, probably some of this is going to move into the common templates.
+    # But the basic idea is that our release assets should include the deployment project,
+    # enabling Marain.Instance to perform infrastructure deployment.
+    # Now... the GitHub release is going to include every single file we put in Release,
+    # so we don't just want to copy the whole Deployment project folder over - we'll end
+    # up with an asset in the GitHub for every file in that project. So I think we need to
+    # ZIP it up.
+    # Something we can't currently do is set labels on GitHub release assets.
+    postPack:
+      - task: ArchiveFiles@2
+        displayName: 'ZIP Azure Deployment Project'
+        inputs:
+          rootFolderOrFile: '$(Build.SourcesDirectory)/Solutions/Marain.Tenancy.Deployment'
+          includeRootFolder: false
+          archiveType: 'zip'
+          archiveFile: '$(Build.ArtifactStagingDirectory)/Marain.Deployment.Azure/Marain.Tenancy.Deployment.zip'
+          replaceExistingArchive: true
+      - task: CopyFiles@2
+        displayName: 'Copy Azure Deployment ZIPs to Release Folder'
+        inputs:
+          SourceFolder: '$(Build.ArtifactStagingDirectory)/Marain.Deployment.Azure'
+          Contents: '*.zip'
+          TargetFolder: '$(Build.ArtifactStagingDirectory)/Release/Marain.Deployment.Azure'
+      - task: DotNetCoreCLI@2
+        displayName: 'Create Run-From-Package contents'
+        inputs:
+          command: 'publish'
+          projects: '$(Build.SourcesDirectory)/Solutions/Marain.Tenancy.Host.Functions/Marain.Tenancy.Host.Functions.csproj'
+          arguments: '--configuration $(BuildConfiguration) /p:Version=$(GitVersion.SemVer) --no-build -o $(Build.SourcesDirectory)/Solutions/Marain.Tenancy.Host.Functions/bin/$(BuildConfiguration)/publish/'
+          versioningScheme: byBuildNumber
+          publishWebProjects: false 
+      #- task: ArchiveFiles@2
+      #  displayName: 'Create Run-From-Package ZIP'
+      #  inputs:
+      #    rootFolderOrFile: '$(Build.SourcesDirectory)/Solutions/Marain.Tenancy.Host.Functions/bin/$(BuildConfiguration)/publish/'
+      #    includeRootFolder: false
+      #    archiveType: 'zip'
+      #    archiveFile: '$(Build.ArtifactStagingDirectory)/Release/Marain.Deployment.Functions/Marain.Tenancy.Host.Functions.zip'
+      #    replaceExistingArchive: true
+      # Even though running the command above at the command line produces the output as a bunch of folders and
+      # files, on the build server it appears to produce an actual ZIP, so we just need to copy the result
+      - task: CopyFiles@2
+        displayName: 'Copy Azure Deployment ZIPs to Release Folder'
+        inputs:
+          SourceFolder: '$(Build.SourcesDirectory)/Solutions/Marain.Tenancy.Host.Functions/bin/$(BuildConfiguration)/publish/'
+          Contents: '*.zip'
+          TargetFolder: '$(Build.ArtifactStagingDirectory)/Release/Marain.Deployment.Functions'
