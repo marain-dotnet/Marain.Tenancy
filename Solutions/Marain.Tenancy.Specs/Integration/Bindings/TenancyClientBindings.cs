@@ -6,6 +6,7 @@ namespace Marain.Tenancy.Specs.Integration.Bindings
 {
     using System.Collections.Generic;
     using Corvus.SpecFlow.Extensions;
+    using Marain.Tenancy.Client;
     using Microsoft.Extensions.Configuration;
     using Microsoft.Extensions.DependencyInjection;
     using TechTalk.SpecFlow;
@@ -37,7 +38,9 @@ namespace Marain.Tenancy.Specs.Integration.Bindings
                         .AddJsonFile("local.settings.json", true, true)
                         .Build();
                     serviceCollection.AddSingleton(config);
-                    serviceCollection.AddTenantProviderServiceClient(config);
+
+                    serviceCollection.AddSingleton(sp => sp.GetRequiredService<IConfigurationRoot>().Get<TenancyClientOptions>());
+                    serviceCollection.AddTenantProviderServiceClient();
                 });
         }
     }
