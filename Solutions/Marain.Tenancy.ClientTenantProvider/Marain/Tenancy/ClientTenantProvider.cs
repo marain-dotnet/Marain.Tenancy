@@ -151,6 +151,11 @@ namespace Marain.Tenancy
                 throw new TenantNotFoundException();
             }
 
+            if (result.Response.StatusCode == HttpStatusCode.MethodNotAllowed)
+            {
+                throw new NotSupportedException("This tenant cannot be updated");
+            }
+
             return this.tenantMapper.MapTenant(result.Body);
         }
     }

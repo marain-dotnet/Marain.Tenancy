@@ -412,6 +412,23 @@ this.ScenarioInitialize(scenarioInfo);
 #line hidden
             this.ScenarioCleanup();
         }
+        
+        [NUnit.Framework.TestAttribute()]
+        [NUnit.Framework.DescriptionAttribute("Updates to root tenant are prohibited")]
+        public virtual void UpdatesToRootTenantAreProhibited()
+        {
+            TechTalk.SpecFlow.ScenarioInfo scenarioInfo = new TechTalk.SpecFlow.ScenarioInfo("Updates to root tenant are prohibited", null, ((string[])(null)));
+#line 112
+this.ScenarioInitialize(scenarioInfo);
+            this.ScenarioStart();
+#line 113
+ testRunner.When("I try to update the properties of the tenant with id \"f26450ab1668784bb327951c8b0" +
+                    "8f347\"", ((string)(null)), ((TechTalk.SpecFlow.Table)(null)), "When ");
+#line 114
+ testRunner.Then("it should throw a NotSupportedException", ((string)(null)), ((TechTalk.SpecFlow.Table)(null)), "Then ");
+#line hidden
+            this.ScenarioCleanup();
+        }
     }
 }
 #pragma warning restore

@@ -122,7 +122,6 @@
             this.scenarioContext.Set(tenant, childName);
         }
 
-
         [When("I update the properties of the tenant called \"(.*)\"")]
         public void WhenIUpdateThePropertiesOfTheTenantCalled(string tenantName, Table table)
         {
@@ -159,6 +158,23 @@
                 }
             }
             provider.UpdateTenantAsync(tenant);
+        }
+
+        [When(@"I try to update the properties of the tenant with id ""(.*)""")]
+        public async Task WhenITryToUpdateThePropertiesOfTheTenantWithIdAsync(string tenantId)
+        {
+            ITenantProvider provider = ContainerBindings.GetServiceProvider(this.featureContext).GetRequiredService<ITenantProvider>();
+
+            ITenant tenant = await provider.GetTenantAsync(tenantId);
+            tenant.Properties.Set("foo", "bar");
+            try
+            {
+                await provider.UpdateTenantAsync(tenant);
+            }
+            catch (Exception ex)
+            {
+                this.scenarioContext.Set(ex);
+            }
         }
 
         [When("I get the children of the tenant with the id called \"(.*)\" with maxItems (.*) and call them \"(.*)\"")]
@@ -257,11 +273,16 @@
             }
         }
 
-        [Then(@"it should throw a TenantNotModifiedException")]
+        [Then("it should throw a TenantNotModifiedException")]
         public void ThenItShouldThrowATenantNotModifiedException()
         {
             Assert.IsInstanceOf<TenantNotModifiedException>(this.scenarioContext.Get<Exception>());
         }
 
+        [Then("it should throw a NotSupportedException")]
+        public void ThenItShouldThrowANotSupportedException()
+        {
+            Assert.IsInstanceOf<NotSupportedException>(this.scenarioContext.Get<Exception>());
+        }
     }
 }

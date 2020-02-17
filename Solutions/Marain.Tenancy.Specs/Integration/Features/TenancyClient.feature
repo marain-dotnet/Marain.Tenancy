@@ -108,3 +108,7 @@ Scenario: Delete a child
 Scenario: Root tenant has empty properties
 	When I get the tenant with id "f26450ab1668784bb327951c8b08f347" and call it "Root"
 	Then the tenant called "Root" should have no properties
+
+Scenario: Updates to root tenant are prohibited
+	When I try to update the properties of the tenant with id "f26450ab1668784bb327951c8b08f347"
+	Then it should throw a NotSupportedException
