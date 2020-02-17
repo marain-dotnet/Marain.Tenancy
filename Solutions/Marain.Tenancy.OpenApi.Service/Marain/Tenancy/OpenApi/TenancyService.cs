@@ -6,6 +6,7 @@ namespace Marain.Tenancy.OpenApi
 {
     using System;
     using System.Collections.Generic;
+    using System.Net;
     using System.Threading.Tasks;
     using Corvus.Extensions.Json;
     using Corvus.Tenancy;
@@ -66,6 +67,7 @@ namespace Marain.Tenancy.OpenApi
         private readonly TelemetryClient telemetryClient;
         private readonly ILogger<TenancyService> logger;
 #pragma warning restore IDE0052
+        private ITenant redactedRootTenant;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="TenancyService"/> class.
@@ -228,7 +230,9 @@ namespace Marain.Tenancy.OpenApi
             {
                 try
                 {
-                    ITenant result = await this.tenantProvider.GetTenantAsync(tenantId, etag).ConfigureAwait(false);
+                    ITenant result = tenantId == RootTenant.RootTenantId
+                        ? this.GetRedactedRootTenant()
+                        : result = await this.tenantProvider.GetTenantAsync(tenantId, etag).ConfigureAwait(false);
                     OpenApiResult okResult = this.OkResult(this.tenantMapper.Map(result), "application/json");
                     if (!string.IsNullOrEmpty(result.ETag))
                     {
@@ -279,6 +283,17 @@ namespace Marain.Tenancy.OpenApi
             if (body is null)
             {
                 throw new OpenApiBadRequestException();
+            }
+
+            if (tenantId == RootTenant.RootTenantId)
+            {
+                // Updates to the root tenant are blocked because in Marain services, the root
+                // tenant is locally synthesized, and not fetched from the tenancy service.
+                // This enables service-specific fallback settings to be configured on the root.
+                // But it also means services will never see settings configured on the root
+                // via the Marain.Tenancy service, and so, to avoid disappointment, we don't
+                // let anyone try to do this.
+                return new OpenApiResult { StatusCode = (int)HttpStatusCode.MethodNotAllowed };
             }
 
             using (this.telemetryClient.StartOperation<RequestTelemetry>(UpdateTenantOperationId))
@@ -351,6 +366,23 @@ namespace Marain.Tenancy.OpenApi
                     return this.ConflictResult();
                 }
             }
+        }
+
+        private ITenant GetRedactedRootTenant() => this.redactedRootTenant ??= new RedactedRootTenant();
+
+        private class RedactedRootTenant : ITenant
+        {
+            public string Id => RootTenant.RootTenantId;
+
+            public PropertyBag Properties { get; } = new PropertyBag();
+
+            public string ETag
+            {
+                get => null;
+                set => throw new NotSupportedException();
+            }
+
+            public string ContentType => Tenant.RegisteredContentType;
         }
     }
 }

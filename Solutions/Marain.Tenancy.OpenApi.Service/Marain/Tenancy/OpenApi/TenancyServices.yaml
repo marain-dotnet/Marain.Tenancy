@@ -33,6 +33,11 @@ paths:
           description: Forbidden
         '404':
           description: Not found
+        # Updates to the root tenant are not supported, because clients are expected to use a
+        # local synthetic root tenant object, and therefore typically wouldn't ever see any
+        # settings applied to the root tenant. So we block such attempts.
+        '405':
+          description: Method not allowed
     get:
       tags:
         - Tenancy

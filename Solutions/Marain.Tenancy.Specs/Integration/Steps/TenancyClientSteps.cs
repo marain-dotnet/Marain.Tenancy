@@ -7,6 +7,7 @@
     using Corvus.Tenancy;
     using Corvus.Tenancy.Exceptions;
     using Microsoft.Extensions.DependencyInjection;
+    using Newtonsoft.Json.Linq;
     using NUnit.Framework;
     using TechTalk.SpecFlow;
 
@@ -39,12 +40,29 @@
             this.scenarioContext.Set(tenant, tenantName);
         }
 
+        [When(@"I get the tenant with id ""(.*)"" and call it ""(.*)""")]
+        public async Task WhenIGetTheTenantWithIdAndCallItAsync(string tenantId, string tenantName)
+        {
+            ITenantProvider provider = ContainerBindings.GetServiceProvider(this.featureContext).GetRequiredService<ITenantProvider>();
+            ITenant tenant = await provider.GetTenantAsync(tenantId);
+            this.scenarioContext.Set(tenant, tenantName);
+        }
+
         [Then("the tenant called \"(.*)\" should have the same ID as the tenant called \"(.*)\"")]
         public void ThenTheTenantCalledShouldHaveTheSameIDAsTheTenantCalled(string firstName, string secondName)
         {
             ITenant firstTenant = this.scenarioContext.Get<ITenant>(firstName);
             ITenant secondTenant = this.scenarioContext.Get<ITenant>(secondName);
             Assert.AreEqual(firstTenant.Id, secondTenant.Id);
+        }
+
+        [Then("the tenant called \"(.*)\" should have no properties")]
+        public void ThenTheTenantCalledShouldHaveNoProperties(string tenantName)
+        {
+            ITenant tenant = this.scenarioContext.Get<ITenant>(tenantName);
+
+            JObject properties = tenant.Properties;
+            Assert.AreEqual(0, properties.Count);
         }
 
         [Then("the tenant called \"(.*)\" should have the properties")]
@@ -104,7 +122,6 @@
             this.scenarioContext.Set(tenant, childName);
         }
 
-
         [When("I update the properties of the tenant called \"(.*)\"")]
         public void WhenIUpdateThePropertiesOfTheTenantCalled(string tenantName, Table table)
         {
@@ -141,6 +158,23 @@
                 }
             }
             provider.UpdateTenantAsync(tenant);
+        }
+
+        [When(@"I try to update the properties of the tenant with id ""(.*)""")]
+        public async Task WhenITryToUpdateThePropertiesOfTheTenantWithIdAsync(string tenantId)
+        {
+            ITenantProvider provider = ContainerBindings.GetServiceProvider(this.featureContext).GetRequiredService<ITenantProvider>();
+
+            ITenant tenant = await provider.GetTenantAsync(tenantId);
+            tenant.Properties.Set("foo", "bar");
+            try
+            {
+                await provider.UpdateTenantAsync(tenant);
+            }
+            catch (Exception ex)
+            {
+                this.scenarioContext.Set(ex);
+            }
         }
 
         [When("I get the children of the tenant with the id called \"(.*)\" with maxItems (.*) and call them \"(.*)\"")]
@@ -239,11 +273,16 @@
             }
         }
 
-        [Then(@"it should throw a TenantNotModifiedException")]
+        [Then("it should throw a TenantNotModifiedException")]
         public void ThenItShouldThrowATenantNotModifiedException()
         {
             Assert.IsInstanceOf<TenantNotModifiedException>(this.scenarioContext.Get<Exception>());
         }
 
+        [Then("it should throw a NotSupportedException")]
+        public void ThenItShouldThrowANotSupportedException()
+        {
+            Assert.IsInstanceOf<NotSupportedException>(this.scenarioContext.Get<Exception>());
+        }
     }
 }
