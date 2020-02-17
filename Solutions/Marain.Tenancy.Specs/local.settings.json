@@ -1,7 +1,0 @@
-{
-  "AzureServicesAuthConnectionString": "RunAs=Developer; DeveloperTool=AzureCLI",
-  "AzureWebJobsStorage": "UseDevelopmentStorage=true",
-  "FUNCTIONS_WORKER_RUNTIME": "dotnet",
-  "FUNCTIONS_EXTENSION_VERSION": "~2",
-  "APPINSIGHTS_INSTRUMENTATIONKEY": ""
-}

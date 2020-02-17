@@ -5,9 +5,8 @@
 namespace Microsoft.Extensions.DependencyInjection
 {
     using System;
-    using Marain.Tenancy.OpenApi;
+    using Corvus.Azure.Storage.Tenancy;
     using Menes;
-    using Microsoft.Extensions.Configuration;
 
     /// <summary>
     /// Configuration of services for using the operations repository implemented on top of the
@@ -19,16 +18,12 @@ namespace Microsoft.Extensions.DependencyInjection
         /// Enable the tenancy st.
         /// </summary>
         /// <param name="services">The service collection.</param>
-        /// <param name="rootTenantDefaultConfiguration">
-        /// Configuration section to read root tenant default repository settings from.
-        /// </param>
         /// <returns>The modified service collection.</returns>
         public static IServiceCollection AddTenancyBlobContainer(
-            this IServiceCollection services,
-            IConfiguration rootTenantDefaultConfiguration)
+            this IServiceCollection services)
         {
             services.AddTenantProviderBlobStore();
-            services.AddTenantCloudBlobContainerFactory(rootTenantDefaultConfiguration);
+            services.AddTenantCloudBlobContainerFactory(sp => sp.GetRequiredService<TenantCloudBlobContainerFactoryOptions>());
             return services;
         }
 
@@ -36,17 +31,13 @@ namespace Microsoft.Extensions.DependencyInjection
         /// Add the temnancy api.
         /// </summary>
         /// <param name="services">The service collection.</param>
-        /// <param name="rootTenantDefaultConfiguration">
-        /// Configuration section to read root tenant default repository settings from.
-        /// </param>
         /// <param name="configureHost">The optional action to configure the host.</param>
         /// <returns>The modified service collection.</returns>
-        public static IServiceCollection AddTenancyApi(
+        public static IServiceCollection AddTenancyApiOnBlobStorage(
             this IServiceCollection services,
-            IConfiguration rootTenantDefaultConfiguration,
             Action<IOpenApiHostConfiguration> configureHost = null)
         {
-            services.AddTenancyBlobContainer(rootTenantDefaultConfiguration);
+            services.AddTenancyBlobContainer();
             services.AddTenancyApi(configureHost);
             return services;
         }

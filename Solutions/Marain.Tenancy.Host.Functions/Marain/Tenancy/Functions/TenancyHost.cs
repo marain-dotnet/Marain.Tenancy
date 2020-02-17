@@ -23,7 +23,8 @@ namespace Marain.Tenancy.Functions
         /// Initializes a new instance of the <see cref="TenancyHost"/> class.
         /// </summary>
         /// <param name="host">The OpenApi host.</param>
-        public TenancyHost(IOpenApiHost<HttpRequest, IActionResult> host)
+        public TenancyHost(
+            IOpenApiHost<HttpRequest, IActionResult> host)
         {
             this.host = host;
         }

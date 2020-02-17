@@ -4,7 +4,6 @@
 
 namespace Microsoft.Extensions.DependencyInjection
 {
-    using System;
     using System.Linq;
     using Corvus.ContentHandling;
     using Corvus.Extensions.Json;
@@ -12,8 +11,6 @@ namespace Microsoft.Extensions.DependencyInjection
     using Marain.Tenancy;
     using Marain.Tenancy.Client;
     using Marain.Tenancy.Mappers;
-    using Microsoft.Extensions.Configuration;
-    using Newtonsoft.Json.Linq;
 
     /// <summary>
     /// Extensions to register the Root tenant with the service collection.
@@ -54,18 +51,20 @@ namespace Microsoft.Extensions.DependencyInjection
         /// Adds services an Azure Blob storage-based implementation of <see cref="ITenantProvider"/>.
         /// </summary>
         /// <param name="services">The service collection.</param>
-        /// <param name="config">The configuration.</param>
         /// <returns>The modified service collection.</returns>
+        /// <remarks>
+        /// Applications using this must also make <see cref="TenancyClientOptions"/> available via
+        /// DI.
+        /// </remarks>
         public static IServiceCollection AddTenantProviderServiceClient(
-            this IServiceCollection services,
-            IConfigurationRoot config)
+            this IServiceCollection services)
         {
             if (services.Any(s => typeof(ITenantProvider).IsAssignableFrom(s.ServiceType)))
             {
                 return services;
             }
 
-            services.AddTenancyClient(new Uri(config["TenancyServiceBaseUri"]));
+            services.AddTenancyClient();
             services.AddTenantServiceClientRootTenant();
             services.AddSingleton<ITenantMapper, TenantMapper>();
             services.AddSingleton<ITenantProvider, ClientTenantProvider>();
