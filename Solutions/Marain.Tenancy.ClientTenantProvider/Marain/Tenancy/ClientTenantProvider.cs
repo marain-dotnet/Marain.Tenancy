@@ -120,6 +120,13 @@ namespace Marain.Tenancy
         /// <inheritdoc/>
         public async Task<ITenant> GetTenantAsync(string tenantId, string eTag = null)
         {
+            // The root tenant is a special case - it lives just in memory. This is because
+            // services use it to configure service-specific defaults.
+            if (tenantId == this.Root.Id)
+            {
+                return this.Root;
+            }
+
             HttpOperationResponse<object, Client.Models.GetTenantHeaders> tenant = await this.tenantService.GetTenantWithHttpMessagesAsync(tenantId, eTag).ConfigureAwait(false);
 
             if (tenant.Response.StatusCode == HttpStatusCode.NotFound)
