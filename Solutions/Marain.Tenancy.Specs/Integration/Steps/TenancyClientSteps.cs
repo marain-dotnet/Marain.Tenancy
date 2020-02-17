@@ -7,6 +7,7 @@
     using Corvus.Tenancy;
     using Corvus.Tenancy.Exceptions;
     using Microsoft.Extensions.DependencyInjection;
+    using Newtonsoft.Json.Linq;
     using NUnit.Framework;
     using TechTalk.SpecFlow;
 
@@ -39,12 +40,29 @@
             this.scenarioContext.Set(tenant, tenantName);
         }
 
+        [When(@"I get the tenant with id ""(.*)"" and call it ""(.*)""")]
+        public async Task WhenIGetTheTenantWithIdAndCallItAsync(string tenantId, string tenantName)
+        {
+            ITenantProvider provider = ContainerBindings.GetServiceProvider(this.featureContext).GetRequiredService<ITenantProvider>();
+            ITenant tenant = await provider.GetTenantAsync(tenantId);
+            this.scenarioContext.Set(tenant, tenantName);
+        }
+
         [Then("the tenant called \"(.*)\" should have the same ID as the tenant called \"(.*)\"")]
         public void ThenTheTenantCalledShouldHaveTheSameIDAsTheTenantCalled(string firstName, string secondName)
         {
             ITenant firstTenant = this.scenarioContext.Get<ITenant>(firstName);
             ITenant secondTenant = this.scenarioContext.Get<ITenant>(secondName);
             Assert.AreEqual(firstTenant.Id, secondTenant.Id);
+        }
+
+        [Then("the tenant called \"(.*)\" should have no properties")]
+        public void ThenTheTenantCalledShouldHaveNoProperties(string tenantName)
+        {
+            ITenant tenant = this.scenarioContext.Get<ITenant>(tenantName);
+
+            JObject properties = tenant.Properties;
+            Assert.AreEqual(0, properties.Count);
         }
 
         [Then("the tenant called \"(.*)\" should have the properties")]

@@ -104,3 +104,7 @@ Scenario: Delete a child
 	| ChildTenant2 |
 	| ChildTenant4 |
 	| ChildTenant5 |
+
+Scenario: Root tenant has empty properties
+	When I get the tenant with id "f26450ab1668784bb327951c8b08f347" and call it "Root"
+	Then the tenant called "Root" should have no properties
