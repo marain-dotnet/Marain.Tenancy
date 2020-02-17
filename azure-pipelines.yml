@@ -33,6 +33,8 @@ jobs:
           command: custom
           verbose: false
           customCommand: 'install -g azure-functions-core-tools@3 --unsafe-perm true'
+          customRegistry: 'useFeed'
+          customFeed: '336cd964-a309-4e97-a5f6-b8843651fe90'
 
     # We want to include the deployment project in the assets. Currently this is experimental,
     # and once we're done, probably some of this is going to move into the common templates.
