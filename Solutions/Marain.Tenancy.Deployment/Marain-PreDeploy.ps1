@@ -12,15 +12,21 @@ use it directly.)
 # Marain.Instance expects us to define just this one function.
 Function MarainDeployment([MarainServiceDeploymentContext] $ServiceDeploymentContext) {
 
-    $app = $ServiceDeploymentContext.DefineAzureAdAppForAppService(
-        "",
-         "TenancyAppId")
+    $app = $ServiceDeploymentContext.DefineAzureAdAppForAppService()
 
     $AdminAppRoleId = "7619c293-764c-437b-9a8e-698a26250efd"
     $app.EnsureAppRolesContain(
         $AdminAppRoleId,
         "Tenancy administrator",
-        "Full control over definition of claim permissions and rule sets",
+        "Ability to create, modify, read, and remove tenants",
         "TenancyAdministrator",
+        ("User", "Application"))
+
+    $ReaderAppRoleId = "60743a6a-63b6-42e5-a464-a08698a0e9ed"
+    $app.EnsureAppRolesContain(
+        $ReaderAppRoleId,
+        "Tenancy reader",
+        "Ability to read information about tenants",
+        "TenancyReader",
         ("User", "Application"))
 }
