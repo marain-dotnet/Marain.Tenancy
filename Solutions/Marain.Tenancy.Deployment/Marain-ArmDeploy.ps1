@@ -6,9 +6,10 @@ script. It is our opportunity to create Azure resources.
 # Marain.Instance expects us to define just this one function.
 Function MarainDeployment([MarainServiceDeploymentContext] $ServiceDeploymentContext) {
 
+    $TenancyAuthAppId = $ServiceDeploymentContext.GetAppId()
     $TemplateParameters = @{
         appName="tenancy"
-        functionEasyAuthAadClientId=$ServiceDeploymentContext.Variables["TenancyAppId"]
+        functionEasyAuthAadClientId=$TenancyAuthAppId
         appInsightsInstrumentationKey=$ServiceDeploymentContext.InstanceContext.ApplicationInsightsInstrumentationKey
     }
     $InstanceResourceGroupName = $InstanceDeploymentContext.MakeResourceGroupName("tenancy")
@@ -18,6 +19,6 @@ Function MarainDeployment([MarainServiceDeploymentContext] $ServiceDeploymentCon
         $TemplateParameters,
         $InstanceResourceGroupName)
 
-    $ServiceDeploymentContext.Variables["KeyVaultName"] = $DeploymentResult.Outputs.keyVaultName.Value
-    $ServiceDeploymentContext.Variables["FunctionServicePrincipalId"] = $DeploymentResult.Outputs.functionServicePrincipalId.Value
+    #$ServiceDeploymentContext.Variables["KeyVaultName"] = $DeploymentResult.Outputs.keyVaultName.Value
+    $ServiceDeploymentContext.SetAppServiceDetails($DeploymentResult.Outputs.functionServicePrincipalId.Value)
 }
