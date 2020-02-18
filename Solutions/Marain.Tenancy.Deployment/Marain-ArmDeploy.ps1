@@ -19,6 +19,5 @@ Function MarainDeployment([MarainServiceDeploymentContext] $ServiceDeploymentCon
         $TemplateParameters,
         $InstanceResourceGroupName)
 
-    #$ServiceDeploymentContext.Variables["KeyVaultName"] = $DeploymentResult.Outputs.keyVaultName.Value
     $ServiceDeploymentContext.SetAppServiceDetails($DeploymentResult.Outputs.functionServicePrincipalId.Value)
 }
