@@ -71,6 +71,21 @@ Scenario: Get children
 	| ChildTenant4 |
 	| ChildTenant5 |
 
+Scenario: Get children when no child tenants exist
+	Given I create a child tenant called "ChildTenant1" for the root tenant
+	When I get the tenant id of the tenant called "ChildTenant1" and call it "ChildTenantId"
+	And I get the children of the tenant with the id called "ChildTenantId" with maxItems 20 and call them "Result"
+	Then there should be no ids in the children called "Result"
+
+Scenario: Get children when there is a single child tenant
+	Given I create a child tenant called "ChildTenant1" for the root tenant
+	And I create a child tenant called "ChildTenant2" for the tenant called "ChildTenant1"
+	When I get the tenant id of the tenant called "ChildTenant1" and call it "ChildTenantId"
+	And I get the children of the tenant with the id called "ChildTenantId" with maxItems 20 and call them "Result"
+	Then the ids of the children called "Result" should match the ids of the tenants called
+	| TenantName   |
+	| ChildTenant2 |
+
 Scenario: Get children with continuation token
 	Given I create a child tenant called "ChildTenant1" for the root tenant
 	And I create a child tenant called "ChildTenant2" for the tenant called "ChildTenant1"
