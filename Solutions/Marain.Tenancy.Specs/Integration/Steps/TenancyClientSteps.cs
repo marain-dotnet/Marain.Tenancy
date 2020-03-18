@@ -205,6 +205,13 @@
             CollectionAssert.AreEquivalent(expected, children.Tenants);
         }
 
+        [Then("there should be no ids in the children called \"(.*)\"")]
+        public void ThenThereShouldBeNoIdsInTheChildrenCalled(string childrenName)
+        {
+            TenantCollectionResult children = this.scenarioContext.Get<TenantCollectionResult>(childrenName);
+            Assert.AreEqual(0, children.Tenants.Count);
+        }
+
         [Then("there should be (.*) tenants in \"(.*)\"")]
         public void ThenThereShouldBeTenantsIn(int count, string childrenName)
         {
