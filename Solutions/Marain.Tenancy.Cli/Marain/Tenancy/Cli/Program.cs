@@ -29,6 +29,8 @@ namespace Marain.Tenancy.Cli
 
             builder.ConfigureServices((ctx, services) =>
             {
+                services.AddJsonSerializerSettings();
+
                 var msiTokenSourceOptions = new AzureManagedIdentityTokenSourceOptions
                 {
                     AzureServicesAuthConnectionString = ctx.Configuration["AzureServicesAuthConnectionString"],
@@ -43,6 +45,7 @@ namespace Marain.Tenancy.Cli
                 };
 
                 services.AddSingleton(tenancyClientOptions);
+
                 services.AddTenantProviderServiceClient();
             });
 
