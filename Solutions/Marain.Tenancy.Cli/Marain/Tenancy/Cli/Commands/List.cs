@@ -54,23 +54,35 @@ namespace Marain.Tenancy.Cli.Commands
                 this.TenantId = this.tenantProvider.Root.Id;
             }
 
-            TenantCollectionResult children = await this.tenantProvider.GetChildrenAsync(this.TenantId).ConfigureAwait(false);
+            string continuationToken = null;
+
+            var childTenantIds = new List<string>();
+
+            do
+            {
+                TenantCollectionResult children = await this.tenantProvider.GetChildrenAsync(this.TenantId, 2, continuationToken).ConfigureAwait(false);
+
+                childTenantIds.AddRange(children.Tenants);
+
+                continuationToken = children.ContinuationToken;
+            }
+            while (!string.IsNullOrEmpty(continuationToken));
 
             if (this.IncludeProperties?.Length > 0)
             {
-                await this.LoadAndOutputTenantDetailsAsync(children, app.Out).ConfigureAwait(false);
+                await this.LoadAndOutputTenantDetailsAsync(childTenantIds, app.Out).ConfigureAwait(false);
             }
             else
             {
-                this.OutputTenantIds(children, app.Out);
+                this.OutputTenantIds(childTenantIds, app.Out);
             }
 
             return 0;
         }
 
-        private async Task LoadAndOutputTenantDetailsAsync(TenantCollectionResult children, TextWriter output)
+        private async Task LoadAndOutputTenantDetailsAsync(List<string> children, TextWriter output)
         {
-            IEnumerable<Task<ITenant>> detailsTasks = children.Tenants.Select(x => this.tenantProvider.GetTenantAsync(x));
+            IEnumerable<Task<ITenant>> detailsTasks = children.Select(x => this.tenantProvider.GetTenantAsync(x));
 
             await Task.WhenAll(detailsTasks).ConfigureAwait(false);
 
@@ -100,11 +112,11 @@ namespace Marain.Tenancy.Cli.Commands
             table.Write(Format.Minimal);
         }
 
-        private void OutputTenantIds(TenantCollectionResult children, TextWriter output)
+        private void OutputTenantIds(List<string> children, TextWriter output)
         {
             output.WriteLine("Child Tenant Ids:");
 
-            foreach (string current in children.Tenants)
+            foreach (string current in children)
             {
                 output.WriteLine($"\t{current}");
             }
