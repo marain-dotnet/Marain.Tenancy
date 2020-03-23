@@ -7,9 +7,7 @@ namespace Marain.Tenancy.Cli
     using System;
     using System.Threading.Tasks;
     using Corvus.Identity.ManagedServiceIdentity.ClientAuthentication;
-    using Marain.Tenancy.Cli.Commands;
     using Marain.Tenancy.Client;
-    using Microsoft.Extensions.Configuration;
     using Microsoft.Extensions.DependencyInjection;
     using Microsoft.Extensions.Hosting;
 

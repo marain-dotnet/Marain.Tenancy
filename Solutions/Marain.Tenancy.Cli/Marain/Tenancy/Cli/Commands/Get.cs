@@ -4,19 +4,14 @@
 
 namespace Marain.Tenancy.Cli.Commands
 {
-    using System;
-    using System.Collections.Generic;
-    using System.IO;
-    using System.Linq;
     using System.Threading.Tasks;
-    using ConsoleTables;
     using Corvus.Extensions.Json;
     using Corvus.Tenancy;
     using McMaster.Extensions.CommandLineUtils;
     using Newtonsoft.Json;
 
     /// <summary>
-    /// Lists children of the specified tenant.
+    /// Retrieves all details for the specified tenant.
     /// </summary>
     [Command(Name = "get", Description = "Gets tenant details.")]
     public class Get
@@ -36,13 +31,13 @@ namespace Marain.Tenancy.Cli.Commands
         }
 
         /// <summary>
-        /// Gets or sets the tenant whose children should be retrieved.
+        /// Gets or sets the tenant whose details should be retrieved.
         /// </summary>
         [Option(
             CommandOptionType.SingleValue,
             ShortName = "t",
             LongName = "tenant",
-            Description = "The Id of the tenant to retrieve children for. Leave blank to retrieve children of the root tenant.")]
+            Description = "The Id of the tenant to retrieve details for.")]
         public string TenantId { get; set; }
 
         /// <summary>

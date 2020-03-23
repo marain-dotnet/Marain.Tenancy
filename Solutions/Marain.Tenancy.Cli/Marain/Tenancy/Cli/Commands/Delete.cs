@@ -19,14 +19,14 @@ namespace Marain.Tenancy.Cli.Commands
         /// <summary>
         /// Initializes a new instance of the <see cref="Delete"/> class.
         /// </summary>
-        /// <param name="tenantProvider">The tenant provider that will be used to retrieve the information.</param>
+        /// <param name="tenantProvider">The tenant provider that will be used to delete the tenant.</param>
         public Delete(ITenantProvider tenantProvider)
         {
             this.tenantProvider = tenantProvider;
         }
 
         /// <summary>
-        /// Gets or sets the tenant whose children should be retrieved.
+        /// Gets or sets the Id of the tenant to be deleted.
         /// </summary>
         [Option(
             CommandOptionType.SingleValue,

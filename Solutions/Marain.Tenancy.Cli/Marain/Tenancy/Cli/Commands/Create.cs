@@ -26,23 +26,26 @@ namespace Marain.Tenancy.Cli.Commands
         }
 
         /// <summary>
-        /// Gets or sets the tenant whose children should be retrieved.
+        /// Gets or sets the Id of the tenant that should be the parent of the new tenant.
         /// </summary>
+        /// <remarks>
+        /// If ommitted, the tenant will be created at the top level, as a child of the root.
+        /// </remarks>
         [Option(
             CommandOptionType.SingleOrNoValue,
             ShortName = "t",
             LongName = "tenant",
-            Description = "The Id of the parent tenant.")]
+            Description = "The Id of the parent tenant. Omit if the child should be a parent of the root tenant.")]
         public string TenantId { get; set; }
 
         /// <summary>
-        /// Gets or sets the tenant whose children should be retrieved.
+        /// Gets or sets the name of the new tenant.
         /// </summary>
         [Option(
             CommandOptionType.SingleValue,
             ShortName = "n",
             LongName = "name",
-            Description = "The name of the tenant.")]
+            Description = "The name of the new tenant.")]
         public string Name { get; set; }
 
         /// <summary>
