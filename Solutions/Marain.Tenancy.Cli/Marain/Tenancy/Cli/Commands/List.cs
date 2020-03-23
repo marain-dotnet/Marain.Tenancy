@@ -40,13 +40,13 @@ namespace Marain.Tenancy.Cli.Commands
         public string TenantId { get; set; }
 
         /// <summary>
-        /// Gets or sets a value indicating whether or not details should be loaded for the tenants.
+        /// Gets or sets a value containing the names of specific properties that should be included in the output.
         /// </summary>
         [Option(
             CommandOptionType.MultipleValue,
             ShortName = "p",
             LongName = "property",
-            Description = "The names of properties to include.")]
+            Description = "The names of tenant properties to include in the output. If omitted, only the tenant Ids will be listed.")]
         public string[] IncludeProperties { get; set; }
 
         /// <summary>
@@ -69,7 +69,7 @@ namespace Marain.Tenancy.Cli.Commands
             {
                 TenantCollectionResult children = await this.tenantProvider.GetChildrenAsync(
                     this.TenantId,
-                    2,
+                    20,
                     continuationToken).ConfigureAwait(false);
 
                 childTenantIds.AddRange(children.Tenants);
