@@ -7,6 +7,7 @@ namespace Marain.Tenancy.Cli.Commands
     using System.Collections.Generic;
     using System.IO;
     using System.Linq;
+    using System.Text;
     using System.Threading.Tasks;
     using ConsoleTables;
     using Corvus.Tenancy;
@@ -37,7 +38,7 @@ namespace Marain.Tenancy.Cli.Commands
             ShortName = "t",
             LongName = "tenant",
             Description = "The Id of the tenant to retrieve children for. Leave blank to retrieve children of the root tenant.")]
-        public string TenantId { get; set; }
+        public string? TenantId { get; set; }
 
         /// <summary>
         /// Gets or sets a value containing the names of specific properties that should be included in the output.
@@ -47,21 +48,23 @@ namespace Marain.Tenancy.Cli.Commands
             ShortName = "p",
             LongName = "property",
             Description = "The names of tenant properties to include in the output. If omitted, only the tenant Ids will be listed.")]
-        public string[] IncludeProperties { get; set; }
+#pragma warning disable SA1011 // Closing square brackets should be spaced correctly
+        public string[]? IncludeProperties { get; set; }
+#pragma warning restore SA1011 // Closing square brackets should be spaced correctly
 
         /// <summary>
         /// Executes the command.
         /// </summary>
         /// <param name="app">The current <c>CommandLineApplication</c>.</param>
         /// <returns>A <see cref="Task"/> representing the asynchronous operation.</returns>
-        public async Task<int> OnExecute(CommandLineApplication app)
+        public async Task OnExecute(CommandLineApplication app)
         {
             if (string.IsNullOrEmpty(this.TenantId))
             {
                 this.TenantId = this.tenantProvider.Root.Id;
             }
 
-            string continuationToken = null;
+            string? continuationToken = null;
 
             var childTenantIds = new List<string>();
 
@@ -86,8 +89,6 @@ namespace Marain.Tenancy.Cli.Commands
             {
                 this.OutputTenantIds(childTenantIds, app.Out);
             }
-
-            return 0;
         }
 
         private async Task LoadAndOutputTenantDetailsAsync(List<string> children, TextWriter output)
@@ -97,7 +98,11 @@ namespace Marain.Tenancy.Cli.Commands
             await Task.WhenAll(detailsTasks).ConfigureAwait(false);
 
             var headings = new List<string> { "Id" };
-            headings.AddRange(this.IncludeProperties);
+
+            if (this.IncludeProperties != null)
+            {
+                headings.AddRange(this.IncludeProperties);
+            }
 
             var table = new ConsoleTable(headings.ToArray());
 
@@ -110,10 +115,13 @@ namespace Marain.Tenancy.Cli.Commands
 
                 var result = new List<string> { tenant.Id };
 
-                foreach (string prop in this.IncludeProperties)
+                if (this.IncludeProperties != null)
                 {
-                    tenant.Properties.TryGet<string>(prop, out string propValue);
-                    result.Add(propValue ?? "{not set}");
+                    foreach (string prop in this.IncludeProperties)
+                    {
+                        tenant.Properties.TryGet<string>(prop, out string propValue);
+                        result.Add(propValue ?? "{not set}");
+                    }
                 }
 
                 table.AddRow(result.ToArray());
@@ -124,12 +132,16 @@ namespace Marain.Tenancy.Cli.Commands
 
         private void OutputTenantIds(List<string> children, TextWriter output)
         {
-            output.WriteLine("Child Tenant Ids:");
+            var builder = new StringBuilder();
+
+            builder.AppendLine("Child Tenant Ids:");
 
             foreach (string current in children)
             {
-                output.WriteLine($"\t{current}");
+                builder.AppendLine($"\t{current}");
             }
+
+            output.WriteLine(builder.ToString());
         }
     }
 }

@@ -6,6 +6,7 @@
     <RootNamespace />
     <AssemblyName>tenancy</AssemblyName>
     <IsPackable>false</IsPackable>
+    <Nullable>enable</Nullable>
   </PropertyGroup>
 
   <ItemGroup>

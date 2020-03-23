@@ -38,14 +38,14 @@ namespace Marain.Tenancy.Cli.Commands
             ShortName = "t",
             LongName = "tenant",
             Description = "The Id of the tenant to retrieve details for.")]
-        public string TenantId { get; set; }
+        public string? TenantId { get; set; }
 
         /// <summary>
         /// Executes the command.
         /// </summary>
         /// <param name="app">The current <c>CommandLineApplication</c>.</param>
         /// <returns>A <see cref="Task"/> representing the asynchronous operation.</returns>
-        public async Task<int> OnExecute(CommandLineApplication app)
+        public async Task OnExecute(CommandLineApplication app)
         {
             if (string.IsNullOrEmpty(this.TenantId))
             {
@@ -60,8 +60,6 @@ namespace Marain.Tenancy.Cli.Commands
                 this.serializationSettingsProvider.Instance);
 
             app.Out.WriteLine(result);
-
-            return 0;
         }
     }
 }

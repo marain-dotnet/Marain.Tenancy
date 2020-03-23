@@ -36,7 +36,7 @@ namespace Marain.Tenancy.Cli.Commands
             ShortName = "t",
             LongName = "tenant",
             Description = "The Id of the parent tenant. Omit if the child should be a parent of the root tenant.")]
-        public string TenantId { get; set; }
+        public string? TenantId { get; set; }
 
         /// <summary>
         /// Gets or sets the name of the new tenant.
@@ -46,14 +46,14 @@ namespace Marain.Tenancy.Cli.Commands
             ShortName = "n",
             LongName = "name",
             Description = "The name of the new tenant.")]
-        public string Name { get; set; }
+        public string? Name { get; set; }
 
         /// <summary>
         /// Executes the command.
         /// </summary>
         /// <param name="app">The current <c>CommandLineApplication</c>.</param>
         /// <returns>A <see cref="Task"/> representing the asynchronous operation.</returns>
-        public async Task<int> OnExecute(CommandLineApplication app)
+        public async Task OnExecute(CommandLineApplication app)
         {
             if (string.IsNullOrEmpty(this.TenantId))
             {
@@ -62,14 +62,9 @@ namespace Marain.Tenancy.Cli.Commands
 
             ITenant child = await this.tenantProvider.CreateChildTenantAsync(this.TenantId).ConfigureAwait(false);
             child.Properties.Set("name", this.Name);
-            await this.tenantProvider.UpdateTenantAsync(child);
+            await this.tenantProvider.UpdateTenantAsync(child).ConfigureAwait(false);
 
-            app.Out.Write("Created new child tenant with Id ");
-            app.Out.Write(child.Id);
-            app.Out.Write(" and name ");
-            app.Out.WriteLine(this.Name);
-
-            return 0;
+            app.Out.WriteLine($"Created new child tenant with Id {child.Id} and name {this.Name}");
         }
     }
 }

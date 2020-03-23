@@ -33,30 +33,28 @@ namespace Marain.Tenancy.Cli.Commands
             ShortName = "t",
             LongName = "tenant",
             Description = "The Id of the parent tenant.")]
-        public string TenantId { get; set; }
+        public string? TenantId { get; set; }
 
         /// <summary>
         /// Executes the command.
         /// </summary>
         /// <param name="app">The current <c>CommandLineApplication</c>.</param>
         /// <returns>A <see cref="Task"/> representing the asynchronous operation.</returns>
-        public async Task<int> OnExecute(CommandLineApplication app)
+        public async Task OnExecute(CommandLineApplication app)
         {
-            TenantCollectionResult children = await this.tenantProvider.GetChildrenAsync(this.TenantId, 1);
+            TenantCollectionResult children = await this.tenantProvider.GetChildrenAsync(this.TenantId, 1).ConfigureAwait(false);
 
             if (children.Tenants.Count > 0)
             {
                 app.Error.WriteLine(
                     $"Cannot delete tenant with Id {this.TenantId} as it has children. Remove the child tenants first.");
-                return -1;
+
+                return;
             }
 
             await this.tenantProvider.DeleteTenantAsync(this.TenantId).ConfigureAwait(false);
 
-            app.Out.Write("Deleted tenant with Id ");
-            app.Out.WriteLine(this.TenantId);
-
-            return 0;
+            app.Out.WriteLine("Deleted tenant with Id " + this.TenantId);
         }
     }
 }
