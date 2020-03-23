@@ -33,13 +33,21 @@ namespace Marain.Tenancy.Cli.Commands
         /// <summary>
         /// Gets or sets the tenant whose children should be retrieved.
         /// </summary>
-        [Option(CommandOptionType.SingleOrNoValue, ShortName = "t", LongName = "tenant", Description = "The Id of the tenant to retrieve children for. Leave blank to retrieve children of the root tenant.")]
+        [Option(
+            CommandOptionType.SingleOrNoValue,
+            ShortName = "t",
+            LongName = "tenant",
+            Description = "The Id of the tenant to retrieve children for. Leave blank to retrieve children of the root tenant.")]
         public string TenantId { get; set; }
 
         /// <summary>
         /// Gets or sets a value indicating whether or not details should be loaded for the tenants.
         /// </summary>
-        [Option(CommandOptionType.MultipleValue, ShortName = "p", LongName = "property", Description = "The names of properties to include.")]
+        [Option(
+            CommandOptionType.MultipleValue,
+            ShortName = "p",
+            LongName = "property",
+            Description = "The names of properties to include.")]
         public string[] IncludeProperties { get; set; }
 
         /// <summary>
@@ -60,7 +68,10 @@ namespace Marain.Tenancy.Cli.Commands
 
             do
             {
-                TenantCollectionResult children = await this.tenantProvider.GetChildrenAsync(this.TenantId, 2, continuationToken).ConfigureAwait(false);
+                TenantCollectionResult children = await this.tenantProvider.GetChildrenAsync(
+                    this.TenantId,
+                    2,
+                    continuationToken).ConfigureAwait(false);
 
                 childTenantIds.AddRange(children.Tenants);
 

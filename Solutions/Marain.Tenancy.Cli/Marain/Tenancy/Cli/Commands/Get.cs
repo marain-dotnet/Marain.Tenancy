@@ -38,7 +38,11 @@ namespace Marain.Tenancy.Cli.Commands
         /// <summary>
         /// Gets or sets the tenant whose children should be retrieved.
         /// </summary>
-        [Option(CommandOptionType.SingleValue, ShortName = "t", LongName = "tenant", Description = "The Id of the tenant to retrieve children for. Leave blank to retrieve children of the root tenant.")]
+        [Option(
+            CommandOptionType.SingleValue,
+            ShortName = "t",
+            LongName = "tenant",
+            Description = "The Id of the tenant to retrieve children for. Leave blank to retrieve children of the root tenant.")]
         public string TenantId { get; set; }
 
         /// <summary>

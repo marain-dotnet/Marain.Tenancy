@@ -19,7 +19,7 @@ namespace Marain.Tenancy.Cli.Commands
         /// <summary>
         /// Initializes a new instance of the <see cref="Create"/> class.
         /// </summary>
-        /// <param name="tenantProvider">The tenant provider that will be used to retrieve the information.</param>
+        /// <param name="tenantProvider">The tenant provider that will be used to create the new tenant.</param>
         public Create(ITenantProvider tenantProvider)
         {
             this.tenantProvider = tenantProvider;
@@ -28,13 +28,21 @@ namespace Marain.Tenancy.Cli.Commands
         /// <summary>
         /// Gets or sets the tenant whose children should be retrieved.
         /// </summary>
-        [Option(CommandOptionType.SingleOrNoValue, ShortName = "t", LongName = "tenant", Description = "The Id of the parent tenant.")]
+        [Option(
+            CommandOptionType.SingleOrNoValue,
+            ShortName = "t",
+            LongName = "tenant",
+            Description = "The Id of the parent tenant.")]
         public string TenantId { get; set; }
 
         /// <summary>
         /// Gets or sets the tenant whose children should be retrieved.
         /// </summary>
-        [Option(CommandOptionType.SingleValue, ShortName = "n", LongName = "name", Description = "The name of the tenant.")]
+        [Option(
+            CommandOptionType.SingleValue,
+            ShortName = "n",
+            LongName = "name",
+            Description = "The name of the tenant.")]
         public string Name { get; set; }
 
         /// <summary>

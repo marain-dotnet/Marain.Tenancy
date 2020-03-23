@@ -28,7 +28,11 @@ namespace Marain.Tenancy.Cli.Commands
         /// <summary>
         /// Gets or sets the tenant whose children should be retrieved.
         /// </summary>
-        [Option(CommandOptionType.SingleValue, ShortName = "t", LongName = "tenant", Description = "The Id of the parent tenant.")]
+        [Option(
+            CommandOptionType.SingleValue,
+            ShortName = "t",
+            LongName = "tenant",
+            Description = "The Id of the parent tenant.")]
         public string TenantId { get; set; }
 
         /// <summary>
@@ -42,7 +46,8 @@ namespace Marain.Tenancy.Cli.Commands
 
             if (children.Tenants.Count > 0)
             {
-                app.Error.WriteLine($"Cannot delete tenant with Id {this.TenantId} as it has children. Remove the child tenants first.");
+                app.Error.WriteLine(
+                    $"Cannot delete tenant with Id {this.TenantId} as it has children. Remove the child tenants first.");
                 return -1;
             }
 

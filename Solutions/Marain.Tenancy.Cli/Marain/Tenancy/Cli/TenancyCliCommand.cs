@@ -15,6 +15,7 @@ namespace Marain.Tenancy.Cli
     [Subcommand(typeof(List))]
     [Subcommand(typeof(Create))]
     [Subcommand(typeof(Delete))]
+    [Subcommand(typeof(DeleteProperty))]
     [Subcommand(typeof(Get))]
     public class TenancyCliCommand
     {
