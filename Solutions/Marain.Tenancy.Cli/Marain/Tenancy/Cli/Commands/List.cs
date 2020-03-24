@@ -95,7 +95,7 @@ namespace Marain.Tenancy.Cli.Commands
         {
             IEnumerable<Task<ITenant>> detailsTasks = children.Select(x => this.tenantProvider.GetTenantAsync(x));
 
-            await Task.WhenAll(detailsTasks).ConfigureAwait(false);
+            ITenant[] tenants = await Task.WhenAll(detailsTasks).ConfigureAwait(false);
 
             var headings = new List<string> { "Id" };
 
@@ -109,10 +109,8 @@ namespace Marain.Tenancy.Cli.Commands
             table.Options.OutputTo = output;
             table.Options.EnableCount = false;
 
-            detailsTasks.ForEach(task =>
+            tenants.ForEach(tenant =>
             {
-                ITenant tenant = task.Result;
-
                 var result = new List<string> { tenant.Id };
 
                 if (this.IncludeProperties != null)
