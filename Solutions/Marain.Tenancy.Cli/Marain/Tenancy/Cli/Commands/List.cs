@@ -109,7 +109,7 @@ namespace Marain.Tenancy.Cli.Commands
             table.Options.OutputTo = output;
             table.Options.EnableCount = false;
 
-            tenants.ForEach(tenant =>
+            foreach (ITenant tenant in tenants)
             {
                 var result = new List<string> { tenant.Id };
 
@@ -123,7 +123,7 @@ namespace Marain.Tenancy.Cli.Commands
                 }
 
                 table.AddRow(result.ToArray());
-            });
+            }
 
             table.Write(Format.Minimal);
         }
