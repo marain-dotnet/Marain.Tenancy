@@ -9,7 +9,7 @@ namespace Marain.Tenancy.Cli.Commands
     using McMaster.Extensions.CommandLineUtils;
 
     /// <summary>
-    /// Creates a new tenant.
+    /// Deletes a tenant.
     /// </summary>
     [Command(Name = "delete", Description = "Deletes a tenant.")]
     public class Delete
