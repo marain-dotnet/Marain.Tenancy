@@ -112,7 +112,27 @@ namespace Marain.Tenancy
             }
 
             var haldoc = (JObject)result.Body;
-            IEnumerable<string> tenantIds = haldoc["_links"]["getTenant"].Cast<JObject>().Select(link => this.tenantMapper.ExtractTenantIdFrom(this.tenantService.BaseUri, (string)link["href"]));
+
+            JToken getTenantLinks = haldoc["_links"]["getTenant"];
+
+            IEnumerable<string> tenantIds;
+
+            if (getTenantLinks == null)
+            {
+                tenantIds = new string[0];
+            }
+            else if (getTenantLinks is JArray)
+            {
+                tenantIds = getTenantLinks.Cast<JObject>().Select(link => this.tenantMapper.ExtractTenantIdFrom(this.tenantService.BaseUri, (string)link["href"]));
+            }
+            else
+            {
+                tenantIds = new string[]
+                {
+                    this.tenantMapper.ExtractTenantIdFrom(this.tenantService.BaseUri, (string)getTenantLinks["href"]),
+                };
+            }
+
             string ct = this.tenantMapper.ExtractContinationTokenFrom(this.tenantService.BaseUri, (string)haldoc.SelectToken("_links.next.href"));
             return new TenantCollectionResult(tenantIds.ToList(), ct);
         }
