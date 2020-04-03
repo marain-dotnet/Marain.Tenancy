@@ -1,7 +1,8 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk" ToolsVersion="Current">
+  <Import Project="$(EndjinProjectPropsPath)" Condition="$(EndjinProjectPropsPath) != ''" />
+
   <PropertyGroup>
     <TargetFramework>netstandard2.0</TargetFramework>
-    <RootNamespace />
   </PropertyGroup>
   <PropertyGroup>
     <PackageLicenseExpression>AGPL-3.0-or-later</PackageLicenseExpression>
@@ -15,7 +16,7 @@
 
   <ItemGroup>
     <PackageReference Include="Corvus.Tenancy.Abstractions" Version="0.24.0-preview.26" />
-    <PackageReference Include="Endjin.RecommendedPractices" Version="0.1.0">
+    <PackageReference Include="Endjin.RecommendedPractices" Version="0.2.1">
       <PrivateAssets>all</PrivateAssets>
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
     </PackageReference>
