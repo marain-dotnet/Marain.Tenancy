@@ -9,6 +9,7 @@ namespace Marain.Tenancy.ControlHost
     using System;
     using System.Linq;
     using Corvus.Azure.Storage.Tenancy;
+    using Menes;
     using Microsoft.ApplicationInsights;
     using Microsoft.ApplicationInsights.Extensibility;
     using Microsoft.Azure.WebJobs;
@@ -43,20 +44,28 @@ namespace Marain.Tenancy.ControlHost
 
             services.AddSingleton(sp => sp.GetRequiredService<IConfiguration>().GetSection("TenantCloudBlobContainerFactoryOptions").Get<TenantCloudBlobContainerFactoryOptions>());
 
-            services.AddTenancyApiOnBlobStorage(config =>
+            services.AddTenancyApiOnBlobStorage(this.GetRootTenantStorageConfiguration, this.ConfigureOpenApiHost);
+        }
+
+        private BlobStorageConfiguration GetRootTenantStorageConfiguration(IServiceProvider serviceProvider)
+        {
+            IConfiguration config = serviceProvider.GetRequiredService<IConfiguration>();
+            return config.GetSection("RootTenantBlobStorageConfigurationOptions").Get<BlobStorageConfiguration>();
+        }
+
+        private void ConfigureOpenApiHost(IOpenApiHostConfiguration config)
+        {
+            if (config == null)
             {
-                if (config == null)
-                {
-                    throw new ArgumentNullException(nameof(config), "AddTenancyApi callback: config");
-                }
+                throw new ArgumentNullException(nameof(config), "AddTenancyApi callback: config");
+            }
 
-                if (config.Documents == null)
-                {
-                    throw new ArgumentNullException(nameof(config.Documents), "AddTenancyApi callback: config.Documents");
-                }
+            if (config.Documents == null)
+            {
+                throw new ArgumentNullException(nameof(config.Documents), "AddTenancyApi callback: config.Documents");
+            }
 
-                config.Documents.AddSwaggerEndpoint();
-            });
+            config.Documents.AddSwaggerEndpoint();
         }
     }
 }

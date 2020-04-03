@@ -8,8 +8,10 @@
     "APPINSIGHTS_INSTRUMENTATIONKEY": "",
     "AI:DeveloperMode": "true",
 
-    "TenantCloudBlobContainerFactoryOptions__RootTenantBlobStorageConfiguration__AccountName": "martenancyprod",
-    "TenantCloudBlobContainerFactoryOptions__RootTenantBlobStorageConfiguration__KeyVaultName": "martenancyprod",
-    "TenantCloudBlobContainerFactoryOptions__RootTenantBlobStorageConfiguration__AccountKeySecretName": "TenancyAccountKey"
+    "TenantCloudBlobContainerFactoryOptions__AzureServicesAuthConnectionString": "",
+
+    "RootTenantBlobStorageConfigurationOptions__AccountName": "martenancyprod",
+    "RootTenantBlobStorageConfigurationOptions__RootTenantBlobStorageConfiguration__KeyVaultName": "martenancyprod",
+    "RootTenantBlobStorageConfigurationOptions__RootTenantBlobStorageConfiguration__AccountKeySecretName": "TenancyAccountKey"
   }
 }

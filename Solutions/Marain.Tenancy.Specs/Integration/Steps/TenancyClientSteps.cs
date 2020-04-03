@@ -109,7 +109,7 @@
         public async Task GivenICreateAChildTenantCalledForTheRootTenant(string tenantName)
         {
             ITenantProvider provider = ContainerBindings.GetServiceProvider(this.featureContext).GetRequiredService<ITenantProvider>();
-            ITenant tenant = await provider.CreateChildTenantAsync(RootTenant.RootTenantId);
+            ITenant tenant = await provider.CreateChildTenantAsync(RootTenant.RootTenantId, tenantName);
             this.scenarioContext.Set(tenant, tenantName);
         }
 
@@ -118,7 +118,7 @@
         {
             ITenantProvider provider = ContainerBindings.GetServiceProvider(this.featureContext).GetRequiredService<ITenantProvider>();
             ITenant parentTenant = this.scenarioContext.Get<ITenant>(parentName);
-            ITenant tenant = await provider.CreateChildTenantAsync(parentTenant.Id);
+            ITenant tenant = await provider.CreateChildTenantAsync(parentTenant.Id, childName);
             this.scenarioContext.Set(tenant, childName);
         }
 

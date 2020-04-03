@@ -809,6 +809,9 @@ namespace Marain.Tenancy.Client
         /// <param name='tenantId'>
         /// The tenant within which the request should operate
         /// </param>
+        /// <param name='tenantName'>
+        /// The name for the new tenant
+        /// </param>
         /// <param name='customHeaders'>
         /// Headers that will be added to request.
         /// </param>
@@ -827,11 +830,15 @@ namespace Marain.Tenancy.Client
         /// <return>
         /// A response object containing the response body and response headers.
         /// </return>
-        public async Task<HttpOperationHeaderResponse<CreateChildTenantHeaders>> CreateChildTenantWithHttpMessagesAsync(string tenantId, Dictionary<string, List<string>> customHeaders = null, CancellationToken cancellationToken = default(CancellationToken))
+        public async Task<HttpOperationHeaderResponse<CreateChildTenantHeaders>> CreateChildTenantWithHttpMessagesAsync(string tenantId, string tenantName, Dictionary<string, List<string>> customHeaders = null, CancellationToken cancellationToken = default(CancellationToken))
         {
             if (tenantId == null)
             {
                 throw new ValidationException(ValidationRules.CannotBeNull, "tenantId");
+            }
+            if (tenantName == null)
+            {
+                throw new ValidationException(ValidationRules.CannotBeNull, "tenantName");
             }
             // Tracing
             bool _shouldTrace = ServiceClientTracing.IsEnabled;
@@ -841,6 +848,7 @@ namespace Marain.Tenancy.Client
                 _invocationId = ServiceClientTracing.NextInvocationId.ToString();
                 Dictionary<string, object> tracingParameters = new Dictionary<string, object>();
                 tracingParameters.Add("tenantId", tenantId);
+                tracingParameters.Add("tenantName", tenantName);
                 tracingParameters.Add("cancellationToken", cancellationToken);
                 ServiceClientTracing.Enter(_invocationId, this, "CreateChildTenant", tracingParameters);
             }
@@ -848,6 +856,15 @@ namespace Marain.Tenancy.Client
             var _baseUrl = BaseUri.AbsoluteUri;
             var _url = new System.Uri(new System.Uri(_baseUrl + (_baseUrl.EndsWith("/") ? "" : "/")), "{tenantId}/marain/tenant/children").ToString();
             _url = _url.Replace("{tenantId}", System.Uri.EscapeDataString(tenantId));
+            List<string> _queryParameters = new List<string>();
+            if (tenantName != null)
+            {
+                _queryParameters.Add(string.Format("tenantName={0}", System.Uri.EscapeDataString(tenantName)));
+            }
+            if (_queryParameters.Count > 0)
+            {
+                _url += "?" + string.Join("&", _queryParameters);
+            }
             // Create HTTP transport objects
             var _httpRequest = new HttpRequestMessage();
             HttpResponseMessage _httpResponse = null;
