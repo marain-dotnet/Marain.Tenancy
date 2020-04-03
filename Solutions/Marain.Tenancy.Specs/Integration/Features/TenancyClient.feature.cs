@@ -622,15 +622,35 @@ this.ScenarioInitialize(scenarioInfo);
         [NUnit.Framework.DescriptionAttribute("Root tenant has empty properties")]
         public virtual void RootTenantHasEmptyProperties()
         {
+            string[] tagsOfScenario = ((string[])(null));
             TechTalk.SpecFlow.ScenarioInfo scenarioInfo = new TechTalk.SpecFlow.ScenarioInfo("Root tenant has empty properties", null, ((string[])(null)));
 #line 108
 this.ScenarioInitialize(scenarioInfo);
-            this.ScenarioStart();
+#line hidden
+            bool isScenarioIgnored = default(bool);
+            bool isFeatureIgnored = default(bool);
+            if ((tagsOfScenario != null))
+            {
+                isScenarioIgnored = tagsOfScenario.Where(__entry => __entry != null).Where(__entry => String.Equals(__entry, "ignore", StringComparison.CurrentCultureIgnoreCase)).Any();
+            }
+            if ((this._featureTags != null))
+            {
+                isFeatureIgnored = this._featureTags.Where(__entry => __entry != null).Where(__entry => String.Equals(__entry, "ignore", StringComparison.CurrentCultureIgnoreCase)).Any();
+            }
+            if ((isScenarioIgnored || isFeatureIgnored))
+            {
+                testRunner.SkipScenario();
+            }
+            else
+            {
+                this.ScenarioStart();
 #line 109
  testRunner.When("I get the tenant with id \"f26450ab1668784bb327951c8b08f347\" and call it \"Root\"", ((string)(null)), ((TechTalk.SpecFlow.Table)(null)), "When ");
+#line hidden
 #line 110
  testRunner.Then("the tenant called \"Root\" should have no properties", ((string)(null)), ((TechTalk.SpecFlow.Table)(null)), "Then ");
 #line hidden
+            }
             this.ScenarioCleanup();
         }
         
@@ -638,16 +658,36 @@ this.ScenarioInitialize(scenarioInfo);
         [NUnit.Framework.DescriptionAttribute("Updates to root tenant are prohibited")]
         public virtual void UpdatesToRootTenantAreProhibited()
         {
+            string[] tagsOfScenario = ((string[])(null));
             TechTalk.SpecFlow.ScenarioInfo scenarioInfo = new TechTalk.SpecFlow.ScenarioInfo("Updates to root tenant are prohibited", null, ((string[])(null)));
 #line 112
 this.ScenarioInitialize(scenarioInfo);
-            this.ScenarioStart();
+#line hidden
+            bool isScenarioIgnored = default(bool);
+            bool isFeatureIgnored = default(bool);
+            if ((tagsOfScenario != null))
+            {
+                isScenarioIgnored = tagsOfScenario.Where(__entry => __entry != null).Where(__entry => String.Equals(__entry, "ignore", StringComparison.CurrentCultureIgnoreCase)).Any();
+            }
+            if ((this._featureTags != null))
+            {
+                isFeatureIgnored = this._featureTags.Where(__entry => __entry != null).Where(__entry => String.Equals(__entry, "ignore", StringComparison.CurrentCultureIgnoreCase)).Any();
+            }
+            if ((isScenarioIgnored || isFeatureIgnored))
+            {
+                testRunner.SkipScenario();
+            }
+            else
+            {
+                this.ScenarioStart();
 #line 113
  testRunner.When("I try to update the properties of the tenant with id \"f26450ab1668784bb327951c8b0" +
-                    "8f347\"", ((string)(null)), ((TechTalk.SpecFlow.Table)(null)), "When ");
+                        "8f347\"", ((string)(null)), ((TechTalk.SpecFlow.Table)(null)), "When ");
+#line hidden
 #line 114
  testRunner.Then("it should throw a NotSupportedException", ((string)(null)), ((TechTalk.SpecFlow.Table)(null)), "Then ");
 #line hidden
+            }
             this.ScenarioCleanup();
         }
     }

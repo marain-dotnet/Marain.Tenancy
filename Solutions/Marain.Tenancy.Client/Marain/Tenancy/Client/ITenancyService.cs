@@ -112,13 +112,16 @@ namespace Marain.Tenancy.Client
         /// <param name='tenantId'>
         /// The tenant within which the request should operate
         /// </param>
+        /// <param name='tenantName'>
+        /// The name for the new tenant
+        /// </param>
         /// <param name='customHeaders'>
         /// The headers that will be added to request.
         /// </param>
         /// <param name='cancellationToken'>
         /// The cancellation token.
         /// </param>
-        Task<HttpOperationHeaderResponse<CreateChildTenantHeaders>> CreateChildTenantWithHttpMessagesAsync(string tenantId, Dictionary<string, List<string>> customHeaders = null, CancellationToken cancellationToken = default(CancellationToken));
+        Task<HttpOperationHeaderResponse<CreateChildTenantHeaders>> CreateChildTenantWithHttpMessagesAsync(string tenantId, string tenantName, Dictionary<string, List<string>> customHeaders = null, CancellationToken cancellationToken = default(CancellationToken));
 
         /// <summary>
         /// Delete a child tenant by ID

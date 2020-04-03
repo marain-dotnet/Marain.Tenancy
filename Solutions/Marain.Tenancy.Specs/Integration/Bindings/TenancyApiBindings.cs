@@ -31,13 +31,15 @@ namespace Marain.Tenancy.Specs.Integration.Bindings
                     var configData = new Dictionary<string, string>
                     {
                     };
+
                     IConfigurationRoot config = new ConfigurationBuilder()
                         .AddInMemoryCollection(configData)
                         .AddEnvironmentVariables()
                         .AddJsonFile("local.settings.json", true, true)
                         .Build();
-                    serviceCollection.AddSingleton(config.Get<TenantCloudBlobContainerFactoryOptions>());
-                    serviceCollection.AddTenancyApiOnBlobStorage();
+
+                    serviceCollection.AddTenancyApiOnBlobStorage(
+                        _ => config.GetSection("RootTenantBlobStorageConfigurationOptions").Get<BlobStorageConfiguration>());
                 });
         }
     }

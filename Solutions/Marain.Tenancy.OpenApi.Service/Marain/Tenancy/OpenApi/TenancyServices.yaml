@@ -99,6 +99,7 @@ paths:
       operationId: createChildTenant
       parameters:
         - $ref: '#/components/parameters/tenantId'
+        - $ref: '#/components/parameters/tenantName'
       responses:
         '201':
           description: Successful operation
@@ -230,6 +231,9 @@ components:
           id:
             type: string
             description: The unique ID of the tenant. This forms a path with parent tenants. 
+          name:
+            type: string
+            description: The name of the tenant.
           eTag:
             type: string
           contentType:
@@ -239,6 +243,7 @@ components:
             $ref: '#/components/schemas/PropertyBag'
         required:
           - id
+          - name
           - contentType
     ChildTenants:
       description: A resource containing links for the child tenants.
@@ -288,6 +293,14 @@ components:
       in: path
       x-ms-parameter-location: method
       description: The tenant within which the request should operate
+      required: true
+      schema:
+        type: string
+    tenantName:
+      name: tenantName
+      in: query
+      x-ms-parameter-location: method
+      description: The name for the new tenant
       required: true
       schema:
         type: string

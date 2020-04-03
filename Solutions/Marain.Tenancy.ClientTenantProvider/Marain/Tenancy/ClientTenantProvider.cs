@@ -44,9 +44,9 @@ namespace Marain.Tenancy
         public ITenant Root { get; }
 
         /// <inheritdoc/>
-        public async Task<ITenant> CreateChildTenantAsync(string parentTenantId)
+        public async Task<ITenant> CreateChildTenantAsync(string parentTenantId, string name)
         {
-            HttpOperationHeaderResponse<Client.Models.CreateChildTenantHeaders> result = await this.tenantService.CreateChildTenantWithHttpMessagesAsync(parentTenantId).ConfigureAwait(false);
+            HttpOperationHeaderResponse<Client.Models.CreateChildTenantHeaders> result = await this.tenantService.CreateChildTenantWithHttpMessagesAsync(parentTenantId, name).ConfigureAwait(false);
             if (result.Response.StatusCode == HttpStatusCode.NotFound)
             {
                 throw new TenantNotFoundException();
