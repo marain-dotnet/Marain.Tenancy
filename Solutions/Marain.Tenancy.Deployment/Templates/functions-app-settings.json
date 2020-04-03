@@ -62,11 +62,10 @@
         "TenantId": "[parameters('tenantId')]",
         "AzureWebJobsDashboard": "[parameters('storageAccountConnectionString')]",
         "AzureWebJobsStorage": "[parameters('storageAccountConnectionString')]",
-        "AzureServicesAuthConnectionString": "",
-
-        "TenantCloudBlobContainerFactoryOptions:RootTenantBlobStorageConfiguration:AccountName": "[parameters('storageAccountName')]",
-        "TenantCloudBlobContainerFactoryOptions:RootTenantBlobStorageConfiguration:KeyVaultName": "[parameters('keyVaultName')]",
-        "TenantCloudBlobContainerFactoryOptions:RootTenantBlobStorageConfiguration:AccountKeySecretName": "[parameters('storageAccountKeyName')]"
+        "TenantCloudBlobContainerFactoryOptions:AzureServicesAuthConnectionString": "",
+        "RootTenantBlobStorageConfigurationOptions:AccountName": "[parameters('storageAccountName')]",
+        "RootTenantBlobStorageConfigurationOptions:KeyVaultName": "[parameters('keyVaultName')]",
+        "RootTenantBlobStorageConfigurationOptions:AccountKeySecretName": "[parameters('storageAccountKeyName')]"
       }
     }
   ],
