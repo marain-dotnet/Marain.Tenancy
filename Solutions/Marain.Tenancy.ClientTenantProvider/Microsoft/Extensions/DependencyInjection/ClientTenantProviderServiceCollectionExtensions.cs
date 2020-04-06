@@ -41,7 +41,13 @@ namespace Microsoft.Extensions.DependencyInjection
                 ITenancyService tenancyService = s.GetRequiredService<ITenancyService>();
                 ITenantMapper tenantMapper = s.GetRequiredService<ITenantMapper>();
                 ITenant rootTenant = tenantMapper.MapTenant(tenancyService.GetTenant(RootTenant.RootTenantId));
-                return new RootTenant(s.GetRequiredService<IJsonSerializerSettingsProvider>()) { ETag = rootTenant.ETag, Id = rootTenant.Id, Properties = rootTenant.Properties };
+                return new RootTenant(s.GetRequiredService<IJsonSerializerSettingsProvider>())
+                {
+                    ETag = rootTenant.ETag,
+                    Id = rootTenant.Id,
+                    Name = rootTenant.Name,
+                    Properties = rootTenant.Properties,
+                };
             });
 
             return services;
