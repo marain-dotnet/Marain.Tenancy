@@ -812,6 +812,9 @@ namespace Marain.Tenancy.Client
         /// <param name='tenantName'>
         /// The name for the new tenant
         /// </param>
+        /// <param name='wellKnownChildTenantGuid'>
+        /// The well known Guid for the new tenant. If provided, this will be used to create the child tenant Id.
+        /// </param>
         /// <param name='customHeaders'>
         /// Headers that will be added to request.
         /// </param>
@@ -830,7 +833,7 @@ namespace Marain.Tenancy.Client
         /// <return>
         /// A response object containing the response body and response headers.
         /// </return>
-        public async Task<HttpOperationHeaderResponse<CreateChildTenantHeaders>> CreateChildTenantWithHttpMessagesAsync(string tenantId, string tenantName, Dictionary<string, List<string>> customHeaders = null, CancellationToken cancellationToken = default(CancellationToken))
+        public async Task<HttpOperationHeaderResponse<CreateChildTenantHeaders>> CreateChildTenantWithHttpMessagesAsync(string tenantId, string tenantName, System.Guid? wellKnownChildTenantGuid = default(System.Guid?), Dictionary<string, List<string>> customHeaders = null, CancellationToken cancellationToken = default(CancellationToken))
         {
             if (tenantId == null)
             {
@@ -849,6 +852,7 @@ namespace Marain.Tenancy.Client
                 Dictionary<string, object> tracingParameters = new Dictionary<string, object>();
                 tracingParameters.Add("tenantId", tenantId);
                 tracingParameters.Add("tenantName", tenantName);
+                tracingParameters.Add("wellKnownChildTenantGuid", wellKnownChildTenantGuid);
                 tracingParameters.Add("cancellationToken", cancellationToken);
                 ServiceClientTracing.Enter(_invocationId, this, "CreateChildTenant", tracingParameters);
             }
@@ -860,6 +864,10 @@ namespace Marain.Tenancy.Client
             if (tenantName != null)
             {
                 _queryParameters.Add(string.Format("tenantName={0}", System.Uri.EscapeDataString(tenantName)));
+            }
+            if (wellKnownChildTenantGuid != null)
+            {
+                _queryParameters.Add(string.Format("wellKnownChildTenantGuid={0}", System.Uri.EscapeDataString(SafeJsonConvert.SerializeObject(wellKnownChildTenantGuid, SerializationSettings).Trim('"'))));
             }
             if (_queryParameters.Count > 0)
             {

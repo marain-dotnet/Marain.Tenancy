@@ -102,12 +102,14 @@ namespace Marain.Tenancy.OpenApi
         /// </summary>
         /// <param name="tenantId">The tenant ID.</param>
         /// <param name="tenantName">The name of the new child tenant.</param>
+        /// <param name="wellKnownChildTenantGuid">The well known Guid for the new tenant.</param>
         /// <param name="context">The OpenApi context.</param>
         /// <returns>A <see cref="Task{TResult}"/> representing the result of the asynchronous operation.</returns>
         [OperationId(CreateChildTenantOperationId)]
         public async Task<OpenApiResult> CreateChildTenantAsync(
             string tenantId,
             string tenantName,
+            Guid? wellKnownChildTenantGuid,
             IOpenApiContext context)
         {
             if (string.IsNullOrEmpty(tenantId))
@@ -129,7 +131,10 @@ namespace Marain.Tenancy.OpenApi
             {
                 try
                 {
-                    ITenant result = await this.tenantProvider.CreateChildTenantAsync(tenantId, tenantName).ConfigureAwait(false);
+                    ITenant result = wellKnownChildTenantGuid.HasValue
+                        ? await this.tenantProvider.CreateWellKnownChildTenantAsync(tenantId, wellKnownChildTenantGuid.Value, tenantName).ConfigureAwait(false)
+                        : await this.tenantProvider.CreateChildTenantAsync(tenantId, tenantName).ConfigureAwait(false);
+
                     return this.CreatedResult(this.linkResolver, GetTenantOperationId, ("tenantId", result.Id));
                 }
                 catch (TenantNotFoundException)
@@ -139,6 +144,10 @@ namespace Marain.Tenancy.OpenApi
                 catch (TenantConflictException)
                 {
                     return this.ConflictResult();
+                }
+                catch (ArgumentException)
+                {
+                    return new OpenApiResult { StatusCode = 400 };
                 }
             }
         }

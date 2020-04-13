@@ -174,9 +174,12 @@ namespace Marain.Tenancy.Client
             /// <param name='tenantName'>
             /// The name for the new tenant
             /// </param>
-            public static CreateChildTenantHeaders CreateChildTenant(this ITenancyService operations, string tenantId, string tenantName)
+            /// <param name='wellKnownChildTenantGuid'>
+            /// The well known Guid for the new tenant. If provided, this will be used to create the child tenant Id.
+            /// </param>
+            public static CreateChildTenantHeaders CreateChildTenant(this ITenancyService operations, string tenantId, string tenantName, System.Guid? wellKnownChildTenantGuid = default(System.Guid?))
             {
-                return operations.CreateChildTenantAsync(tenantId, tenantName).GetAwaiter().GetResult();
+                return operations.CreateChildTenantAsync(tenantId, tenantName, wellKnownChildTenantGuid).GetAwaiter().GetResult();
             }
 
             /// <summary>
@@ -194,12 +197,15 @@ namespace Marain.Tenancy.Client
             /// <param name='tenantName'>
             /// The name for the new tenant
             /// </param>
+            /// <param name='wellKnownChildTenantGuid'>
+            /// The well known Guid for the new tenant. If provided, this will be used to create the child tenant Id.
+            /// </param>
             /// <param name='cancellationToken'>
             /// The cancellation token.
             /// </param>
-            public static async Task<CreateChildTenantHeaders> CreateChildTenantAsync(this ITenancyService operations, string tenantId, string tenantName, CancellationToken cancellationToken = default(CancellationToken))
+            public static async Task<CreateChildTenantHeaders> CreateChildTenantAsync(this ITenancyService operations, string tenantId, string tenantName, System.Guid? wellKnownChildTenantGuid = default(System.Guid?), CancellationToken cancellationToken = default(CancellationToken))
             {
-                using (var _result = await operations.CreateChildTenantWithHttpMessagesAsync(tenantId, tenantName, null, cancellationToken).ConfigureAwait(false))
+                using (var _result = await operations.CreateChildTenantWithHttpMessagesAsync(tenantId, tenantName, wellKnownChildTenantGuid, null, cancellationToken).ConfigureAwait(false))
                 {
                     return _result.Headers;
                 }
