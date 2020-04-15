@@ -1,8 +1,10 @@
 ﻿namespace Marain.Tenancy.Specs.Integration.Steps
 {
     using System;
+    using System.Collections.Generic;
     using System.Linq;
     using System.Threading.Tasks;
+    using Corvus.Extensions.Json;
     using Corvus.SpecFlow.Extensions;
     using Corvus.Tenancy;
     using Corvus.Tenancy.Exceptions;
@@ -16,11 +18,17 @@
     {
         private readonly FeatureContext featureContext;
         private readonly ScenarioContext scenarioContext;
+        private readonly ITenantStore store;
+        private readonly IJsonNetPropertyBagFactory propertyBagFactory;
 
         public TenancyClientSteps(FeatureContext featureContext, ScenarioContext scenarioContext)
         {
             this.featureContext = featureContext;
             this.scenarioContext = scenarioContext;
+
+            this.store = ContainerBindings.GetServiceProvider(this.featureContext).GetRequiredService<ITenantStore>();
+            this.propertyBagFactory = ContainerBindings.GetServiceProvider(this.featureContext).GetRequiredService<IJsonNetPropertyBagFactory>();
+
         }
 
         [Given("I get the tenant id of the tenant called \"(.*)\" and call it \"(.*)\"")]
@@ -35,16 +43,14 @@
         [When("I get the tenant with the id called \"(.*)\" and call it \"(.*)\"")]
         public async Task WhenIGetTheTenantWithTheIdCalled(string tenantIdName, string tenantName)
         {
-            ITenantProvider provider = ContainerBindings.GetServiceProvider(this.featureContext).GetRequiredService<ITenantProvider>();
-            ITenant tenant = await provider.GetTenantAsync(this.scenarioContext.Get<string>(tenantIdName));
+            ITenant tenant = await this.store.GetTenantAsync(this.scenarioContext.Get<string>(tenantIdName));
             this.scenarioContext.Set(tenant, tenantName);
         }
 
         [When(@"I get the tenant with id ""(.*)"" and call it ""(.*)""")]
         public async Task WhenIGetTheTenantWithIdAndCallItAsync(string tenantId, string tenantName)
         {
-            ITenantProvider provider = ContainerBindings.GetServiceProvider(this.featureContext).GetRequiredService<ITenantProvider>();
-            ITenant tenant = await provider.GetTenantAsync(tenantId);
+            ITenant tenant = await this.store.GetTenantAsync(tenantId);
             this.scenarioContext.Set(tenant, tenantName);
         }
 
@@ -61,7 +67,7 @@
         {
             ITenant tenant = this.scenarioContext.Get<ITenant>(tenantName);
 
-            JObject properties = tenant.Properties;
+            JObject properties = this.propertyBagFactory.AsJObject(tenant.Properties);
             Assert.AreEqual(0, properties.Count);
         }
 
@@ -108,17 +114,15 @@
         [Given("I create a child tenant called \"(.*)\" for the root tenant")]
         public async Task GivenICreateAChildTenantCalledForTheRootTenant(string tenantName)
         {
-            ITenantProvider provider = ContainerBindings.GetServiceProvider(this.featureContext).GetRequiredService<ITenantProvider>();
-            ITenant tenant = await provider.CreateChildTenantAsync(RootTenant.RootTenantId, tenantName);
+            ITenant tenant = await this.store.CreateChildTenantAsync(RootTenant.RootTenantId, tenantName);
             this.scenarioContext.Set(tenant, tenantName);
         }
 
         [Given("I create a child tenant called \"(.*)\" for the tenant called \"(.*)\"")]
         public async Task GivenICreateAChildTenantCalledForTheTenantCalled(string childName, string parentName)
         {
-            ITenantProvider provider = ContainerBindings.GetServiceProvider(this.featureContext).GetRequiredService<ITenantProvider>();
             ITenant parentTenant = this.scenarioContext.Get<ITenant>(parentName);
-            ITenant tenant = await provider.CreateChildTenantAsync(parentTenant.Id, childName);
+            ITenant tenant = await this.store.CreateChildTenantAsync(parentTenant.Id, childName);
             this.scenarioContext.Set(tenant, childName);
         }
 
@@ -126,7 +130,7 @@
         public void WhenIUpdateThePropertiesOfTheTenantCalled(string tenantName, Table table)
         {
             ITenant tenant = this.scenarioContext.Get<ITenant>(tenantName);
-            ITenantProvider provider = ContainerBindings.GetServiceProvider(this.featureContext).GetRequiredService<ITenantProvider>();
+            var propertiesToSetOrAdd = new Dictionary<string, object>();
 
             foreach (TableRow row in table.Rows)
             {
@@ -137,19 +141,19 @@
                 {
                     case "string":
                         {
-                            tenant.Properties.Set(key, value);
+                            propertiesToSetOrAdd.Add(key, value);
                             break;
                         }
 
                     case "integer":
                         {
-                            tenant.Properties.Set(key, int.Parse(value));
+                            propertiesToSetOrAdd.Add(key, int.Parse(value));
                             break;
                         }
 
                     case "datetimeoffset":
                         {
-                            tenant.Properties.Set(key, DateTimeOffset.Parse(value));
+                            propertiesToSetOrAdd.Add(key, DateTimeOffset.Parse(value));
                             break;
                         }
 
@@ -157,19 +161,17 @@
                         throw new InvalidOperationException($"Unknown data type '{type}'");
                 }
             }
-            provider.UpdateTenantAsync(tenant);
+            this.store.UpdateTenantAsync(tenant.Id, propertiesToSetOrAdd);
         }
 
         [When(@"I try to update the properties of the tenant with id ""(.*)""")]
         public async Task WhenITryToUpdateThePropertiesOfTheTenantWithIdAsync(string tenantId)
         {
-            ITenantProvider provider = ContainerBindings.GetServiceProvider(this.featureContext).GetRequiredService<ITenantProvider>();
-
-            ITenant tenant = await provider.GetTenantAsync(tenantId);
-            tenant.Properties.Set("foo", "bar");
+            ITenant tenant = await this.store.GetTenantAsync(tenantId);
+            var propertiesToAdd = new Dictionary<string, object> { { "foo", "bar" } };
             try
             {
-                await provider.UpdateTenantAsync(tenant);
+                await this.store.UpdateTenantAsync(tenant.Id, propertiesToAdd);
             }
             catch (Exception ex)
             {
@@ -180,19 +182,17 @@
         [When("I get the children of the tenant with the id called \"(.*)\" with maxItems (.*) and call them \"(.*)\"")]
         public async Task WhenIGetTheChildrenOfTheTenantWithTheIdCalledWithMaxItemsAndCallThem(string tenantIdName, int maxItems, string childrenName)
         {
-            ITenantProvider provider = ContainerBindings.GetServiceProvider(this.featureContext).GetRequiredService<ITenantProvider>();
             string tenantId = this.scenarioContext.Get<string>(tenantIdName);
-            TenantCollectionResult children = await provider.GetChildrenAsync(tenantId, maxItems);
+            TenantCollectionResult children = await this.store.GetChildrenAsync(tenantId, maxItems);
             this.scenarioContext.Set(children, childrenName);
         }
 
         [When("I get the children of the tenant with the id called \"(.*)\" with maxItems (.*) and continuation token \"(.*)\" and call them \"(.*)\"")]
         public async Task WhenIGetTheChildrenOfTheTenantWithTheIdCalledWithMaxItemsAndCallThem(string tenantIdName, int maxItems, string continuationTokenSource, string childrenName)
         {
-            ITenantProvider provider = ContainerBindings.GetServiceProvider(this.featureContext).GetRequiredService<ITenantProvider>();
             string tenantId = this.scenarioContext.Get<string>(tenantIdName);
             TenantCollectionResult previousChildren = this.scenarioContext.Get<TenantCollectionResult>(continuationTokenSource);
-            TenantCollectionResult children = await provider.GetChildrenAsync(tenantId, maxItems, previousChildren.ContinuationToken);
+            TenantCollectionResult children = await this.store.GetChildrenAsync(tenantId, maxItems, previousChildren.ContinuationToken);
             this.scenarioContext.Set(children, childrenName);
         }
 
@@ -234,18 +234,16 @@
         [When("I delete the tenant with the id called \"(.*)\"")]
         public Task WhenIDeleteTheTenantWithTheIdCalled(string tenantIdName)
         {
-            ITenantProvider provider = ContainerBindings.GetServiceProvider(this.featureContext).GetRequiredService<ITenantProvider>();
             string tenantId = this.scenarioContext.Get<string>(tenantIdName);
-            return provider.DeleteTenantAsync(tenantId);
+            return this.store.DeleteTenantAsync(tenantId);
         }
 
         [When("I get a tenant with id \"(.*)\"")]
         public async Task WhenIGetATenantWithId(string tenantId)
         {
-            ITenantProvider provider = ContainerBindings.GetServiceProvider(this.featureContext).GetRequiredService<ITenantProvider>();
             try
             {
-                await provider.GetTenantAsync(tenantId);
+                await this.store.GetTenantAsync(tenantId);
             }
             catch (Exception ex)
             {
@@ -271,8 +269,7 @@
         {
             try
             {
-                ITenantProvider provider = ContainerBindings.GetServiceProvider(this.featureContext).GetRequiredService<ITenantProvider>();
-                ITenant tenant = await provider.GetTenantAsync(this.scenarioContext.Get<string>(tenantIdName), this.scenarioContext.Get<string>(tenantETagName));
+                ITenant tenant = await this.store.GetTenantAsync(this.scenarioContext.Get<string>(tenantIdName), this.scenarioContext.Get<string>(tenantETagName));
             }
             catch (Exception ex)
             {

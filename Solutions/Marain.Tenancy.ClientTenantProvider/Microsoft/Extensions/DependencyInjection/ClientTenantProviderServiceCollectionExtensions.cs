@@ -40,14 +40,11 @@ namespace Microsoft.Extensions.DependencyInjection
             {
                 ITenancyService tenancyService = s.GetRequiredService<ITenancyService>();
                 ITenantMapper tenantMapper = s.GetRequiredService<ITenantMapper>();
-                ITenant rootTenant = tenantMapper.MapTenant(tenancyService.GetTenant(RootTenant.RootTenantId));
-                return new RootTenant(s.GetRequiredService<IJsonSerializerSettingsProvider>())
-                {
-                    ETag = rootTenant.ETag,
-                    Id = rootTenant.Id,
-                    Name = rootTenant.Name,
-                    Properties = rootTenant.Properties,
-                };
+                IPropertyBagFactory propertyBagFactory = s.GetRequiredService<IPropertyBagFactory>();
+                ITenant fetchedRootTenant = tenantMapper.MapTenant(tenancyService.GetTenant(RootTenant.RootTenantId));
+                var localRootTenant = new RootTenant(propertyBagFactory);
+                localRootTenant.UpdateProperties(fetchedRootTenant.Properties.AsDictionary());
+                return localRootTenant;
             });
 
             return services;
@@ -74,6 +71,7 @@ namespace Microsoft.Extensions.DependencyInjection
             services.AddTenantServiceClientRootTenant();
             services.AddSingleton<ITenantMapper, TenantMapper>();
             services.AddSingleton<ITenantProvider, ClientTenantProvider>();
+            services.AddSingleton<ITenantStore, ClientTenantStore>();
             return services;
         }
     }
