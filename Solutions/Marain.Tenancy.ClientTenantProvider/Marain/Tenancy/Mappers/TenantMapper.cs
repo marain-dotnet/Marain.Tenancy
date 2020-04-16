@@ -76,7 +76,7 @@ namespace Marain.Tenancy.Mappers
         }
 
         /// <inheritdoc/>
-        public string ExtractContinationTokenFrom(Uri baseUri, string tokenUri)
+        public string? ExtractContinationTokenFrom(Uri baseUri, string tokenUri)
         {
             if (string.IsNullOrEmpty(tokenUri))
             {

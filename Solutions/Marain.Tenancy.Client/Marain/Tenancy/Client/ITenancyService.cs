@@ -57,7 +57,7 @@ namespace Marain.Tenancy.Client
         /// <param name='cancellationToken'>
         /// The cancellation token.
         /// </param>
-        Task<HttpOperationResponse<object>> UpdateTenantWithHttpMessagesAsync(string tenantId, object body, Dictionary<string, List<string>> customHeaders = null, CancellationToken cancellationToken = default(CancellationToken));
+        Task<HttpOperationResponse<object>> UpdateTenantWithHttpMessagesAsync(string tenantId, IList<UpdateTenantJsonPatchEntry> body, Dictionary<string, List<string>> customHeaders = null, CancellationToken cancellationToken = default(CancellationToken));
 
         /// <summary>
         /// Gets a tenant
@@ -116,7 +116,7 @@ namespace Marain.Tenancy.Client
         /// The name for the new tenant
         /// </param>
         /// <param name='wellKnownChildTenantGuid'>
-        /// The well known Guid for the new tenant. If provided, this will be used to create the child tenant Id.
+        /// The name for the new tenant
         /// </param>
         /// <param name='customHeaders'>
         /// The headers that will be added to request.

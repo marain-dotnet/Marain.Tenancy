@@ -6,7 +6,7 @@ servers:
   - url: https://tenancy.marain.io
 paths:
   /{tenantId}/marain/tenant:
-    put:
+    patch:
       tags:
         - Tenancy
       summary: Update a tenant
@@ -17,9 +17,9 @@ paths:
       requestBody:
         required: true
         content:
-          application/json:
+          application/json-patch+json:
             schema:
-              $ref: '#/components/schemas/Tenant'
+              $ref: '#/components/schemas/UpdateTenantJsonPatchArray'
       responses:
         '200':
           description: Successful operation
@@ -38,6 +38,10 @@ paths:
         # settings applied to the root tenant. So we block such attempts.
         '405':
           description: Method not allowed
+        # If the patch attempts to modify anything other than the tenant name or properties,
+        # or to delete anything other than properties, 
+        '422':
+          description: Unprocessable entity
     get:
       tags:
         - Tenancy
@@ -280,6 +284,41 @@ components:
               - type: object
               - type: string
       additionalProperties: true
+    UpdateTenantJsonPatchArray:
+      description: An update to a tenant in the form of a JSON Patch document as described by RFC6902
+      type: array
+      items:
+        $ref: "#/components/schemas/UpdateTenantJsonPatchEntry"
+    UpdateTenantJsonPatchEntry:
+      type: object
+      description: An operation describing one change to a tenant as part of an UpdateTenantJsonPatchArray
+      required:
+        - "op"
+        - "path"
+      # Note: http://json.schemastore.org/json-patch uses a mixture of allOf and oneOf to constrain
+      # documents to valid combinations of op and value. (I.e., value should only be present for
+      # add, replace, and test, operations.) However, AutoRest appears not to understand this,
+      # so we're taking a more basic approach here.
+      properties:
+        path: 
+          type: string 
+          description: A JSON-Pointer. Either /name or /properties/propertyName
+        op: 
+          type: string 
+          description: The operation to be performed.
+          # Note: JSON Patch also supports move, copy, and test, but we only support these:
+          enum: [add, replace, remove]
+        value: 
+          description: The value to add or set
+          # We need to set type to none to work around https://github.com/menes-dotnet/Menes/issues/37
+          type: none
+          anyOf:
+            - type: string
+            - type: object
+            - type: array
+            - type: boolean
+            - type: integer
+            - type: number
   parameters:
     ifNoneMatch:
       name: If-None-Match

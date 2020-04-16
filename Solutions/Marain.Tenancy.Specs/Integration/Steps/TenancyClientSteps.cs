@@ -28,7 +28,6 @@
 
             this.store = ContainerBindings.GetServiceProvider(this.featureContext).GetRequiredService<ITenantStore>();
             this.propertyBagFactory = ContainerBindings.GetServiceProvider(this.featureContext).GetRequiredService<IJsonNetPropertyBagFactory>();
-
         }
 
         [Given("I get the tenant id of the tenant called \"(.*)\" and call it \"(.*)\"")]
@@ -43,14 +42,14 @@
         [When("I get the tenant with the id called \"(.*)\" and call it \"(.*)\"")]
         public async Task WhenIGetTheTenantWithTheIdCalled(string tenantIdName, string tenantName)
         {
-            ITenant tenant = await this.store.GetTenantAsync(this.scenarioContext.Get<string>(tenantIdName));
+            ITenant tenant = await this.store.GetTenantAsync(this.scenarioContext.Get<string>(tenantIdName)).ConfigureAwait(false);
             this.scenarioContext.Set(tenant, tenantName);
         }
 
         [When(@"I get the tenant with id ""(.*)"" and call it ""(.*)""")]
         public async Task WhenIGetTheTenantWithIdAndCallItAsync(string tenantId, string tenantName)
         {
-            ITenant tenant = await this.store.GetTenantAsync(tenantId);
+            ITenant tenant = await this.store.GetTenantAsync(tenantId).ConfigureAwait(false);
             this.scenarioContext.Set(tenant, tenantName);
         }
 
@@ -60,6 +59,14 @@
             ITenant firstTenant = this.scenarioContext.Get<ITenant>(firstName);
             ITenant secondTenant = this.scenarioContext.Get<ITenant>(secondName);
             Assert.AreEqual(firstTenant.Id, secondTenant.Id);
+        }
+
+        [Then(@"the tenant called ""(.*)"" should now have the name ""(.*)""")]
+        public void ThenTheTenantCalledShouldNowHaveTheName(
+            string nameTenantStoredUnder, string newTenantName)
+        {
+            ITenant tenant = this.scenarioContext.Get<ITenant>(nameTenantStoredUnder);
+            Assert.AreEqual(newTenantName, tenant.Name);
         }
 
         [Then("the tenant called \"(.*)\" should have no properties")]
@@ -85,21 +92,21 @@
                 {
                     case "string":
                         {
-                            Assert.IsTrue(tenant.Properties.TryGet(key, out string actual));
+                            Assert.IsTrue(tenant.Properties.TryGet(key, out string actual), $"Property {key} should be present");
                             Assert.AreEqual(value, actual);
                             break;
                         }
 
                     case "integer":
                         {
-                            Assert.IsTrue(tenant.Properties.TryGet(key, out int actual));
+                            Assert.IsTrue(tenant.Properties.TryGet(key, out int actual), $"Property {key} should be present");
                             Assert.AreEqual(int.Parse(value), actual);
                             break;
                         }
 
                     case "datetimeoffset":
                         {
-                            Assert.IsTrue(tenant.Properties.TryGet(key, out DateTimeOffset actual));
+                            Assert.IsTrue(tenant.Properties.TryGet(key, out DateTimeOffset actual), $"Property {key} should be present");
                             Assert.AreEqual(DateTimeOffset.Parse(value), actual);
                             break;
                         }
@@ -110,11 +117,10 @@
             }
         }
 
-
         [Given("I create a child tenant called \"(.*)\" for the root tenant")]
         public async Task GivenICreateAChildTenantCalledForTheRootTenant(string tenantName)
         {
-            ITenant tenant = await this.store.CreateChildTenantAsync(RootTenant.RootTenantId, tenantName);
+            ITenant tenant = await this.store.CreateChildTenantAsync(RootTenant.RootTenantId, tenantName).ConfigureAwait(false);
             this.scenarioContext.Set(tenant, tenantName);
         }
 
@@ -122,10 +128,11 @@
         public async Task GivenICreateAChildTenantCalledForTheTenantCalled(string childName, string parentName)
         {
             ITenant parentTenant = this.scenarioContext.Get<ITenant>(parentName);
-            ITenant tenant = await this.store.CreateChildTenantAsync(parentTenant.Id, childName);
+            ITenant tenant = await this.store.CreateChildTenantAsync(parentTenant.Id, childName).ConfigureAwait(false);
             this.scenarioContext.Set(tenant, childName);
         }
 
+        [Given("I update the properties of the tenant called \"(.*)\"")]
         [When("I update the properties of the tenant called \"(.*)\"")]
         public void WhenIUpdateThePropertiesOfTheTenantCalled(string tenantName, Table table)
         {
@@ -161,17 +168,61 @@
                         throw new InvalidOperationException($"Unknown data type '{type}'");
                 }
             }
-            this.store.UpdateTenantAsync(tenant.Id, propertiesToSetOrAdd);
+            this.store.UpdateTenantAsync(tenant.Id, propertiesToSetOrAdd: propertiesToSetOrAdd);
+        }
+
+        [When(@"I rename the tenant called ""(.*)"" to ""(.*)"" and update its properties")]
+        public async Task WhenIRenameTheTenantCalledToAndUpdateItsPropertiesAsync(
+            string tenantName,
+            string newTenantName,
+            Table table)
+        {
+            ITenant tenant = this.scenarioContext.Get<ITenant>(tenantName);
+
+            var propertiesToRemove = new List<string>();
+            var propertiesToSetOrAdd = new Dictionary<string, object?>();
+            foreach (TableRow row in table.Rows)
+            {
+                string propertyName = row["Property"];
+                switch (row["Action"])
+                {
+                    case "remove":
+                        propertiesToRemove.Add(propertyName);
+                        break;
+
+                    case "addOrSet":
+                        string value = row["Value"];
+                        string type = row["Type"];
+                        object actualValue = type switch
+                        {
+                            "string" => value,
+                            "integer" => int.Parse(value),
+                            _ => throw new InvalidOperationException($"Unknown data type '{type}'")
+                        };
+                        propertiesToSetOrAdd.Add(propertyName, actualValue);
+                        break;
+
+                    default:
+                        Assert.Fail("Unknown action in add/modify/remove table: " + row["Action"]);
+                        break;
+                }
+            }
+
+            await this.store.UpdateTenantAsync(
+                tenant.Id,
+                newTenantName,
+                propertiesToSetOrAdd.Count == 0 ? null : propertiesToSetOrAdd,
+                propertiesToRemove.Count == 0 ? null : propertiesToRemove).ConfigureAwait(false);
         }
 
         [When(@"I try to update the properties of the tenant with id ""(.*)""")]
         public async Task WhenITryToUpdateThePropertiesOfTheTenantWithIdAsync(string tenantId)
         {
-            ITenant tenant = await this.store.GetTenantAsync(tenantId);
+            ITenant tenant = await this.store.GetTenantAsync(tenantId).ConfigureAwait(false);
             var propertiesToAdd = new Dictionary<string, object> { { "foo", "bar" } };
             try
             {
-                await this.store.UpdateTenantAsync(tenant.Id, propertiesToAdd);
+                await this.store.UpdateTenantAsync(tenant.Id, propertiesToSetOrAdd: propertiesToAdd).ConfigureAwait(false);
             }
             catch (Exception ex)
             {
@@ -183,7 +234,7 @@
         public async Task WhenIGetTheChildrenOfTheTenantWithTheIdCalledWithMaxItemsAndCallThem(string tenantIdName, int maxItems, string childrenName)
         {
             string tenantId = this.scenarioContext.Get<string>(tenantIdName);
-            TenantCollectionResult children = await this.store.GetChildrenAsync(tenantId, maxItems);
+            TenantCollectionResult children = await this.store.GetChildrenAsync(tenantId, maxItems).ConfigureAwait(false);
             this.scenarioContext.Set(children, childrenName);
         }
 
@@ -192,7 +243,7 @@
         {
             string tenantId = this.scenarioContext.Get<string>(tenantIdName);
             TenantCollectionResult previousChildren = this.scenarioContext.Get<TenantCollectionResult>(continuationTokenSource);
-            TenantCollectionResult children = await this.store.GetChildrenAsync(tenantId, maxItems, previousChildren.ContinuationToken);
+            TenantCollectionResult children = await this.store.GetChildrenAsync(tenantId, maxItems, previousChildren.ContinuationToken).ConfigureAwait(false);
             this.scenarioContext.Set(children, childrenName);
         }
 
@@ -230,7 +281,6 @@
             CollectionAssert.AreEquivalent(expected, children1.Tenants.Union(children2.Tenants));
         }
 
-
         [When("I delete the tenant with the id called \"(.*)\"")]
         public Task WhenIDeleteTheTenantWithTheIdCalled(string tenantIdName)
         {
@@ -243,7 +293,7 @@
         {
             try
             {
-                await this.store.GetTenantAsync(tenantId);
+                await this.store.GetTenantAsync(tenantId).ConfigureAwait(false);
             }
             catch (Exception ex)
             {
@@ -269,7 +319,7 @@
         {
             try
             {
-                ITenant tenant = await this.store.GetTenantAsync(this.scenarioContext.Get<string>(tenantIdName), this.scenarioContext.Get<string>(tenantETagName));
+                ITenant tenant = await this.store.GetTenantAsync(this.scenarioContext.Get<string>(tenantIdName), this.scenarioContext.Get<string>(tenantETagName)).ConfigureAwait(false);
             }
             catch (Exception ex)
             {

@@ -12,6 +12,7 @@ namespace Marain.Tenancy
     using Corvus.Tenancy;
     using Corvus.Tenancy.Exceptions;
     using Marain.Tenancy.Client;
+    using Marain.Tenancy.Client.Models;
     using Marain.Tenancy.Mappers;
     using Microsoft.Rest;
     using Newtonsoft.Json.Linq;
@@ -68,7 +69,7 @@ namespace Marain.Tenancy
         }
 
         /// <inheritdoc/>
-        public async Task<TenantCollectionResult> GetChildrenAsync(string tenantId, int limit = 20, string continuationToken = null)
+        public async Task<TenantCollectionResult> GetChildrenAsync(string tenantId, int limit = 20, string? continuationToken = null)
         {
             HttpOperationResponse<object> result = await this.TenantService.GetChildrenWithHttpMessagesAsync(tenantId, continuationToken, limit).ConfigureAwait(false);
 
@@ -109,26 +110,55 @@ namespace Marain.Tenancy
                 };
             }
 
-            string ct = this.TenantMapper.ExtractContinationTokenFrom(this.TenantService.BaseUri, (string)haldoc.SelectToken("_links.next.href"));
+            string? ct = this.TenantMapper.ExtractContinationTokenFrom(this.TenantService.BaseUri, (string)haldoc.SelectToken("_links.next.href"));
             return new TenantCollectionResult(tenantIds.ToList(), ct);
         }
 
         /// <inheritdoc/>
-        public Task<ITenant> UpdateTenantAsync(string tenantId, IEnumerable<KeyValuePair<string, object>> propertiesToSetOrAdd = null, IEnumerable<string> propertiesToRemove = null)
+        public async Task<ITenant> UpdateTenantAsync(
+            string tenantId,
+            string? name,
+            IEnumerable<KeyValuePair<string, object>>? propertiesToSetOrAdd = null,
+            IEnumerable<string>? propertiesToRemove = null)
         {
-            throw new NotImplementedException();
-            ////HttpOperationResponse<object> result = await this.tenantService.UpdateTenantWithHttpMessagesAsync(tenant.Id, this.tenantMapper.MapTenant(tenant)).ConfigureAwait(false);
-            ////if (result.Response.StatusCode == HttpStatusCode.NotFound)
-            ////{
-            ////    throw new TenantNotFoundException();
-            ////}
+            var patch = new List<UpdateTenantJsonPatchEntry>();
 
-            ////if (result.Response.StatusCode == HttpStatusCode.MethodNotAllowed)
-            ////{
-            ////    throw new NotSupportedException("This tenant cannot be updated");
-            ////}
+            if (name is string)
+            {
+                patch.Add(new UpdateTenantJsonPatchEntry("/name", "replace", name));
+            }
 
-            ////return this.tenantMapper.MapTenant(result.Body);
+            if (!(propertiesToSetOrAdd is null))
+            {
+                foreach (KeyValuePair<string, object> kv in propertiesToSetOrAdd)
+                {
+                    patch.Add(new UpdateTenantJsonPatchEntry("/properties/" + kv.Key, "add", kv.Value));
+                }
+            }
+
+            if (!(propertiesToRemove is null))
+            {
+                foreach (string propertyName in propertiesToRemove)
+                {
+                    patch.Add(new UpdateTenantJsonPatchEntry("/properties/" + propertyName, "remove"));
+                }
+            }
+
+            HttpOperationResponse<object> result = await this.TenantService.UpdateTenantWithHttpMessagesAsync(tenantId, patch).ConfigureAwait(false);
+
+            if (result.Response.StatusCode == HttpStatusCode.NotFound)
+            {
+                throw new TenantNotFoundException();
+            }
+
+            if (result.Response.StatusCode == HttpStatusCode.MethodNotAllowed)
+            {
+                throw new NotSupportedException("This tenant cannot be updated");
+            }
+
+            result.Response.EnsureSuccessStatusCode();
+
+            return this.TenantMapper.MapTenant(result.Body);
         }
 
         private async Task<ITenant> CreateChildTenantAsync(string parentTenantId, string name, Guid? wellKnownChildTenantGuid)

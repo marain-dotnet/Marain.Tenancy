@@ -19,6 +19,8 @@ namespace Marain.Tenancy.OpenApi
     using Microsoft.ApplicationInsights;
     using Microsoft.ApplicationInsights.DataContracts;
     using Microsoft.ApplicationInsights.Extensibility;
+    using Microsoft.AspNetCore.JsonPatch;
+    using Microsoft.AspNetCore.JsonPatch.Operations;
     using Microsoft.Extensions.Logging;
 
     /// <summary>
@@ -68,7 +70,7 @@ namespace Marain.Tenancy.OpenApi
         private readonly ILogger<TenancyService> logger;
 #pragma warning restore IDE0052
         private readonly IPropertyBagFactory propertyBagFactory;
-        private ITenant redactedRootTenant;
+        private ITenant? redactedRootTenant;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="TenancyService"/> class.
@@ -282,7 +284,7 @@ namespace Marain.Tenancy.OpenApi
         [OperationId(UpdateTenantOperationId)]
         public async Task<OpenApiResult> UpdateTenantAsync(
             string tenantId,
-            ITenant body,
+            JsonPatchDocument body,
             IOpenApiContext context)
         {
             if (context is null)
@@ -293,11 +295,6 @@ namespace Marain.Tenancy.OpenApi
             if (string.IsNullOrEmpty(tenantId))
             {
                 throw new OpenApiBadRequestException("Bad request");
-            }
-
-            if (tenantId != body.Id)
-            {
-                return this.ForbiddenResult();
             }
 
             if (body is null)
@@ -320,14 +317,52 @@ namespace Marain.Tenancy.OpenApi
             {
                 try
                 {
-                    // TBD.
-                    // We need a way to set the name.
-                    // And we need to decide what this endpoint should look like. Do we really want
-                    // to post the entire tenant? Or do we want something more like JsonPatch?
-                    ////ITenant result = await this.tenantStore.UpdateTenantAsync(body).ConfigureAwait(false);
-                    ////return this.OkResult(this.tenantMapper.Map(result), "application/json");
-                    await Task.Yield();
-                    return this.NotImplementedResult();
+                    string? name = null;
+                    Dictionary<string, object>? propertiesToSet = null;
+                    List<string>? propertiesToRemove = null;
+
+                    foreach (Operation operation in body.Operations)
+                    {
+                        if (operation.path == "/name")
+                        {
+                            if (operation.OperationType == OperationType.Replace &&
+                                operation.value is string newTenantName)
+                            {
+                                name = newTenantName;
+                            }
+                            else
+                            {
+                                return new OpenApiResult { StatusCode = 422 };  // Unprocessable entity
+                            }
+                        }
+                        else
+                        {
+                            if (operation.path.StartsWith("/properties/"))
+                            {
+                                string propertyName = operation.path.Substring(12);
+                                switch (operation.OperationType)
+                                {
+                                    case OperationType.Add:
+                                    case OperationType.Replace:
+                                        (propertiesToSet ??= new Dictionary<string, object>()).Add(propertyName, operation.value);
+                                        break;
+
+                                    case OperationType.Remove:
+                                        (propertiesToRemove ??= new List<string>()).Add(propertyName);
+                                        break;
+                                }
+                            }
+                        }
+                    }
+
+                    ITenant result = await this.tenantStore.UpdateTenantAsync(
+                        tenantId,
+                        name,
+                        propertiesToSet,
+                        propertiesToRemove)
+                        .ConfigureAwait(false);
+
+                    return this.OkResult(this.tenantMapper.Map(result), "application/json");
                 }
                 catch (InvalidOperationException)
                 {
@@ -409,7 +444,7 @@ namespace Marain.Tenancy.OpenApi
 
             public IPropertyBag Properties { get; }
 
-            public string ETag
+            public string? ETag
             {
                 get => null;
                 set => throw new NotSupportedException();

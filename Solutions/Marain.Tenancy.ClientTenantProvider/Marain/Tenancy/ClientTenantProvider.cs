@@ -48,7 +48,7 @@ namespace Marain.Tenancy
         protected ITenantMapper TenantMapper { get; }
 
         /// <inheritdoc/>
-        public async Task<ITenant> GetTenantAsync(string tenantId, string eTag = null)
+        public async Task<ITenant> GetTenantAsync(string tenantId, string? eTag = null)
         {
             // The root tenant is a special case - it lives just in memory. This is because
             // services use it to configure service-specific defaults.

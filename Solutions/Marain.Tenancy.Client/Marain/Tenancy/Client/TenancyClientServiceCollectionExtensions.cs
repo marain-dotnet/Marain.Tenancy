@@ -10,6 +10,7 @@ namespace Marain.Tenancy.Client
     using Corvus.Identity.ManagedServiceIdentity.ClientAuthentication;
     using Microsoft.Extensions.DependencyInjection;
     using Microsoft.Rest;
+    using Newtonsoft.Json;
 
     /// <summary>
     /// DI initialization for clients of the Tenancy service.
@@ -36,27 +37,31 @@ namespace Marain.Tenancy.Client
             }
 
             services.AddContentSerialization();
-            services.AddSingleton<ITenancyService>(sp =>
+            services.AddSingleton((Func<IServiceProvider, ITenancyService>)(sp =>
             {
                 TenancyClientOptions options = sp.GetRequiredService<TenancyClientOptions>();
 
+                TenancyService service;
                 if (string.IsNullOrWhiteSpace(options.ResourceIdForMsiAuthentication))
                 {
-                    return new UnauthenticatedTenancyService(sp.GetRequiredService<TenancyClientOptions>().TenancyServiceBaseUri);
+                    service = new UnauthenticatedTenancyService(options.TenancyServiceBaseUri);
                 }
                 else
                 {
-                    var service = new TenancyService(options.TenancyServiceBaseUri, new TokenCredentials(
+                    service = new TenancyService(options.TenancyServiceBaseUri, new TokenCredentials(
                         new ServiceIdentityTokenProvider(
                             sp.GetRequiredService<IServiceIdentityTokenSource>(),
                             options.ResourceIdForMsiAuthentication)));
-
-                    sp.GetRequiredService<IJsonSerializerSettingsProvider>().Instance.Converters.ForEach(service.SerializationSettings.Converters.Add);
-                    sp.GetRequiredService<IJsonSerializerSettingsProvider>().Instance.Converters.ForEach(service.DeserializationSettings.Converters.Add);
-
-                    return service;
                 }
-            });
+
+                JsonSerializerSettings serializerSettings = sp.GetRequiredService<IJsonSerializerSettingsProvider>().Instance;
+                serializerSettings.Converters.ForEach(service.SerializationSettings.Converters.Add);
+                serializerSettings.Converters.ForEach(service.DeserializationSettings.Converters.Add);
+
+                service.DeserializationSettings.DateParseHandling = serializerSettings.DateParseHandling;
+
+                return service;
+            }));
 
             return services;
         }
