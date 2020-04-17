@@ -115,6 +115,70 @@ namespace Marain.Tenancy
         }
 
         /// <inheritdoc/>
+        /// <remarks>
+        /// <para>
+        /// The tenancy service uses JSON Patch to describe changes. This means that the body of
+        /// the request is a JSON Array with one entry for each change to be made. For example,
+        /// if you just wish to rename the tenant, your code would just need to do this:
+        /// </para>
+        /// <code><![CDATA[
+        /// await tenantStore.UpdateTenantAsync(tenantId, name: "NewTenantName");
+        /// ]]></code>
+        /// <para>
+        /// This method would then send an HTTP PATCH request to the tenancy service with the
+        /// following content:
+        /// </para>
+        /// <code><![CDATA[
+        ///  [{
+        ///    "path": "/name",
+        ///    "op": "replace",
+        ///    "value": "NewTenantName"
+        ///  }]
+        /// ]]></code>
+        /// <para>
+        /// If you pass a non-null <c>propertiesToSetOrAdd</c> argument, the request will include
+        /// one entry for each property being set or updated, e.g.:
+        /// </para>
+        /// <code><![CDATA[
+        ///  [
+        ///     {
+        ///         "op": "add",
+        ///         "path": "/properties/StorageConfiguration__corvustenancy",
+        ///         "value": {
+        ///            "AccountName": "mardevtenancy",
+        ///            "Container": null,
+        ///            "KeyVaultName": "mardevkv",
+        ///            "AccountKeySecretName": "mardevtenancystore",
+        ///            "DisableTenantIdPrefix": false
+        ///        }
+        ///     },
+        ///     {
+        ///         "op": "add",
+        ///         "path": "/properties/Foo__bar",
+        ///         "value": "Some string"
+        ///     },
+        ///     {
+        ///         "op": "add",
+        ///         "path": "/properties/Foo__spong",
+        ///         "value": 42
+        ///     }
+        ///  ]
+        /// ]]></code>
+        /// <para>
+        /// If the <c>propertiesToRemove</c> argument is non-null, each entry it contains will
+        /// result in an entry in the patch with an <c>op</c> of <c>remove</c>.
+        /// </para>
+        /// <para>
+        /// JSON Patch allows any combination of operations, so a single request may add, change,
+        /// or remove anything.
+        /// </para>
+        /// <para>
+        /// Note that the <c>add</c> semantics in JSON Patch are really add-or-replace, so there
+        /// is no need for this client to check whether properties exist first and to set the
+        /// operation type appropriately. Note however that a tenant always has a name, so we
+        /// always specify <c>replace</c> when asking to change the name.
+        /// </para>
+        /// </remarks>
         public async Task<ITenant> UpdateTenantAsync(
             string tenantId,
             string? name,
