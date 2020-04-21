@@ -4,6 +4,7 @@
 
 namespace Marain.Tenancy.Cli.Commands
 {
+    using System;
     using System.Threading.Tasks;
     using Corvus.Tenancy;
     using McMaster.Extensions.CommandLineUtils;
@@ -42,6 +43,11 @@ namespace Marain.Tenancy.Cli.Commands
         /// <returns>A <see cref="Task"/> representing the asynchronous operation.</returns>
         public async Task OnExecute(CommandLineApplication app)
         {
+            if (string.IsNullOrEmpty(this.TenantId))
+            {
+                throw new ArgumentException("Tenant Id must be provided.");
+            }
+
             TenantCollectionResult children = await this.tenantProvider.GetChildrenAsync(this.TenantId, 1).ConfigureAwait(false);
 
             if (children.Tenants.Count > 0)

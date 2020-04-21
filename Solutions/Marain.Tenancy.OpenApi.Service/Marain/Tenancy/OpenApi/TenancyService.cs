@@ -390,7 +390,7 @@ namespace Marain.Tenancy.OpenApi
         {
             public string Id => RootTenant.RootTenantId;
 
-            public string Name => "Root";
+            public string Name => RootTenant.RootTenantName;
 
             public PropertyBag Properties { get; } = new PropertyBag();
 
