@@ -186,8 +186,8 @@ namespace Marain.Tenancy.OpenApi
                     if (result.ContinuationToken != null)
                     {
                         OpenApiWebLink link = maxItems.HasValue
-                            ? this.linkResolver.Resolve(GetChildrenOperationId, "next", ("tenantId", tenantId), ("continuationToken", result.ContinuationToken), ("maxItems", maxItems))
-                            : this.linkResolver.Resolve(GetChildrenOperationId, "next", ("tenantId", tenantId), ("continuationToken", result.ContinuationToken));
+                            ? this.linkResolver.ResolveByOperationIdAndRelationType(GetChildrenOperationId, "next", ("tenantId", tenantId), ("continuationToken", result.ContinuationToken), ("maxItems", maxItems))
+                            : this.linkResolver.ResolveByOperationIdAndRelationType(GetChildrenOperationId, "next", ("tenantId", tenantId), ("continuationToken", result.ContinuationToken));
                         document.AddLink("next", link);
                     }
 
@@ -202,7 +202,7 @@ namespace Marain.Tenancy.OpenApi
                         values.Add(("continuationToken", continuationToken));
                     }
 
-                    OpenApiWebLink selfLink = this.linkResolver.Resolve(GetChildrenOperationId, "self", values.ToArray());
+                    OpenApiWebLink selfLink = this.linkResolver.ResolveByOperationIdAndRelationType(GetChildrenOperationId, "self", values.ToArray());
                     document.AddLink("self", selfLink);
 
                     return this.OkResult(document, "application/json");
