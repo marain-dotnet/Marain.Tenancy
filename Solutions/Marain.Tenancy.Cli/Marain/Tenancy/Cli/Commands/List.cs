@@ -41,6 +41,16 @@ namespace Marain.Tenancy.Cli.Commands
         public string? TenantId { get; set; }
 
         /// <summary>
+        /// Gets or sets a value indicating whether the tenant name should be output.
+        /// </summary>
+        [Option(
+            CommandOptionType.NoValue,
+            ShortName = "n",
+            LongName = "name",
+            Description = "Indicates that the tenant name should be displayed")]
+        public bool Name { get; set; }
+
+        /// <summary>
         /// Gets or sets a value containing the names of specific properties that should be included in the output.
         /// </summary>
         [Option(
@@ -81,7 +91,7 @@ namespace Marain.Tenancy.Cli.Commands
             }
             while (!string.IsNullOrEmpty(continuationToken));
 
-            if (this.IncludeProperties?.Length > 0)
+            if (this.Name || this.IncludeProperties?.Length > 0)
             {
                 await this.LoadAndOutputTenantDetailsAsync(childTenantIds, app.Out).ConfigureAwait(false);
             }
@@ -99,6 +109,11 @@ namespace Marain.Tenancy.Cli.Commands
 
             var headings = new List<string> { "Id" };
 
+            if (this.Name)
+            {
+                headings.Add("Name");
+            }
+
             if (this.IncludeProperties != null)
             {
                 headings.AddRange(this.IncludeProperties);
@@ -113,11 +128,16 @@ namespace Marain.Tenancy.Cli.Commands
             {
                 var result = new List<string> { tenant.Id };
 
+                if (this.Name)
+                {
+                    result.Add(tenant.Name);
+                }
+
                 if (this.IncludeProperties != null)
                 {
                     foreach (string prop in this.IncludeProperties)
                     {
-                        tenant.Properties.TryGet<string>(prop, out string propValue);
+                        tenant.Properties.TryGet(prop, out string propValue);
                         result.Add(propValue ?? "{not set}");
                     }
                 }
