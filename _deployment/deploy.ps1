@@ -7,6 +7,10 @@ param
     [string] $ConfigPath = $null
 )
 
+#
+# WhatIf support through the stack? (inc. ARM)
+#
+
 $ErrorActionPreference = 'Stop'
 $VerbosePreference = 'Continue'
 Set-StrictMode -Version 3.0
@@ -34,49 +38,52 @@ $environmentConfig = Get-Content -raw $environmentConfigPath | ConvertFrom-Yaml
 
 # merge the 'local' app-specific config with the settings from the shared config
 # NOTE: this should probably become YAML too, but being able to use powershell expressions is convenient?!?
-Write-Verbose "here: $here"
 . $here/config.ps1
 
 # debug logging of the config
 $deployConfig | Format-Table | Out-String | Write-Verbose
 
-# TODO: Currently combined as ServiceContext has dependency on underlying DeploymentContext class
+#
+# This is mostly naming-convention configuration and tracking config from provisioned objects
+# If we adopt configuration persistence, then it might if not completely disappear at least
+# lose its statefulness behaviour
 New-AzureDeploymentContext -AzureLocation $deployConfig.AzureLocation `
-                                                -EnvironmentSuffix $deployConfig.EnvironmentSuffix `
-                                                -Prefix "mar" `
-                                                -Name "tenancy" `
-                                                -AadTenantId $deployConfig.AadTenantId `
-                                                -SubscriptionId $deployConfig.SubscriptionId `
-                                                -AadAppIds $deployConfig.AadAppIds `
-                                                -DoNotUseGraph $deployConfig.DoNotUseGraph `
-                                                -IncludeServiceContext `
-                                                -ServiceApiSuffix $deployConfig.MarainServices['Marain.Tenancy'].apiPrefix `
-                                                -ServiceShortName $deployConfig.MarainServices['Marain.Tenancy'].apiPrefix
+                            -EnvironmentSuffix $deployConfig.EnvironmentSuffix `
+                            -Prefix "mar" `
+                            -Name "tenancy" `
+                            -AadTenantId $deployConfig.AadTenantId `
+                            -SubscriptionId $deployConfig.SubscriptionId `
+                            -AadAppIds $deployConfig.AadAppIds `
+                            -DoNotUseGraph $deployConfig.DoNotUseGraph `
+                            -IncludeServiceContext `
+                            -ServiceApiSuffix $deployConfig.MarainServices['Marain.Tenancy'].apiPrefix `
+                            -ServiceShortName $deployConfig.MarainServices['Marain.Tenancy'].apiPrefix
+
+#
+# Alternatives to tracking state:
+# - use convention-based naming to query Azure directly for required info
+# - storing info in tags to help future lookup?
+#
 
 if ($ReleaseVersion)
 {
-    # Get github release
+    # TODO: Get github release for non 'workcopy copy' deployments
 }
 
-New-AzureServiceDeploymentContext -DeploymentContext $script:DeploymentContext `
-                                                              -ServiceApiSuffix $deployConfig.MarainServices['Marain.Tenancy'].apiPrefix `
-                                                              -GitHubRelease 'foo' `
-                                                              -ServiceShortName $deployConfig.MarainServices['Marain.Tenancy'].apiPrefix `
-                                                              -TempFolder 'foo'
+New-AzureServiceDeploymentContext -ServiceApiSuffix $deployConfig.MarainServices['Marain.Tenancy'].apiPrefix `
+                                    -GitHubRelease 'foo' `
+                                    -ServiceShortName $deployConfig.MarainServices['Marain.Tenancy'].apiPrefix `
+                                    -TempFolder 'foo'
 
 
 # ensure AD app
-$AppServiceIdentityDetails  = Ensure-AzureAdAppForAppService `
-                                        -ServiceDeploymentContext $ServiceDeploymentContext
-                                        # -AppNameSuffix $deployConfig.MarainServices['Marain.Tenancy'].apiPrefix
+$AppServiceIdentityDetails  = Ensure-AzureAdAppForAppService
 
 
 # ensure AD app permissions
 foreach ($role in $RequiredAppRoles)
 {
-    $roleParams = $role + @{ DeploymentContext = $script:DeploymentContext
-                                AppId = $AppServiceIdentityDetails.Application.ApplicationId
-                        }
+    $roleParams = $role + @{ AppId = $AppServiceIdentityDetails.Application.ApplicationId }
     if ( !(Ensure-AppRolesContain @roleParams) ) {
         Write-Warning "Unable to check AzureAD App roles - no graph access?"
     }
@@ -90,7 +97,7 @@ if ($True)
     $TemplatePath = Join-Path $here '../Solutions/Marain.Tenancy.Deployment/deploy.json' -Resolve
     $LinkedTemplatesPath = Join-Path $here '../Solutions/Marain.Tenancy.Deployment' -Resolve        # folder structure needs fixing
 
-    $TenancyAuthAppId = $ServiceDeploymentContext.AdApps[$ServiceDeploymentContext.AppName].ApplicationId.ToString()
+    $TenancyAuthAppId = $script:ServiceDeploymentContext.AdApps[$script:ServiceDeploymentContext.AppName].ApplicationId.ToString()
     $TemplateParameters = @{
         appName = "tenancy"
         functionEasyAuthAadClientId = $TenancyAuthAppId
@@ -100,15 +107,9 @@ if ($True)
     }
     $DeploymentResult = DeployArmTemplate -TemplateFileName $TemplatePath `
                                           -TemplateParameters $TemplateParameters `
-                                          -DeploymentContext $script:DeploymentContext `
                                           -ArtifactsFolderPath $LinkedTemplatesPath
     
-    # TODO: refactor into Set-AppServiceDetails
-    $script:ServiceDeploymentContext.AppServices[$script:ServiceDeploymentContext.AppName] = @{
-        AuthAppId = $TenancyAuthAppId
-        ServicePrincipalId = $DeploymentResult.Outputs.functionServicePrincipalId.Value
-        BaseUrl = $null
-    }
+    Set-AppServiceDetails -ServicePrincipalId $DeploymentResult.Outputs.functionServicePrincipalId.Value
 }
 
 
@@ -116,10 +117,8 @@ if ($True)
 # if ($Deploy)
 if ($True)
 {
-    # $ServiceDeploymentContext.MakeAppServiceCommonService("Marain.Tenancy")
+    Set-AppServiceCommonService -AppKey "Marain.Tenancy"
 
-    # $ServiceDeploymentContext.UploadReleaseAssetAsAppServiceSitePackage(
-    #     "Marain.Tenancy.Host.Functions.zip",
-    #     $ServiceDeploymentContext.AppName
-    # )
+    UploadReleaseAssetAsAppServiceSitePackage -AssetName "Marain.Tenancy.Host.Functions.zip" `
+                                              -AppServiceName $script:ServiceDeploymentContext.AppName
 }
