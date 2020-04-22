@@ -11,6 +11,9 @@ $ErrorActionPreference = 'Stop'
 $VerbosePreference = 'Continue'
 Set-StrictMode -Version 3.0
 
+# explicitly import this module as it seems to leak a '$here' variable that clashes with ours :-(
+Import-Module powershell-yaml
+
 $here = Split-Path -Parent $PSCommandPath
 
 # Import-Module endjin.deployment
@@ -38,7 +41,7 @@ Write-Verbose "here: $here"
 $deployConfig | Format-Table | Out-String | Write-Verbose
 
 # TODO: Currently combined as ServiceContext has dependency on underlying DeploymentContext class
-$DeploymentContext,$ServiceDeploymentContext = New-AzureDeploymentContext -AzureLocation $deployConfig.AzureLocation `
+New-AzureDeploymentContext -AzureLocation $deployConfig.AzureLocation `
                                                 -EnvironmentSuffix $deployConfig.EnvironmentSuffix `
                                                 -Prefix "mar" `
                                                 -Name "tenancy" `
@@ -55,11 +58,11 @@ if ($ReleaseVersion)
     # Get github release
 }
 
-# $ServiceDeploymentContext = New-AzureServiceDeploymentContext -DeploymentContext $DeploymentContext `
-#                                                               -ServiceApiSuffix $deployConfig.MarainServices['Marain.Tenancy'].apiPrefix `
-#                                                               -GitHubRelease 'foo' `
-#                                                               -ServiceShortName $deployConfig.MarainServices['Marain.Tenancy'].apiPrefix `
-#                                                               -TempFolder 'foo'
+New-AzureServiceDeploymentContext -DeploymentContext $script:DeploymentContext `
+                                                              -ServiceApiSuffix $deployConfig.MarainServices['Marain.Tenancy'].apiPrefix `
+                                                              -GitHubRelease 'foo' `
+                                                              -ServiceShortName $deployConfig.MarainServices['Marain.Tenancy'].apiPrefix `
+                                                              -TempFolder 'foo'
 
 
 # ensure AD app
@@ -71,7 +74,7 @@ $AppServiceIdentityDetails  = Ensure-AzureAdAppForAppService `
 # ensure AD app permissions
 foreach ($role in $RequiredAppRoles)
 {
-    $roleParams = $role + @{ DeploymentContext = $DeploymentContext
+    $roleParams = $role + @{ DeploymentContext = $script:DeploymentContext
                                 AppId = $AppServiceIdentityDetails.Application.ApplicationId
                         }
     if ( !(Ensure-AppRolesContain @roleParams) ) {
@@ -92,18 +95,19 @@ if ($True)
         appName = "tenancy"
         functionEasyAuthAadClientId = $TenancyAuthAppId
         appInsightsInstrumentationKey = $deployConfig.AppInsightsInstrumentationKey
-        marainPrefix = $DeploymentContext.Prefix
-        environmentSuffix = $DeploymentContext.EnvironmentSuffix
+        marainPrefix = $script:DeploymentContext.Prefix
+        environmentSuffix = $script:DeploymentContext.EnvironmentSuffix
     }
     $DeploymentResult = DeployArmTemplate -TemplateFileName $TemplatePath `
                                           -TemplateParameters $TemplateParameters `
-                                          -DeploymentContext $DeploymentContext `
+                                          -DeploymentContext $script:DeploymentContext `
                                           -ArtifactsFolderPath $LinkedTemplatesPath
     
-    $ServiceDeploymentContext.AppServices[$ServiceDeploymentContext.AppName] = @{
+    # TODO: refactor into Set-AppServiceDetails
+    $script:ServiceDeploymentContext.AppServices[$script:ServiceDeploymentContext.AppName] = @{
         AuthAppId = $TenancyAuthAppId
         ServicePrincipalId = $DeploymentResult.Outputs.functionServicePrincipalId.Value
-        BaseUrl = $ServiceDeploymentContext.AdApps[$ServiceDeploymentContext.AppName].BaseUrl
+        BaseUrl = $null
     }
 }
 
@@ -112,10 +116,10 @@ if ($True)
 # if ($Deploy)
 if ($True)
 {
-    $ServiceDeploymentContext.MakeAppServiceCommonService("Marain.Tenancy")
+    # $ServiceDeploymentContext.MakeAppServiceCommonService("Marain.Tenancy")
 
-    $ServiceDeploymentContext.UploadReleaseAssetAsAppServiceSitePackage(
-        "Marain.Tenancy.Host.Functions.zip",
-        $ServiceDeploymentContext.AppName
-    )
+    # $ServiceDeploymentContext.UploadReleaseAssetAsAppServiceSitePackage(
+    #     "Marain.Tenancy.Host.Functions.zip",
+    #     $ServiceDeploymentContext.AppName
+    # )
 }
