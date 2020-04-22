@@ -31,16 +31,16 @@ namespace Marain.Tenancy.OpenApi.Mappers
         /// <inheritdoc/>
         public void ConfigureLinkMap(IOpenApiLinkOperationMap links)
         {
-            links.Map(Tenant.RegisteredContentType, "self", TenancyService.GetTenantOperationId);
-            links.Map(Tenant.RegisteredContentType, "children", TenancyService.GetChildrenOperationId);
+            links.MapByContentTypeAndRelationTypeAndOperationId(Tenant.RegisteredContentType, "self", TenancyService.GetTenantOperationId);
+            links.MapByContentTypeAndRelationTypeAndOperationId(Tenant.RegisteredContentType, "children", TenancyService.GetChildrenOperationId);
         }
 
         /// <inheritdoc/>
         public HalDocument Map(ITenant input)
         {
             HalDocument response = this.halDocumentFactory.CreateHalDocumentFrom(input);
-            response.ResolveAndAdd(this.linkResolver, input, "self", ("tenantId", input.Id));
-            response.ResolveAndAdd(this.linkResolver, input, "children", ("tenantId", input.Id));
+            response.ResolveAndAddByOwnerAndRelationType(this.linkResolver, input, "self", ("tenantId", input.Id));
+            response.ResolveAndAddByOwnerAndRelationType(this.linkResolver, input, "children", ("tenantId", input.Id));
 
             return response;
         }

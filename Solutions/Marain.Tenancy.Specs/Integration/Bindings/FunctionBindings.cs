@@ -20,6 +20,7 @@ namespace Marain.Tenancy.Specs.Integration.Bindings
         /// Runs the public API function.
         /// </summary>
         /// <param name="featureContext">The current feature context.</param>
+        /// <param name="scenarioContext">The current scenario context.</param>
         /// <returns>A task that completes when the functions have been started.</returns>
         [BeforeScenario("useTenancyFunction", Order = ContainerBeforeScenarioOrder.ServiceProviderAvailable)]
         public static async Task RunPublicApiFunction(FeatureContext featureContext, ScenarioContext scenarioContext)
@@ -36,7 +37,7 @@ namespace Marain.Tenancy.Specs.Integration.Bindings
         /// <summary>
         /// Tear down the running functions instances for the feature.
         /// </summary>
-        /// <param name="featureContext">The current feature context.</param>
+        /// <param name="scenarioContext">The current scenario context.</param>
         [AfterScenario(Order = 100)]
         public static void TeardownFunctionsAfterScenario(ScenarioContext scenarioContext)
         {

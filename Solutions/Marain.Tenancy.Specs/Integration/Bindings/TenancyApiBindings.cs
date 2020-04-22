@@ -1,5 +1,5 @@
-﻿// <copyright file="OperationsControlApiAndTasksBindings.cs" company="Endjin">
-// Copyright (c) Endjin. All rights reserved.
+﻿// <copyright file="TenancyApiBindings.cs" company="Endjin Limited">
+// Copyright (c) Endjin Limited. All rights reserved.
 // </copyright>
 
 namespace Marain.Tenancy.Specs.Integration.Bindings
@@ -12,7 +12,7 @@ namespace Marain.Tenancy.Specs.Integration.Bindings
     using TechTalk.SpecFlow;
 
     /// <summary>
-    /// Bindings for the integration tests for <see cref="TenancyService"/>.
+    /// Bindings for the integration tests for the TenancyService.
     /// </summary>
     [Binding]
     public static class TenancyApiBindings

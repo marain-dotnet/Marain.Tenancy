@@ -116,7 +116,7 @@ namespace Marain.Tenancy.Client
         /// The name for the new tenant
         /// </param>
         /// <param name='wellKnownChildTenantGuid'>
-        /// The name for the new tenant
+        /// The well known Guid for the new tenant. If provided, this will be used to create the child tenant Id.
         /// </param>
         /// <param name='customHeaders'>
         /// The headers that will be added to request.

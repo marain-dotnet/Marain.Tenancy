@@ -9,6 +9,7 @@ namespace Marain.Tenancy.OpenApi
     using System.Net;
     using System.Threading.Tasks;
     using Corvus.Extensions.Json;
+    using Corvus.Json;
     using Corvus.Tenancy;
     using Corvus.Tenancy.Exceptions;
     using Marain.Tenancy.OpenApi.Mappers;
@@ -192,12 +193,12 @@ namespace Marain.Tenancy.OpenApi
                     if (result.ContinuationToken != null)
                     {
                         OpenApiWebLink link = maxItems.HasValue
-                            ? this.linkResolver.Resolve(GetChildrenOperationId, "next", ("tenantId", tenantId), ("continuationToken", result.ContinuationToken), ("maxItems", maxItems))
-                            : this.linkResolver.Resolve(GetChildrenOperationId, "next", ("tenantId", tenantId), ("continuationToken", result.ContinuationToken));
+                            ? this.linkResolver.ResolveByOperationIdAndRelationType(GetChildrenOperationId, "next", ("tenantId", tenantId), ("continuationToken", result.ContinuationToken), ("maxItems", maxItems))
+                            : this.linkResolver.ResolveByOperationIdAndRelationType(GetChildrenOperationId, "next", ("tenantId", tenantId), ("continuationToken", result.ContinuationToken));
                         document.AddLink("next", link);
                     }
 
-                    var values = new List<(string, object)> { ("tenantId", tenantId) };
+                    var values = new List<(string, object?)> { ("tenantId", tenantId) };
                     if (maxItems.HasValue)
                     {
                         values.Add(("maxItems", maxItems));
@@ -208,7 +209,7 @@ namespace Marain.Tenancy.OpenApi
                         values.Add(("continuationToken", continuationToken));
                     }
 
-                    OpenApiWebLink selfLink = this.linkResolver.Resolve(GetChildrenOperationId, "self", values.ToArray());
+                    OpenApiWebLink selfLink = this.linkResolver.ResolveByOperationIdAndRelationType(GetChildrenOperationId, "self", values.ToArray());
                     document.AddLink("self", selfLink);
 
                     return this.OkResult(document, "application/json");
@@ -258,7 +259,7 @@ namespace Marain.Tenancy.OpenApi
                     OpenApiResult okResult = this.OkResult(this.tenantMapper.Map(result), "application/json");
                     if (!string.IsNullOrEmpty(result.ETag))
                     {
-                        okResult.Results.Add("ETag", result.ETag);
+                        okResult.Results.Add("ETag", result.ETag!);
                     }
 
                     return okResult;
@@ -440,7 +441,7 @@ namespace Marain.Tenancy.OpenApi
 
             public string Id => RootTenant.RootTenantId;
 
-            public string Name => "Root";
+            public string Name => RootTenant.RootTenantName;
 
             public IPropertyBag Properties { get; }
 

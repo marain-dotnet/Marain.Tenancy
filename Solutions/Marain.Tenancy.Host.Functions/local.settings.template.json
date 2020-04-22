@@ -10,8 +10,8 @@
 
     "TenantCloudBlobContainerFactoryOptions__AzureServicesAuthConnectionString": "",
 
-    "RootTenantBlobStorageConfigurationOptions__AccountName": "martenancyprod",
-    "RootTenantBlobStorageConfigurationOptions__RootTenantBlobStorageConfiguration__KeyVaultName": "martenancyprod",
-    "RootTenantBlobStorageConfigurationOptions__RootTenantBlobStorageConfiguration__AccountKeySecretName": "TenancyAccountKey"
+    "RootTenantBlobStorageConfigurationOptions__AccountName": "",
+    "RootTenantBlobStorageConfigurationOptions__RootTenantBlobStorageConfiguration__KeyVaultName": "",
+    "RootTenantBlobStorageConfigurationOptions__RootTenantBlobStorageConfiguration__AccountKeySecretName": ""
   }
 }
