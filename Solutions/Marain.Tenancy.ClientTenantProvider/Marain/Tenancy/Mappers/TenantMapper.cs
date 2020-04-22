@@ -7,7 +7,7 @@ namespace Marain.Tenancy.Mappers
     using System;
     using System.Collections.Generic;
     using System.Linq;
-    using Corvus.Extensions.Json;
+    using Corvus.Json;
     using Corvus.Tenancy;
     using Microsoft.AspNetCore.WebUtilities;
     using Newtonsoft.Json.Linq;

@@ -180,7 +180,7 @@
             ITenant tenant = this.scenarioContext.Get<ITenant>(tenantName);
 
             var propertiesToRemove = new List<string>();
-            var propertiesToSetOrAdd = new Dictionary<string, object?>();
+            var propertiesToSetOrAdd = new Dictionary<string, object>();
             foreach (TableRow row in table.Rows)
             {
                 string propertyName = row["Property"];

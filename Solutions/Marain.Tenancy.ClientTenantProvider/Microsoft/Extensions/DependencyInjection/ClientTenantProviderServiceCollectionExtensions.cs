@@ -8,6 +8,7 @@ namespace Microsoft.Extensions.DependencyInjection
     using System.Linq;
     using Corvus.ContentHandling;
     using Corvus.Extensions.Json;
+    using Corvus.Json;
     using Corvus.Tenancy;
     using Marain.Tenancy;
     using Marain.Tenancy.Client;
@@ -44,14 +45,7 @@ namespace Microsoft.Extensions.DependencyInjection
                 IPropertyBagFactory propertyBagFactory = s.GetRequiredService<IPropertyBagFactory>();
                 ITenant fetchedRootTenant = tenantMapper.MapTenant(tenancyService.GetTenant(RootTenant.RootTenantId));
                 var localRootTenant = new RootTenant(propertyBagFactory);
-                IReadOnlyDictionary<string, object> propertiesToSetOrAdd;
-                // TODO: do we want to:
-                //  a) just allow tenant properties to include explicitly-set null values
-                //  b) modify IPropertyBag to disallow nulls
-                //  c) continue to live with this sort of hack
-#nullable disable
-                propertiesToSetOrAdd = fetchedRootTenant.Properties.AsDictionary();
-#nullable restore
+                IReadOnlyDictionary<string, object> propertiesToSetOrAdd = ((IJsonNetPropertyBag)fetchedRootTenant.Properties).AsDictionary();
                 localRootTenant.UpdateProperties(propertiesToSetOrAdd);
                 return localRootTenant;
             });
