@@ -35,6 +35,7 @@ namespace Marain.Tenancy.Mappers
             Client.Models.Tenant tenant = ((JObject)source).ToObject<Client.Models.Tenant>();
             Tenant result = this.serviceProvider.GetRequiredService<Tenant>();
             result.Id = tenant.Id;
+            result.Name = tenant.Name;
             result.ETag = tenant.ETag;
             result.Properties = new PropertyBag(JObject.FromObject(tenant.Properties), result.Properties.SerializerSettings);
             return result;
@@ -46,6 +47,7 @@ namespace Marain.Tenancy.Mappers
             var result = new Client.Models.Tenant
             {
                 Id = source.Id,
+                Name = source.Name,
                 ContentType = source.ContentType,
                 ETag = source.ETag,
                 Properties = ((JObject)source.Properties).ToObject<Dictionary<string, object>>(),

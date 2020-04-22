@@ -20,29 +20,30 @@ namespace Marain.Tenancy.Specs.Integration.Bindings
         /// Runs the public API function.
         /// </summary>
         /// <param name="featureContext">The current feature context.</param>
+        /// <param name="scenarioContext">The current scenario context.</param>
         /// <returns>A task that completes when the functions have been started.</returns>
-        [BeforeFeature("useTenancyFunction", Order = ContainerBeforeFeatureOrder.ServiceProviderAvailable)]
-        public static async Task RunPublicApiFunction(FeatureContext featureContext)
+        [BeforeScenario("useTenancyFunction", Order = ContainerBeforeScenarioOrder.ServiceProviderAvailable)]
+        public static async Task RunPublicApiFunction(FeatureContext featureContext, ScenarioContext scenarioContext)
         {
             var functionsController = new FunctionsController();
-            featureContext.Set(functionsController);
+            scenarioContext.Set(functionsController);
 
             IConfigurationRoot config = ContainerBindings.GetServiceProvider(featureContext).GetRequiredService<IConfigurationRoot>();
-            featureContext.CopyToFunctionConfigurationEnvironmentVariables(config);
+            scenarioContext.CopyToFunctionConfigurationEnvironmentVariables(config);
 
-            await functionsController.StartFunctionsInstance(featureContext, null, "Marain.Tenancy.Host.Functions", 7071, "netcoreapp3.1");
+            await functionsController.StartFunctionsInstance(featureContext, scenarioContext, "Marain.Tenancy.Host.Functions", 7071, "netcoreapp3.1");
         }
 
         /// <summary>
         /// Tear down the running functions instances for the feature.
         /// </summary>
-        /// <param name="featureContext">The current feature context.</param>
-        [AfterFeature(Order = 100)]
-        public static void TeardownFunctionsAfterScenario(FeatureContext featureContext)
+        /// <param name="scenarioContext">The current scenario context.</param>
+        [AfterScenario(Order = 100)]
+        public static void TeardownFunctionsAfterScenario(ScenarioContext scenarioContext)
         {
-            if (featureContext.TryGetValue(out FunctionsController functionsController))
+            if (scenarioContext.TryGetValue(out FunctionsController functionsController))
             {
-                featureContext.RunAndStoreExceptions(functionsController.TeardownFunctions);
+                scenarioContext.RunAndStoreExceptions(functionsController.TeardownFunctions);
             }
         }
     }

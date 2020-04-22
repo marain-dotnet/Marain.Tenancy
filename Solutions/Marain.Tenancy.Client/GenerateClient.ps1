@@ -1,6 +1,9 @@
 ﻿
 # This requires the Tenancy function to be running locally on its default port of 7071
 $tmp = (New-TemporaryFile).FullName
+
+Write-Output "Downloading Swagger from local API instance to " $tmp
+
 Invoke-WebRequest http://localhost:7071/api/swagger -o $tmp
 
 $OutputFolder = Join-Path $PSScriptRoot "Marain\Tenancy\Client\"

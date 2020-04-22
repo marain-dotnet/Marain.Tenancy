@@ -101,14 +101,23 @@ namespace Marain.Tenancy.OpenApi
         /// Implements the create tenant operation.
         /// </summary>
         /// <param name="tenantId">The tenant ID.</param>
+        /// <param name="tenantName">The name of the new child tenant.</param>
+        /// <param name="wellKnownChildTenantGuid">The well known Guid for the new tenant.</param>
         /// <param name="context">The OpenApi context.</param>
         /// <returns>A <see cref="Task{TResult}"/> representing the result of the asynchronous operation.</returns>
         [OperationId(CreateChildTenantOperationId)]
         public async Task<OpenApiResult> CreateChildTenantAsync(
             string tenantId,
+            string tenantName,
+            Guid? wellKnownChildTenantGuid,
             IOpenApiContext context)
         {
             if (string.IsNullOrEmpty(tenantId))
+            {
+                throw new OpenApiBadRequestException("Bad request");
+            }
+
+            if (string.IsNullOrEmpty(tenantName))
             {
                 throw new OpenApiBadRequestException("Bad request");
             }
@@ -122,7 +131,10 @@ namespace Marain.Tenancy.OpenApi
             {
                 try
                 {
-                    ITenant result = await this.tenantProvider.CreateChildTenantAsync(tenantId).ConfigureAwait(false);
+                    ITenant result = wellKnownChildTenantGuid.HasValue
+                        ? await this.tenantProvider.CreateWellKnownChildTenantAsync(tenantId, wellKnownChildTenantGuid.Value, tenantName).ConfigureAwait(false)
+                        : await this.tenantProvider.CreateChildTenantAsync(tenantId, tenantName).ConfigureAwait(false);
+
                     return this.CreatedResult(this.linkResolver, GetTenantOperationId, ("tenantId", result.Id));
                 }
                 catch (TenantNotFoundException)
@@ -132,6 +144,10 @@ namespace Marain.Tenancy.OpenApi
                 catch (TenantConflictException)
                 {
                     return this.ConflictResult();
+                }
+                catch (ArgumentException)
+                {
+                    return new OpenApiResult { StatusCode = 400 };
                 }
             }
         }
@@ -170,8 +186,8 @@ namespace Marain.Tenancy.OpenApi
                     if (result.ContinuationToken != null)
                     {
                         OpenApiWebLink link = maxItems.HasValue
-                            ? this.linkResolver.Resolve(GetChildrenOperationId, "next", ("tenantId", tenantId), ("continuationToken", result.ContinuationToken), ("maxItems", maxItems))
-                            : this.linkResolver.Resolve(GetChildrenOperationId, "next", ("tenantId", tenantId), ("continuationToken", result.ContinuationToken));
+                            ? this.linkResolver.ResolveByOperationIdAndRelationType(GetChildrenOperationId, "next", ("tenantId", tenantId), ("continuationToken", result.ContinuationToken), ("maxItems", maxItems))
+                            : this.linkResolver.ResolveByOperationIdAndRelationType(GetChildrenOperationId, "next", ("tenantId", tenantId), ("continuationToken", result.ContinuationToken));
                         document.AddLink("next", link);
                     }
 
@@ -186,7 +202,7 @@ namespace Marain.Tenancy.OpenApi
                         values.Add(("continuationToken", continuationToken));
                     }
 
-                    OpenApiWebLink selfLink = this.linkResolver.Resolve(GetChildrenOperationId, "self", values.ToArray());
+                    OpenApiWebLink selfLink = this.linkResolver.ResolveByOperationIdAndRelationType(GetChildrenOperationId, "self", values.ToArray());
                     document.AddLink("self", selfLink);
 
                     return this.OkResult(document, "application/json");
@@ -373,6 +389,8 @@ namespace Marain.Tenancy.OpenApi
         private class RedactedRootTenant : ITenant
         {
             public string Id => RootTenant.RootTenantId;
+
+            public string Name => RootTenant.RootTenantName;
 
             public PropertyBag Properties { get; } = new PropertyBag();
 

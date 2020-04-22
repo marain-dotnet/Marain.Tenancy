@@ -4,6 +4,7 @@
 
 namespace Marain.Tenancy.Cli.Commands
 {
+    using System;
     using System.Threading.Tasks;
     using Corvus.Tenancy;
     using McMaster.Extensions.CommandLineUtils;
@@ -49,6 +50,16 @@ namespace Marain.Tenancy.Cli.Commands
         public string? Name { get; set; }
 
         /// <summary>
+        /// Gets or sets the well-known GUID of the new tenant.
+        /// </summary>
+        [Option(
+            CommandOptionType.SingleValue,
+            ShortName = "g",
+            LongName = "guid",
+            Description = "The well-known GUID of the new tenant.")]
+        public string? WellKnownTenantGuid { get; set; }
+
+        /// <summary>
         /// Executes the command.
         /// </summary>
         /// <param name="app">The current <c>CommandLineApplication</c>.</param>
@@ -60,11 +71,23 @@ namespace Marain.Tenancy.Cli.Commands
                 this.TenantId = this.tenantProvider.Root.Id;
             }
 
-            ITenant child = await this.tenantProvider.CreateChildTenantAsync(this.TenantId).ConfigureAwait(false);
-            child.Properties.Set("name", this.Name);
+            if (string.IsNullOrEmpty(this.Name))
+            {
+                throw new ArgumentException("Name must be supplied", nameof(this.Name));
+            }
+
+            Guid wellKnownGuid = string.IsNullOrEmpty(this.WellKnownTenantGuid)
+                ? Guid.NewGuid()
+                : Guid.Parse(this.WellKnownTenantGuid);
+
+            ITenant child = await this.tenantProvider.CreateWellKnownChildTenantAsync(
+                this.TenantId,
+                wellKnownGuid,
+                this.Name).ConfigureAwait(false);
+
             await this.tenantProvider.UpdateTenantAsync(child).ConfigureAwait(false);
 
-            app.Out.WriteLine($"Created new child tenant with Id {child.Id} and name {this.Name}");
+            app.Out.WriteLine($"Created new child tenant with Id {child.Id} and name {child.Name}");
         }
     }
 }

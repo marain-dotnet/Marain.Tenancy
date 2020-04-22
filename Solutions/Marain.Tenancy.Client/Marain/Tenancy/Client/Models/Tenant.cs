@@ -27,12 +27,14 @@ namespace Marain.Tenancy.Client.Models
         /// </summary>
         /// <param name="id">The unique ID of the tenant. This forms a path
         /// with parent tenants.</param>
+        /// <param name="name">The name of the tenant.</param>
         /// <param name="contentType">The content type of the tenant.</param>
         /// <param name="_links">Hyperlink</param>
-        public Tenant(string id, string contentType, IDictionary<string, object> _links = default(IDictionary<string, object>), IDictionary<string, object> _embedded = default(IDictionary<string, object>), string eTag = default(string), IDictionary<string, object> properties = default(IDictionary<string, object>))
+        public Tenant(string id, string name, string contentType, IDictionary<string, object> _links = default(IDictionary<string, object>), IDictionary<string, object> _embedded = default(IDictionary<string, object>), string eTag = default(string), IDictionary<string, object> properties = default(IDictionary<string, object>))
             : base(_links, _embedded)
         {
             Id = id;
+            Name = name;
             ETag = eTag;
             ContentType = contentType;
             Properties = properties;
@@ -50,6 +52,12 @@ namespace Marain.Tenancy.Client.Models
         /// </summary>
         [JsonProperty(PropertyName = "id")]
         public string Id { get; set; }
+
+        /// <summary>
+        /// Gets or sets the name of the tenant.
+        /// </summary>
+        [JsonProperty(PropertyName = "name")]
+        public string Name { get; set; }
 
         /// <summary>
         /// </summary>
@@ -78,6 +86,10 @@ namespace Marain.Tenancy.Client.Models
             if (Id == null)
             {
                 throw new ValidationException(ValidationRules.CannotBeNull, "Id");
+            }
+            if (Name == null)
+            {
+                throw new ValidationException(ValidationRules.CannotBeNull, "Name");
             }
             if (ContentType == null)
             {

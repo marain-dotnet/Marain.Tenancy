@@ -44,31 +44,15 @@ namespace Marain.Tenancy
         public ITenant Root { get; }
 
         /// <inheritdoc/>
-        public async Task<ITenant> CreateChildTenantAsync(string parentTenantId)
+        public Task<ITenant> CreateChildTenantAsync(string parentTenantId, string name)
         {
-            HttpOperationHeaderResponse<Client.Models.CreateChildTenantHeaders> result = await this.tenantService.CreateChildTenantWithHttpMessagesAsync(parentTenantId).ConfigureAwait(false);
-            if (result.Response.StatusCode == HttpStatusCode.NotFound)
-            {
-                throw new TenantNotFoundException();
-            }
+            return this.CreateChildTenantAsync(parentTenantId, name, null);
+        }
 
-            if (result.Response.StatusCode == HttpStatusCode.Conflict)
-            {
-                throw new TenantConflictException();
-            }
-
-            if (result.Response.StatusCode == HttpStatusCode.BadRequest)
-            {
-                throw new InvalidOperationException();
-            }
-
-            if (!result.Response.IsSuccessStatusCode)
-            {
-                throw new Exception(result.Response.ReasonPhrase);
-            }
-
-            object tenant = await this.tenantService.GetTenantAsync(this.tenantMapper.ExtractTenantIdFrom(this.tenantService.BaseUri, result.Headers.Location)).ConfigureAwait(false);
-            return this.tenantMapper.MapTenant(tenant);
+        /// <inheritdoc/>
+        public Task<ITenant> CreateWellKnownChildTenantAsync(string parentTenantId, Guid wellKnownChildTenantGuid, string name)
+        {
+            return this.CreateChildTenantAsync(parentTenantId, name, wellKnownChildTenantGuid);
         }
 
         /// <inheritdoc/>
@@ -177,6 +161,38 @@ namespace Marain.Tenancy
             }
 
             return this.tenantMapper.MapTenant(result.Body);
+        }
+
+        private async Task<ITenant> CreateChildTenantAsync(string parentTenantId, string name, Guid? wellKnownChildTenantGuid)
+        {
+            HttpOperationHeaderResponse<Client.Models.CreateChildTenantHeaders> result =
+                await this.tenantService.CreateChildTenantWithHttpMessagesAsync(parentTenantId, name, wellKnownChildTenantGuid).ConfigureAwait(false);
+
+            if (result.Response.StatusCode == HttpStatusCode.NotFound)
+            {
+                throw new TenantNotFoundException();
+            }
+
+            // TODO: How do we determine a duplicate Id?
+            if (result.Response.StatusCode == HttpStatusCode.Conflict)
+            {
+                throw new TenantConflictException();
+            }
+
+            if (result.Response.StatusCode == HttpStatusCode.BadRequest)
+            {
+                throw new ArgumentException();
+            }
+
+            if (!result.Response.IsSuccessStatusCode)
+            {
+                throw new Exception(result.Response.ReasonPhrase);
+            }
+
+            object tenant = await this.tenantService.GetTenantAsync(
+                this.tenantMapper.ExtractTenantIdFrom(this.tenantService.BaseUri, result.Headers.Location)).ConfigureAwait(false);
+
+            return this.tenantMapper.MapTenant(tenant);
         }
     }
 }

@@ -1,5 +1,5 @@
-﻿// <copyright file="OperationsControlApiAndTasksBindings.cs" company="Endjin">
-// Copyright (c) Endjin. All rights reserved.
+﻿// <copyright file="TenancyClientBindings.cs" company="Endjin Limited">
+// Copyright (c) Endjin Limited. All rights reserved.
 // </copyright>
 
 namespace Marain.Tenancy.Specs.Integration.Bindings

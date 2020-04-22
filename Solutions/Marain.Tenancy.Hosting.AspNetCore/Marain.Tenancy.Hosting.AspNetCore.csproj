@@ -1,8 +1,8 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
+  <Import Project="$(EndjinProjectPropsPath)" Condition="$(EndjinProjectPropsPath) != ''" />
 
   <PropertyGroup>
     <TargetFramework>netstandard2.0</TargetFramework>
-    <RootNamespace />
   </PropertyGroup>
 
   <PropertyGroup>
@@ -13,15 +13,15 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="Corvus.Azure.Storage.Tenancy" Version="0.20.0" />
-    <PackageReference Include="Corvus.Tenancy.Abstractions" Version="0.20.0" />
-    <PackageReference Include="Corvus.Tenancy.Storage.Azure.Blob" Version="0.20.0" />
-    <PackageReference Include="Endjin.RecommendedPractices" Version="0.1.0">
+    <PackageReference Include="Corvus.Azure.Storage.Tenancy" Version="0.24.0-preview.37" />
+    <PackageReference Include="Corvus.Tenancy.Abstractions" Version="0.24.0-preview.37" />
+    <PackageReference Include="Corvus.Tenancy.Storage.Azure.Blob" Version="0.24.0-preview.37" />
+    <PackageReference Include="Endjin.RecommendedPractices" Version="0.3.0">
       <PrivateAssets>all</PrivateAssets>
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
     </PackageReference>
-    <PackageReference Include="Menes.Abstractions" Version="0.9.0" />
-    <PackageReference Include="Menes.Hosting.AspNetCore" Version="0.8.0" />
+    <PackageReference Include="Menes.Abstractions" Version="0.11.0" />
+    <PackageReference Include="Menes.Hosting.AspNetCore" Version="0.11.0" />
     <PackageReference Include="Newtonsoft.Json" Version="11.0.2" />
   </ItemGroup>
 

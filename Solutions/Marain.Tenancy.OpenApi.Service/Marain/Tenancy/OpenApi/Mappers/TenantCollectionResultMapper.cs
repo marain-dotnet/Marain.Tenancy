@@ -31,7 +31,7 @@ namespace Marain.Tenancy.OpenApi.Mappers
         /// <inheritdoc/>
         public void ConfigureLinkMap(IOpenApiLinkOperationMap links)
         {
-            links.Map(Tenant.RegisteredContentType, "delete", TenancyService.DeleteChildTenantOperationId);
+            links.MapByContentTypeAndRelationTypeAndOperationId(Tenant.RegisteredContentType, "delete", TenancyService.DeleteChildTenantOperationId);
         }
 
         /// <inheritdoc/>
@@ -41,8 +41,14 @@ namespace Marain.Tenancy.OpenApi.Mappers
             foreach (string tenantId in input.Tenants)
             {
                 string parentId = tenantId.GetParentId();
-                response.AddLink("getTenant", this.linkResolver.Resolve(TenancyService.GetTenantOperationId, "self", ("tenantId", tenantId)));
-                response.AddLink("deleteTenant", this.linkResolver.Resolve(TenancyService.DeleteChildTenantOperationId, "delete", ("tenantId", parentId), ("childTenantId", tenantId)));
+
+                response.AddLink(
+                    "getTenant",
+                    this.linkResolver.ResolveByOperationIdAndRelationType(TenancyService.GetTenantOperationId, "self", ("tenantId", tenantId)));
+
+                response.AddLink(
+                    "deleteTenant",
+                    this.linkResolver.ResolveByOperationIdAndRelationType(TenancyService.DeleteChildTenantOperationId, "delete", ("tenantId", parentId), ("childTenantId", tenantId)));
             }
 
             return response;
