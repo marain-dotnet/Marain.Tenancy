@@ -25,7 +25,7 @@ Import-Module $here/../../Marain.Instance/_deployContainer/endjin.deployment -Fo
 
 if (-not $ConfigPath)
 {
-    $ConfigPath = Join-Path $here '../../Marain.Configuration'
+    $ConfigPath = Join-Path $here '../../Marain.Instance/_configRepo'
 }
 
 # load config from 'shared repo'
