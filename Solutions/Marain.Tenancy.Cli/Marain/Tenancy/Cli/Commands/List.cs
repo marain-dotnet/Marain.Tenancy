@@ -19,15 +19,15 @@ namespace Marain.Tenancy.Cli.Commands
     [Command(Name = "list", Description = "List tenants.")]
     public class List
     {
-        private readonly ITenantProvider tenantProvider;
+        private readonly ITenantStore tenantStore;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="List"/> class.
         /// </summary>
-        /// <param name="tenantProvider">The tenant provider that will be used to retrieve the information.</param>
-        public List(ITenantProvider tenantProvider)
+        /// <param name="tenantStore">The tenant store that will be used to retrieve the information.</param>
+        public List(ITenantStore tenantStore)
         {
-            this.tenantProvider = tenantProvider;
+            this.tenantStore = tenantStore;
         }
 
         /// <summary>
@@ -71,7 +71,7 @@ namespace Marain.Tenancy.Cli.Commands
         {
             if (string.IsNullOrEmpty(this.TenantId))
             {
-                this.TenantId = this.tenantProvider.Root.Id;
+                this.TenantId = this.tenantStore.Root.Id;
             }
 
             string? continuationToken = null;
@@ -80,7 +80,7 @@ namespace Marain.Tenancy.Cli.Commands
 
             do
             {
-                TenantCollectionResult children = await this.tenantProvider.GetChildrenAsync(
+                TenantCollectionResult children = await this.tenantStore.GetChildrenAsync(
                     this.TenantId,
                     20,
                     continuationToken).ConfigureAwait(false);
@@ -103,7 +103,7 @@ namespace Marain.Tenancy.Cli.Commands
 
         private async Task LoadAndOutputTenantDetailsAsync(List<string> children, TextWriter output)
         {
-            IEnumerable<Task<ITenant>> detailsTasks = children.Select(x => this.tenantProvider.GetTenantAsync(x));
+            IEnumerable<Task<ITenant>> detailsTasks = children.Select(x => this.tenantStore.GetTenantAsync(x));
 
             ITenant[] tenants = await Task.WhenAll(detailsTasks).ConfigureAwait(false);
 

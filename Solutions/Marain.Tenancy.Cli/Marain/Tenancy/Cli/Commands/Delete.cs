@@ -15,15 +15,15 @@ namespace Marain.Tenancy.Cli.Commands
     [Command(Name = "delete", Description = "Deletes a tenant.")]
     public class Delete
     {
-        private readonly ITenantProvider tenantProvider;
+        private readonly ITenantStore tenantStore;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="Delete"/> class.
         /// </summary>
-        /// <param name="tenantProvider">The tenant provider that will be used to delete the tenant.</param>
-        public Delete(ITenantProvider tenantProvider)
+        /// <param name="tenantStore">The tenant store that will be used to delete the tenant.</param>
+        public Delete(ITenantStore tenantStore)
         {
-            this.tenantProvider = tenantProvider;
+            this.tenantStore = tenantStore;
         }
 
         /// <summary>
@@ -48,7 +48,7 @@ namespace Marain.Tenancy.Cli.Commands
                 throw new ArgumentException("Tenant Id must be provided.");
             }
 
-            TenantCollectionResult children = await this.tenantProvider.GetChildrenAsync(this.TenantId, 1).ConfigureAwait(false);
+            TenantCollectionResult children = await this.tenantStore.GetChildrenAsync(this.TenantId, 1).ConfigureAwait(false);
 
             if (children.Tenants.Count > 0)
             {
@@ -58,7 +58,7 @@ namespace Marain.Tenancy.Cli.Commands
                 return;
             }
 
-            await this.tenantProvider.DeleteTenantAsync(this.TenantId).ConfigureAwait(false);
+            await this.tenantStore.DeleteTenantAsync(this.TenantId).ConfigureAwait(false);
 
             app.Out.WriteLine("Deleted tenant with Id " + this.TenantId);
         }

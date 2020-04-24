@@ -40,15 +40,18 @@ namespace Marain.Tenancy.OpenApi.Mappers
             HalDocument response = this.halDocumentFactory.CreateHalDocument();
             foreach (string tenantId in input.Tenants)
             {
-                string parentId = tenantId.GetParentId();
+                string? parentId = tenantId.GetParentId();
 
                 response.AddLink(
                     "getTenant",
                     this.linkResolver.ResolveByOperationIdAndRelationType(TenancyService.GetTenantOperationId, "self", ("tenantId", tenantId)));
 
-                response.AddLink(
-                    "deleteTenant",
-                    this.linkResolver.ResolveByOperationIdAndRelationType(TenancyService.DeleteChildTenantOperationId, "delete", ("tenantId", parentId), ("childTenantId", tenantId)));
+                if (parentId != null)
+                {
+                    response.AddLink(
+                        "deleteTenant",
+                        this.linkResolver.ResolveByOperationIdAndRelationType(TenancyService.DeleteChildTenantOperationId, "delete", ("tenantId", parentId), ("childTenantId", tenantId)));
+                }
             }
 
             return response;

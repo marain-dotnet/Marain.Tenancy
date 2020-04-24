@@ -9,6 +9,7 @@ namespace Marain.Tenancy.OpenApi
     using System.Net;
     using System.Threading.Tasks;
     using Corvus.Extensions.Json;
+    using Corvus.Json;
     using Corvus.Tenancy;
     using Corvus.Tenancy.Exceptions;
     using Marain.Tenancy.OpenApi.Mappers;
@@ -19,6 +20,8 @@ namespace Marain.Tenancy.OpenApi
     using Microsoft.ApplicationInsights;
     using Microsoft.ApplicationInsights.DataContracts;
     using Microsoft.ApplicationInsights.Extensibility;
+    using Microsoft.AspNetCore.JsonPatch;
+    using Microsoft.AspNetCore.JsonPatch.Operations;
     using Microsoft.Extensions.Logging;
 
     /// <summary>
@@ -59,7 +62,7 @@ namespace Marain.Tenancy.OpenApi
         public const string DeleteChildTenantOperationId = "deleteChildTenant";
 
 #pragma warning disable IDE0052
-        private readonly ITenantProvider tenantProvider;
+        private readonly ITenantStore tenantStore;
         private readonly TenantMapper tenantMapper;
         private readonly TenantCollectionResultMapper tenantCollectionResultMapper;
         private readonly IOpenApiWebLinkResolver linkResolver;
@@ -67,12 +70,14 @@ namespace Marain.Tenancy.OpenApi
         private readonly TelemetryClient telemetryClient;
         private readonly ILogger<TenancyService> logger;
 #pragma warning restore IDE0052
-        private ITenant redactedRootTenant;
+        private readonly IPropertyBagFactory propertyBagFactory;
+        private ITenant? redactedRootTenant;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="TenancyService"/> class.
         /// </summary>
-        /// <param name="tenantProvider">The tenant provider.</param>
+        /// <param name="tenantStore">The tenant store.</param>
+        /// <param name="propertyBagFactory">Provides property bag initialization and modification services.</param>
         /// <param name="tenantMapper">The mapper from tenants to tenant resources.</param>
         /// <param name="tenantCollectionResultMapper">The mapper from tenant collection results to the result resource.</param>
         /// <param name="linkResolver">The link resolver.</param>
@@ -80,7 +85,8 @@ namespace Marain.Tenancy.OpenApi
         /// <param name="telemetryClient">A <see cref="TelemetryClient"/> to log telemetry.</param>
         /// <param name="logger">The logger for the service.</param>
         public TenancyService(
-            ITenantProvider tenantProvider,
+            ITenantStore tenantStore,
+            IPropertyBagFactory propertyBagFactory,
             TenantMapper tenantMapper,
             TenantCollectionResultMapper tenantCollectionResultMapper,
             IOpenApiWebLinkResolver linkResolver,
@@ -88,13 +94,14 @@ namespace Marain.Tenancy.OpenApi
             TelemetryClient telemetryClient,
             ILogger<TenancyService> logger)
         {
-            this.tenantProvider = tenantProvider ?? throw new ArgumentNullException(nameof(tenantProvider));
+            this.tenantStore = tenantStore ?? throw new ArgumentNullException(nameof(tenantStore));
             this.tenantMapper = tenantMapper ?? throw new ArgumentNullException(nameof(tenantMapper));
             this.tenantCollectionResultMapper = tenantCollectionResultMapper ?? throw new ArgumentNullException(nameof(tenantCollectionResultMapper));
             this.linkResolver = linkResolver ?? throw new ArgumentNullException(nameof(linkResolver));
             this.serializerSettingsProvider = serializerSettingsProvider ?? throw new ArgumentNullException(nameof(serializerSettingsProvider));
             this.telemetryClient = telemetryClient ?? throw new ArgumentNullException(nameof(telemetryClient));
             this.logger = logger ?? throw new ArgumentNullException(nameof(logger));
+            this.propertyBagFactory = propertyBagFactory;
         }
 
         /// <summary>
@@ -132,8 +139,8 @@ namespace Marain.Tenancy.OpenApi
                 try
                 {
                     ITenant result = wellKnownChildTenantGuid.HasValue
-                        ? await this.tenantProvider.CreateWellKnownChildTenantAsync(tenantId, wellKnownChildTenantGuid.Value, tenantName).ConfigureAwait(false)
-                        : await this.tenantProvider.CreateChildTenantAsync(tenantId, tenantName).ConfigureAwait(false);
+                        ? await this.tenantStore.CreateWellKnownChildTenantAsync(tenantId, wellKnownChildTenantGuid.Value, tenantName).ConfigureAwait(false)
+                        : await this.tenantStore.CreateChildTenantAsync(tenantId, tenantName).ConfigureAwait(false);
 
                     return this.CreatedResult(this.linkResolver, GetTenantOperationId, ("tenantId", result.Id));
                 }
@@ -181,7 +188,7 @@ namespace Marain.Tenancy.OpenApi
             {
                 try
                 {
-                    TenantCollectionResult result = await this.tenantProvider.GetChildrenAsync(tenantId, maxItems ?? 20, continuationToken).ConfigureAwait(false);
+                    TenantCollectionResult result = await this.tenantStore.GetChildrenAsync(tenantId, maxItems ?? 20, continuationToken).ConfigureAwait(false);
                     HalDocument document = this.tenantCollectionResultMapper.Map(result);
                     if (result.ContinuationToken != null)
                     {
@@ -191,7 +198,7 @@ namespace Marain.Tenancy.OpenApi
                         document.AddLink("next", link);
                     }
 
-                    var values = new List<(string, object)> { ("tenantId", tenantId) };
+                    var values = new List<(string, object?)> { ("tenantId", tenantId) };
                     if (maxItems.HasValue)
                     {
                         values.Add(("maxItems", maxItems));
@@ -248,11 +255,11 @@ namespace Marain.Tenancy.OpenApi
                 {
                     ITenant result = tenantId == RootTenant.RootTenantId
                         ? this.GetRedactedRootTenant()
-                        : result = await this.tenantProvider.GetTenantAsync(tenantId, etag).ConfigureAwait(false);
+                        : result = await this.tenantStore.GetTenantAsync(tenantId, etag).ConfigureAwait(false);
                     OpenApiResult okResult = this.OkResult(this.tenantMapper.Map(result), "application/json");
                     if (!string.IsNullOrEmpty(result.ETag))
                     {
-                        okResult.Results.Add("ETag", result.ETag);
+                        okResult.Results.Add("ETag", result.ETag!);
                     }
 
                     return okResult;
@@ -278,7 +285,7 @@ namespace Marain.Tenancy.OpenApi
         [OperationId(UpdateTenantOperationId)]
         public async Task<OpenApiResult> UpdateTenantAsync(
             string tenantId,
-            ITenant body,
+            JsonPatchDocument body,
             IOpenApiContext context)
         {
             if (context is null)
@@ -289,11 +296,6 @@ namespace Marain.Tenancy.OpenApi
             if (string.IsNullOrEmpty(tenantId))
             {
                 throw new OpenApiBadRequestException("Bad request");
-            }
-
-            if (tenantId != body.Id)
-            {
-                return this.ForbiddenResult();
             }
 
             if (body is null)
@@ -316,7 +318,51 @@ namespace Marain.Tenancy.OpenApi
             {
                 try
                 {
-                    ITenant result = await this.tenantProvider.UpdateTenantAsync(body).ConfigureAwait(false);
+                    string? name = null;
+                    Dictionary<string, object>? propertiesToSet = null;
+                    List<string>? propertiesToRemove = null;
+
+                    foreach (Operation operation in body.Operations)
+                    {
+                        if (operation.path == "/name")
+                        {
+                            if (operation.OperationType == OperationType.Replace &&
+                                operation.value is string newTenantName)
+                            {
+                                name = newTenantName;
+                            }
+                            else
+                            {
+                                return new OpenApiResult { StatusCode = 422 };  // Unprocessable entity
+                            }
+                        }
+                        else
+                        {
+                            if (operation.path.StartsWith("/properties/"))
+                            {
+                                string propertyName = operation.path.Substring(12);
+                                switch (operation.OperationType)
+                                {
+                                    case OperationType.Add:
+                                    case OperationType.Replace:
+                                        (propertiesToSet ??= new Dictionary<string, object>()).Add(propertyName, operation.value);
+                                        break;
+
+                                    case OperationType.Remove:
+                                        (propertiesToRemove ??= new List<string>()).Add(propertyName);
+                                        break;
+                                }
+                            }
+                        }
+                    }
+
+                    ITenant result = await this.tenantStore.UpdateTenantAsync(
+                        tenantId,
+                        name,
+                        propertiesToSet,
+                        propertiesToRemove)
+                        .ConfigureAwait(false);
+
                     return this.OkResult(this.tenantMapper.Map(result), "application/json");
                 }
                 catch (InvalidOperationException)
@@ -370,7 +416,7 @@ namespace Marain.Tenancy.OpenApi
                 try
                 {
                     this.logger.LogInformation($"Attempting to delete {childTenantId}");
-                    await this.tenantProvider.DeleteTenantAsync(childTenantId).ConfigureAwait(false);
+                    await this.tenantStore.DeleteTenantAsync(childTenantId).ConfigureAwait(false);
                     return this.OkResult();
                 }
                 catch (TenantNotFoundException)
@@ -384,17 +430,22 @@ namespace Marain.Tenancy.OpenApi
             }
         }
 
-        private ITenant GetRedactedRootTenant() => this.redactedRootTenant ??= new RedactedRootTenant();
+        private ITenant GetRedactedRootTenant() => this.redactedRootTenant ??= new RedactedRootTenant(this.propertyBagFactory);
 
         private class RedactedRootTenant : ITenant
         {
+            public RedactedRootTenant(IPropertyBagFactory propertyBagFactory)
+            {
+                this.Properties = propertyBagFactory.Create(PropertyBagValues.Empty);
+            }
+
             public string Id => RootTenant.RootTenantId;
 
             public string Name => RootTenant.RootTenantName;
 
-            public PropertyBag Properties { get; } = new PropertyBag();
+            public IPropertyBag Properties { get; }
 
-            public string ETag
+            public string? ETag
             {
                 get => null;
                 set => throw new NotSupportedException();

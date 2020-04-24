@@ -15,15 +15,15 @@ namespace Marain.Tenancy.Cli.Commands
     [Command(Name = "create", Description = "Create a new tenant.")]
     public class Create
     {
-        private readonly ITenantProvider tenantProvider;
+        private readonly ITenantStore tenantStore;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="Create"/> class.
         /// </summary>
-        /// <param name="tenantProvider">The tenant provider that will be used to create the new tenant.</param>
-        public Create(ITenantProvider tenantProvider)
+        /// <param name="tenantStore">The tenant store that will be used to create the new tenant.</param>
+        public Create(ITenantStore tenantStore)
         {
-            this.tenantProvider = tenantProvider;
+            this.tenantStore = tenantStore;
         }
 
         /// <summary>
@@ -68,7 +68,7 @@ namespace Marain.Tenancy.Cli.Commands
         {
             if (string.IsNullOrEmpty(this.TenantId))
             {
-                this.TenantId = this.tenantProvider.Root.Id;
+                this.TenantId = this.tenantStore.Root.Id;
             }
 
             if (string.IsNullOrEmpty(this.Name))
@@ -80,12 +80,10 @@ namespace Marain.Tenancy.Cli.Commands
                 ? Guid.NewGuid()
                 : Guid.Parse(this.WellKnownTenantGuid);
 
-            ITenant child = await this.tenantProvider.CreateWellKnownChildTenantAsync(
+            ITenant child = await this.tenantStore.CreateWellKnownChildTenantAsync(
                 this.TenantId,
                 wellKnownGuid,
                 this.Name).ConfigureAwait(false);
-
-            await this.tenantProvider.UpdateTenantAsync(child).ConfigureAwait(false);
 
             app.Out.WriteLine($"Created new child tenant with Id {child.Id} and name {child.Name}");
         }

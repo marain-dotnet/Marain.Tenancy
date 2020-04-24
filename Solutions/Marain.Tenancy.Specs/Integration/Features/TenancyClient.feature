@@ -49,6 +49,30 @@ Scenario: Update a child tenant
 	| SecondKey | This is a string | string         |
 	| ThirdKey  | 1999-01-17       | datetimeoffset |
 
+Scenario: Add, update, and remove properties of a child tenant
+	Given I create a child tenant called "ChildTenant1" for the root tenant
+	And I update the properties of the tenant called "ChildTenant1"
+	| Key       | Value            | Type           |
+	| FirstKey  | 1                | integer        |
+	| SecondKey | This is a string | string         |
+	| ThirdKey  | 1999-01-17       | datetimeoffset |
+	When I rename the tenant called "ChildTenant1" to "RenamedChildTenant1" and update its properties
+	| Property  | Value                | Type    | Action   |
+	| FirstKey  | 2                    | integer | addOrSet |
+	| FourthKey | 4                    | integer | addOrSet |
+	| FifthKey  | This is a new string | string  | addOrSet |
+	| ThirdKey  |                      |         | remove   |
+	And I get the tenant id of the tenant called "ChildTenant1" and call it "ChildTenantId"
+	And I get the tenant with the id called "ChildTenantId" and call it "Result"
+	Then the tenant called "ChildTenant1" should have the same ID as the tenant called "Result"
+	And the tenant called "Result" should now have the name "RenamedChildTenant1"
+	And the tenant called "Result" should have the properties
+	| Key       | Value                | Type    |
+	| FirstKey  | 2                    | integer |
+	| SecondKey | This is a string     | string  |
+	| FourthKey | 4                    | integer |
+	| FifthKey  | This is a new string | string  |
+
 Scenario: Create a child of a child
 	Given I create a child tenant called "ChildTenant1" for the root tenant
 	And I create a child tenant called "ChildTenant2" for the tenant called "ChildTenant1"

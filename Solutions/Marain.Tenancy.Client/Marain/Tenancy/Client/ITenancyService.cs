@@ -57,7 +57,7 @@ namespace Marain.Tenancy.Client
         /// <param name='cancellationToken'>
         /// The cancellation token.
         /// </param>
-        Task<HttpOperationResponse<object>> UpdateTenantWithHttpMessagesAsync(string tenantId, object body, Dictionary<string, List<string>> customHeaders = null, CancellationToken cancellationToken = default(CancellationToken));
+        Task<HttpOperationResponse<object>> UpdateTenantWithHttpMessagesAsync(string tenantId, IList<UpdateTenantJsonPatchEntry> body, Dictionary<string, List<string>> customHeaders = null, CancellationToken cancellationToken = default(CancellationToken));
 
         /// <summary>
         /// Gets a tenant

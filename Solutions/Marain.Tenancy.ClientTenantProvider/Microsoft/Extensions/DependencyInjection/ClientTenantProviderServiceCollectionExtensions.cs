@@ -4,9 +4,11 @@
 
 namespace Microsoft.Extensions.DependencyInjection
 {
+    using System.Collections.Generic;
     using System.Linq;
     using Corvus.ContentHandling;
     using Corvus.Extensions.Json;
+    using Corvus.Json;
     using Corvus.Tenancy;
     using Marain.Tenancy;
     using Marain.Tenancy.Client;
@@ -40,14 +42,12 @@ namespace Microsoft.Extensions.DependencyInjection
             {
                 ITenancyService tenancyService = s.GetRequiredService<ITenancyService>();
                 ITenantMapper tenantMapper = s.GetRequiredService<ITenantMapper>();
-                ITenant rootTenant = tenantMapper.MapTenant(tenancyService.GetTenant(RootTenant.RootTenantId));
-                return new RootTenant(s.GetRequiredService<IJsonSerializerSettingsProvider>())
-                {
-                    ETag = rootTenant.ETag,
-                    Id = rootTenant.Id,
-                    Name = rootTenant.Name,
-                    Properties = rootTenant.Properties,
-                };
+                IPropertyBagFactory propertyBagFactory = s.GetRequiredService<IPropertyBagFactory>();
+                ITenant fetchedRootTenant = tenantMapper.MapTenant(tenancyService.GetTenant(RootTenant.RootTenantId));
+                var localRootTenant = new RootTenant(propertyBagFactory);
+                IReadOnlyDictionary<string, object> propertiesToSetOrAdd = ((IJsonNetPropertyBag)fetchedRootTenant.Properties).AsDictionary();
+                localRootTenant.UpdateProperties(propertiesToSetOrAdd);
+                return localRootTenant;
             });
 
             return services;
@@ -74,6 +74,7 @@ namespace Microsoft.Extensions.DependencyInjection
             services.AddTenantServiceClientRootTenant();
             services.AddSingleton<ITenantMapper, TenantMapper>();
             services.AddSingleton<ITenantProvider, ClientTenantProvider>();
+            services.AddSingleton<ITenantStore, ClientTenantStore>();
             return services;
         }
     }

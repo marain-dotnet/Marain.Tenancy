@@ -6,6 +6,7 @@
     <LangVersion>latest</LangVersion>
     <IsPackable>false</IsPackable>
     <RootNamespace>Marain.Tenancy.Specs</RootNamespace>
+    <Nullable>enable</Nullable>
     <!-- Disabling SA1204 because it prioritizes static/non-static over public/non-public, which doesn't fit very well
          with bindings in SpecFlow.
          Disabling SA1600, SA1602 (all public types and members to be documented) because test projects need to make lots of types
@@ -16,11 +17,7 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="Corvus.SpecFlow.Extensions" Version="0.7.0-preview.6" />
-    <PackageReference Include="Endjin.RecommendedPractices" Version="0.3.0">
-      <PrivateAssets>all</PrivateAssets>
-      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
-    </PackageReference>
+    <PackageReference Include="Corvus.SpecFlow.Extensions" Version="0.7.0-49-system-management-version.6" />
     <PackageReference Include="Microsoft.Extensions.Configuration" Version="2.2.0" />
     <PackageReference Include="Microsoft.Extensions.Configuration.EnvironmentVariables" Version="2.2.4" />
     <PackageReference Include="Microsoft.Extensions.Configuration.Json" Version="2.2.0" />

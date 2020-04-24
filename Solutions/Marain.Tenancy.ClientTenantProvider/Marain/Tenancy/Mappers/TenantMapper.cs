@@ -7,10 +7,9 @@ namespace Marain.Tenancy.Mappers
     using System;
     using System.Collections.Generic;
     using System.Linq;
-    using Corvus.Extensions.Json;
+    using Corvus.Json;
     using Corvus.Tenancy;
     using Microsoft.AspNetCore.WebUtilities;
-    using Microsoft.Extensions.DependencyInjection;
     using Newtonsoft.Json.Linq;
 
     /// <summary>
@@ -18,27 +17,29 @@ namespace Marain.Tenancy.Mappers
     /// </summary>
     public class TenantMapper : ITenantMapper
     {
-        private readonly IServiceProvider serviceProvider;
+        private readonly IPropertyBagFactory propertyBagFactory;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="TenantMapper"/> class.
         /// </summary>
-        /// <param name="serviceProvider">The <see cref="IServiceProvider"/> for the context.</param>
-        public TenantMapper(IServiceProvider serviceProvider)
+        /// <param name="propertyBagFactory">Enables property bag building.</param>
+        public TenantMapper(
+            IPropertyBagFactory propertyBagFactory)
         {
-            this.serviceProvider = serviceProvider ?? throw new ArgumentNullException(nameof(serviceProvider));
+            this.propertyBagFactory = propertyBagFactory ?? throw new ArgumentNullException(nameof(propertyBagFactory));
         }
 
         /// <inheritdoc/>
         public ITenant MapTenant(object source)
         {
-            Client.Models.Tenant tenant = ((JObject)source).ToObject<Client.Models.Tenant>();
-            Tenant result = this.serviceProvider.GetRequiredService<Tenant>();
-            result.Id = tenant.Id;
-            result.Name = tenant.Name;
-            result.ETag = tenant.ETag;
-            result.Properties = new PropertyBag(JObject.FromObject(tenant.Properties), result.Properties.SerializerSettings);
-            return result;
+            Client.Models.Tenant tenantFromService = ((JObject)source).ToObject<Client.Models.Tenant>();
+            return new Tenant(
+                tenantFromService.Id,
+                tenantFromService.Name,
+                this.propertyBagFactory.Create(tenantFromService.Properties))
+            {
+                ETag = tenantFromService.ETag,
+            };
         }
 
         /// <inheritdoc/>
@@ -75,7 +76,7 @@ namespace Marain.Tenancy.Mappers
         }
 
         /// <inheritdoc/>
-        public string ExtractContinationTokenFrom(Uri baseUri, string tokenUri)
+        public string? ExtractContinationTokenFrom(Uri baseUri, string tokenUri)
         {
             if (string.IsNullOrEmpty(tokenUri))
             {

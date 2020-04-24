@@ -42,6 +42,6 @@ namespace Marain.Tenancy.Mappers
         /// <param name="tokenUri">The uri containing the contination token.</param>
         /// <returns>The tenant ID.</returns>
         /// <remarks>The continuation token should be in the <c>?continuationToken={}</c> parameter.</remarks>
-        string ExtractContinationTokenFrom(Uri baseUri, string tokenUri);
+        string? ExtractContinationTokenFrom(Uri baseUri, string tokenUri);
     }
 }
