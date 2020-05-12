@@ -2,13 +2,16 @@
 {
     using System;
     using System.Collections.Generic;
+    using System.IO;
     using System.Linq;
     using System.Threading.Tasks;
     using Corvus.Extensions.Json;
-    using Corvus.SpecFlow.Extensions;
     using Corvus.Tenancy;
     using Corvus.Tenancy.Exceptions;
+    using Corvus.Testing.SpecFlow;
+    using Marain.TenantManagement.ServiceManifests;
     using Microsoft.Extensions.DependencyInjection;
+    using Newtonsoft.Json;
     using Newtonsoft.Json.Linq;
     using NUnit.Framework;
     using TechTalk.SpecFlow;
@@ -20,6 +23,7 @@
         private readonly ScenarioContext scenarioContext;
         private readonly ITenantStore store;
         private readonly IJsonNetPropertyBagFactory propertyBagFactory;
+        private readonly IJsonSerializerSettingsProvider jsonSerializerSettingsProvider;
 
         public TenancyClientSteps(FeatureContext featureContext, ScenarioContext scenarioContext)
         {
@@ -28,6 +32,7 @@
 
             this.store = ContainerBindings.GetServiceProvider(this.featureContext).GetRequiredService<ITenantStore>();
             this.propertyBagFactory = ContainerBindings.GetServiceProvider(this.featureContext).GetRequiredService<IJsonNetPropertyBagFactory>();
+            this.jsonSerializerSettingsProvider = ContainerBindings.GetServiceProvider(this.featureContext).GetRequiredService<IJsonSerializerSettingsProvider>();
         }
 
         [Given("I get the tenant id of the tenant called \"(.*)\" and call it \"(.*)\"")]
@@ -111,6 +116,19 @@
                             break;
                         }
 
+                    case "ServiceManifest":
+                        {
+                            Assert.IsTrue(tenant.Properties.TryGet(key, out ServiceManifest actual), $"Property {key} should be present");
+                            ServiceManifest expectedValue = this.GetEmbeddedServiceManifest(value);
+
+                            var serializer = JsonSerializer.Create(this.jsonSerializerSettingsProvider.Instance);
+                            var expectedJson = JToken.FromObject(expectedValue, serializer);
+                            var actualJson = JToken.FromObject(actual, serializer);
+
+                            Assert.AreEqual(expectedJson, actualJson);
+                            break;
+                        }
+
                     default:
                         throw new InvalidOperationException($"Unknown data type '{type}'");
                 }
@@ -164,10 +182,17 @@
                             break;
                         }
 
+                    case "ServiceManifest":
+                        {
+                            propertiesToSetOrAdd.Add(key, this.GetEmbeddedServiceManifest(value));
+                            break;
+                        }
+
                     default:
                         throw new InvalidOperationException($"Unknown data type '{type}'");
                 }
             }
+
             this.store.UpdateTenantAsync(tenant.Id, propertiesToSetOrAdd: propertiesToSetOrAdd);
         }
 
@@ -337,6 +362,18 @@
         public void ThenItShouldThrowANotSupportedException()
         {
             Assert.IsInstanceOf<NotSupportedException>(this.scenarioContext.Get<Exception>());
+        }
+
+        private ServiceManifest GetEmbeddedServiceManifest(string resourceName)
+        {
+            using Stream resourceStream =
+                this.GetType().Assembly.GetManifestResourceStream($"Marain.Tenancy.Specs.Integration.Data.{resourceName}")
+                ?? throw new ArgumentException($"Could not find embedded resource with name '{resourceName}'");
+            
+            using var resourceReader = new StreamReader(resourceStream);
+            string resourceJson = resourceReader.ReadToEnd();
+
+            return JsonConvert.DeserializeObject<ServiceManifest>(resourceJson, this.jsonSerializerSettingsProvider.Instance);
         }
     }
 }

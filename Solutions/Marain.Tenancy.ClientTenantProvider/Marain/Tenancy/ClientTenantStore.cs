@@ -9,12 +9,14 @@ namespace Marain.Tenancy
     using System.Linq;
     using System.Net;
     using System.Threading.Tasks;
+    using Corvus.Extensions.Json;
     using Corvus.Tenancy;
     using Corvus.Tenancy.Exceptions;
     using Marain.Tenancy.Client;
     using Marain.Tenancy.Client.Models;
     using Marain.Tenancy.Mappers;
     using Microsoft.Rest;
+    using Newtonsoft.Json;
     using Newtonsoft.Json.Linq;
 
     // Note that we do not add a using statment for Marain.Client.Models as this is the "mapping" namespace and could
@@ -25,15 +27,24 @@ namespace Marain.Tenancy
     /// </summary>
     public class ClientTenantStore : ClientTenantProvider, ITenantStore
     {
+        private readonly IJsonSerializerSettingsProvider jsonSerializerSettingsProvider;
+
         /// <summary>
         /// Initializes a new instance of the <see cref="ClientTenantProvider"/> class.
         /// </summary>
         /// <param name="root">The Root tenant.</param>
         /// <param name="tenantService">The tenant service.</param>
         /// <param name="tenantMapper">The tenant mapper to use.</param>
-        public ClientTenantStore(RootTenant root, ITenancyService tenantService, ITenantMapper tenantMapper)
+        /// <param name="jsonSerializerSettingsProvider">The JSON serializer settings provider.</param>
+        public ClientTenantStore(
+            RootTenant root,
+            ITenancyService tenantService,
+            ITenantMapper tenantMapper,
+            IJsonSerializerSettingsProvider jsonSerializerSettingsProvider)
             : base(root, tenantService, tenantMapper)
         {
+            this.jsonSerializerSettingsProvider = jsonSerializerSettingsProvider
+                ?? throw new ArgumentNullException(nameof(jsonSerializerSettingsProvider));
         }
 
         /// <inheritdoc/>
@@ -194,9 +205,22 @@ namespace Marain.Tenancy
 
             if (!(propertiesToSetOrAdd is null))
             {
+                // When adding new values, we convert them to JTokens here so that we can use our own serializer
+                // settings. Once we send things into the generated TenantService class, we lose control of
+                // serialization. This is especially dangerous because the SafeJsonConvert class used internally
+                // doesn't serialize read-only properties, and we tend to make extensive use of read-only properties
+                // when nullable reference types are enabled.
+                // I haven't found any explicit mention of this behaviour in the docs, but it is mentioned as being
+                // by design in this autorest issue: https://github.com/Azure/autorest/issues/1904
+                var serializer = JsonSerializer.Create(this.jsonSerializerSettingsProvider.Instance);
+
                 foreach (KeyValuePair<string, object> kv in propertiesToSetOrAdd)
                 {
-                    patch.Add(new UpdateTenantJsonPatchEntry("/properties/" + kv.Key, "add", kv.Value));
+                    patch.Add(
+                        new UpdateTenantJsonPatchEntry(
+                            "/properties/" + kv.Key,
+                            "add",
+                            JToken.FromObject(kv.Value, serializer)));
                 }
             }
 

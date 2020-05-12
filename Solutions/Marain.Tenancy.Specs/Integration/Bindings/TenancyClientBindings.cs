@@ -5,7 +5,7 @@
 namespace Marain.Tenancy.Specs.Integration.Bindings
 {
     using System.Collections.Generic;
-    using Corvus.SpecFlow.Extensions;
+    using Corvus.Testing.SpecFlow;
     using Marain.Tenancy.Client;
     using Microsoft.Extensions.Configuration;
     using Microsoft.Extensions.DependencyInjection;
@@ -39,8 +39,12 @@ namespace Marain.Tenancy.Specs.Integration.Bindings
                         .Build();
                     serviceCollection.AddSingleton(config);
 
+                    serviceCollection.AddJsonSerializerSettings();
+
                     serviceCollection.AddSingleton(sp => sp.GetRequiredService<IConfigurationRoot>().Get<TenancyClientOptions>());
                     serviceCollection.AddTenantProviderServiceClient();
+
+                    serviceCollection.AddMarainTenantManagement();
                 });
         }
     }

@@ -5,9 +5,13 @@
 namespace Marain.Tenancy.Specs.Integration.Bindings
 {
     using System.Threading.Tasks;
-    using Corvus.SpecFlow.Extensions;
+    using Corvus.Testing.AzureFunctions;
+    using Corvus.Testing.AzureFunctions.SpecFlow;
+    using Corvus.Testing.SpecFlow;
+    using Microsoft.CodeAnalysis.CSharp.Syntax;
     using Microsoft.Extensions.Configuration;
     using Microsoft.Extensions.DependencyInjection;
+    using NUnit.Framework;
     using TechTalk.SpecFlow;
 
     /// <summary>
@@ -23,15 +27,22 @@ namespace Marain.Tenancy.Specs.Integration.Bindings
         /// <param name="scenarioContext">The current scenario context.</param>
         /// <returns>A task that completes when the functions have been started.</returns>
         [BeforeScenario("useTenancyFunction", Order = ContainerBeforeScenarioOrder.ServiceProviderAvailable)]
-        public static async Task RunPublicApiFunction(FeatureContext featureContext, ScenarioContext scenarioContext)
+        public static Task RunPublicApiFunction(FeatureContext featureContext, ScenarioContext scenarioContext)
         {
-            var functionsController = new FunctionsController();
-            scenarioContext.Set(functionsController);
+            FunctionsController functionsController = FunctionsBindings.GetFunctionsController(scenarioContext);
+            FunctionConfiguration functionsConfig = FunctionsBindings.GetFunctionConfiguration(scenarioContext);
 
             IConfigurationRoot config = ContainerBindings.GetServiceProvider(featureContext).GetRequiredService<IConfigurationRoot>();
-            scenarioContext.CopyToFunctionConfigurationEnvironmentVariables(config);
 
-            await functionsController.StartFunctionsInstance(featureContext, scenarioContext, "Marain.Tenancy.Host.Functions", 7071, "netcoreapp3.1");
+            functionsConfig.CopyToEnvironmentVariables(config.AsEnumerable());
+
+            return functionsController.StartFunctionsInstance(
+                TestContext.CurrentContext.TestDirectory,
+                "Marain.Tenancy.Host.Functions",
+                7071,
+                "netcoreapp3.1",
+                "csharp",
+                functionsConfig);
         }
 
         /// <summary>
