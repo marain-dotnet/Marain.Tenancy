@@ -36,7 +36,7 @@ Function MarainDeployment([MarainServiceDeploymentContext] $ServiceDeploymentCon
     # Ensure a default tenancy administrator principal is setup
     $defaultTenantAdminSpName = '{0}{1}tenantadmin' -f $ServiceDeploymentContext.InstanceContext.Prefix, $ServiceDeploymentContext.InstanceContext.EnvironmentSuffix
     $existingSp = Get-AzADServicePrincipal -DisplayName $defaultTenantAdminSpName
-    if (!$existingSp) {
+    if (!$ServiceDeploymentContext.InstanceContext.DoNotUseGraph -and !$existingSp) {
         Write-Host "Setting-up default tenant administrator"
         $newSp = & az ad sp create-for-rbac -n $defaultTenantAdminSpName --skip-assignment
         if ($LASTEXITCODE -eq 0) {
@@ -56,6 +56,9 @@ Function MarainDeployment([MarainServiceDeploymentContext] $ServiceDeploymentCon
         else {
             Write-Error "The azure-cli returned non-zero status whilst creating the default tenant administrator principal - check previous errors"
         }
+    }
+    elseif (!$existingSp) {
+        Write-Error "No graph token available - full access is required for at least the first deployment"
     }
     else {
         # Read the existing tenant admin details
