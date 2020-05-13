@@ -36,18 +36,20 @@ Scenario: Create a child tenant
 Scenario: Update a child tenant
 	Given I create a child tenant called "ChildTenant1" for the root tenant
 	When I update the properties of the tenant called "ChildTenant1"
-	| Key       | Value            | Type           |
-	| FirstKey  | 1                | integer        |
-	| SecondKey | This is a string | string         |
-	| ThirdKey  | 1999-01-17       | datetimeoffset |
+	| Key       | Value                           | Type            |
+	| FirstKey  | 1                               | integer         |
+	| SecondKey | This is a string                | string          |
+	| ThirdKey  | 1999-01-17                      | datetimeoffset  |
+	| FourthKey | OperationsServiceManifest.jsonc | ServiceManifest |
 	And I get the tenant id of the tenant called "ChildTenant1" and call it "ChildTenantId"
 	And I get the tenant with the id called "ChildTenantId" and call it "Result"
 	Then the tenant called "ChildTenant1" should have the same ID as the tenant called "Result"
 	And the tenant called "Result" should have the properties
-	| Key       | Value            | Type           |
-	| FirstKey  | 1                | integer        |
-	| SecondKey | This is a string | string         |
-	| ThirdKey  | 1999-01-17       | datetimeoffset |
+	| Key       | Value                           | Type            |
+	| FirstKey  | 1                               | integer         |
+	| SecondKey | This is a string                | string          |
+	| ThirdKey  | 1999-01-17                      | datetimeoffset  |
+	| FourthKey | OperationsServiceManifest.jsonc | ServiceManifest |
 
 Scenario: Add, update, and remove properties of a child tenant
 	Given I create a child tenant called "ChildTenant1" for the root tenant
