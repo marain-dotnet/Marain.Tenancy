@@ -64,7 +64,15 @@ Function MarainDeployment([MarainServiceDeploymentContext] $ServiceDeploymentCon
         # Read the existing tenant admin details
         $ServiceDeploymentContext.InstanceContext.TenantAdminAppId = $existingSp.ApplicationId
         $ServiceDeploymentContext.InstanceContext.TenantAdminObjectId = (Get-AzADServicePrincipal -ApplicationId $existingSp.ApplicationId).Id
-        $ServiceDeploymentContext.InstanceContext.TenantAdminSecret = (Get-AzKeyVaultSecret -VaultName $keyVaultName -Name $tenantAdminSecretName).SecretValueText
+        $tenantAdminSecret = Get-AzKeyVaultSecret -VaultName $keyVaultName -Name $tenantAdminSecretName
+
+        # Add guard rails for if we've lost the keyvault secret, re-generate a new one
+        if (!$tenantAdminSecret) {
+            $newSpCred = $existingSp | New-AzADServicePrincipalCredential
+            Set-AzKeyVaultSecret -VaultName $keyVaultName -Name $tenantAdminSecretName -SecretValue $newSpCred.Secret | Out-Null
+            $tenantAdminSecret = Get-AzKeyVaultSecret -VaultName $keyVaultName -Name $tenantAdminSecretName
+        }
+        $ServiceDeploymentContext.InstanceContext.TenantAdminSecret = ($tenantAdminSecret).SecretValueText
     }
 
 }
