@@ -44,9 +44,9 @@ Function MarainDeployment([MarainServiceDeploymentContext] $ServiceDeploymentCon
     $appSettings | ConvertTo-Json | Set-Content -Path $cliAppSettings -Force
     # Ensure the tenancy instance is initialised
     try {
-        & $ServiceDeploymentContext.InstanceContext.MarainCliPath init
+        $cliOutput = & $ServiceDeploymentContext.InstanceContext.MarainCliPath init
         if ($LASTEXITCODE -ne 0) {
-            Write-Error "Error whilst trying to initialise the marain tenancy instance: ExitCode=$LASTEXITCODE"
+            Write-Error "Error whilst trying to initialise the marain tenancy instance: ExitCode=$LASTEXITCODE`n$cliOutput"
         }
     }
     catch {
