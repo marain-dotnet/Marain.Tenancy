@@ -38,24 +38,12 @@ Function MarainDeployment([MarainServiceDeploymentContext] $ServiceDeploymentCon
     $existingSp = Get-AzADServicePrincipal -DisplayName $defaultTenantAdminSpName
     if (!$ServiceDeploymentContext.InstanceContext.DoNotUseGraph -and !$existingSp) {
         Write-Host "Setting-up default tenant administrator"
-        $newSp = & az ad sp create-for-rbac -n $defaultTenantAdminSpName --skip-assignment
-        if ($LASTEXITCODE -eq 0) {
-            $newSpObj = $newSp | ConvertFrom-Json
-            try {                
-                $ServiceDeploymentContext.InstanceContext.TenantAdminAppId = $newSpObj.appId
-                $ServiceDeploymentContext.InstanceContext.TenantAdminObjectId = (Get-AzADServicePrincipal -ApplicationId $newSpObj.appId).Id
-                $ServiceDeploymentContext.InstanceContext.TenantAdminSecret = $newSpObj.password
-                Set-AzKeyVaultSecret -VaultName $keyVaultName -Name $tenantAdminSecretName -SecretValue (ConvertTo-SecureString $newSpObj.password -AsPlainText -Force)
-            }
-            catch {
-                # we've not saved the secret yet and we'll lose it now, so get rid of the SP so we can try again next time
-                & az ad app delete --id $newSpObj.appId
-                throw $_
-            }
-        }
-        else {
-            Write-Error "The azure-cli returned non-zero status whilst creating the default tenant administrator principal - check previous errors"
-        }
+        $newSp = New-AzADServicePrincipal -DisplayName $defaultTenantAdminSpName -SkipAssignment
+
+        $ServiceDeploymentContext.InstanceContext.TenantAdminAppId = $newSp.ApplicationId
+        $ServiceDeploymentContext.InstanceContext.TenantAdminObjectId = $newSp.Id
+        $ServiceDeploymentContext.InstanceContext.TenantAdminSecret = (ConvertFrom-SecureString $newSp.Secret -AsPlainText)
+        Set-AzKeyVaultSecret -VaultName $keyVaultName -Name $tenantAdminSecretName -SecretValue $newSp.Secret | Out-Null
     }
     elseif (!$existingSp) {
         Write-Error "No graph token available - full access is required for at least the first deployment"
