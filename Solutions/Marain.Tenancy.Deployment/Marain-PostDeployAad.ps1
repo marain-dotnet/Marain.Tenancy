@@ -26,24 +26,17 @@ Function MarainDeployment([MarainServiceDeploymentContext] $ServiceDeploymentCon
     #     --body ($body | ConvertTo-Json -Compress) `
     #     --headers "Content-Type=application/json"
 
-    # generate an appsettings.json for the cli
-    $cliAppDir = Split-Path -Parent $ServiceDeploymentContext.InstanceContext.MarainCliPath
-    $cliAppSettings = Join-Path $cliAppDir "appsettings.json"
-    $appSettings = [ordered]@{
-        Logging = @{
-            LogLevel = @{
-                Default = "Debug"
-            }
-        }
-        "TenancyClient:TenancyServiceBaseUri" = "https://{0}.azurewebsites.net/" -f $ServiceDeploymentContext.AppName
-        "TenancyClient:ResourceIdForMsiAuthentication" = $ServiceDeploymentContext.AppServices[$ServiceDeploymentContext.AppName].AuthAppId
-        "AzureServicesAuthConnectionString" = "RunAs=App;AppId={0};TenantId={1};AppKey={2}" -f $ServiceDeploymentContext.InstanceContext.TenantAdminAppId,
-                                                                $ServiceDeploymentContext.InstanceContext.TenantId,
-                                                                $ServiceDeploymentContext.InstanceContext.TenantAdminSecret
-    }
-    $appSettings | ConvertTo-Json | Set-Content -Path $cliAppSettings -Force
+    # Setup enviornment variables for marain cli
+    $env:TenancyClient:TenancyServiceBaseUri = "https://{0}.azurewebsites.net/" -f $ServiceDeploymentContext.AppName
+    $env:TenancyClient:ResourceIdForMsiAuthentication = $ServiceDeploymentContext.AppServices[$ServiceDeploymentContext.AppName].AuthAppId
+    $env:AzureServicesAuthConnectionString = "RunAs=App;AppId={0};TenantId={1};AppKey={2}" -f `
+                                                        $ServiceDeploymentContext.InstanceContext.TenantAdminAppId,
+                                                        $ServiceDeploymentContext.InstanceContext.TenantId,
+                                                        $ServiceDeploymentContext.InstanceContext.TenantAdminSecret
+
     # Ensure the tenancy instance is initialised
     try {
+        Write-Host "Initialising marain tenancy instance..."
         $cliOutput = & $ServiceDeploymentContext.InstanceContext.MarainCliPath init
         if ($LASTEXITCODE -ne 0) {
             Write-Error "Error whilst trying to initialise the marain tenancy instance: ExitCode=$LASTEXITCODE`n$cliOutput"
