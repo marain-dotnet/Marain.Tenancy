@@ -26,23 +26,4 @@ Function MarainDeployment([MarainServiceDeploymentContext] $ServiceDeploymentCon
     #     --body ($body | ConvertTo-Json -Compress) `
     #     --headers "Content-Type=application/json"
 
-    # Setup enviornment variables for marain cli
-    $env:TenancyClient:TenancyServiceBaseUri = "https://{0}.azurewebsites.net/" -f $ServiceDeploymentContext.AppName
-    $env:TenancyClient:ResourceIdForMsiAuthentication = $ServiceDeploymentContext.AppServices[$ServiceDeploymentContext.AppName].AuthAppId
-    $env:AzureServicesAuthConnectionString = "RunAs=App;AppId={0};TenantId={1};AppKey={2}" -f `
-                                                        $ServiceDeploymentContext.InstanceContext.TenantAdminAppId,
-                                                        $ServiceDeploymentContext.InstanceContext.TenantId,
-                                                        $ServiceDeploymentContext.InstanceContext.TenantAdminSecret
-
-    # Ensure the tenancy instance is initialised
-    try {
-        Write-Host "Initialising marain tenancy instance..."
-        $cliOutput = & $ServiceDeploymentContext.InstanceContext.MarainCliPath init
-        if ($LASTEXITCODE -ne 0) {
-            Write-Error "Error whilst trying to initialise the marain tenancy instance: ExitCode=$LASTEXITCODE`n$cliOutput"
-        }
-    }
-    catch {
-        throw $_
-    }
 }
