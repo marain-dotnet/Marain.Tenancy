@@ -33,34 +33,44 @@ Function MarainDeployment([MarainServiceDeploymentContext] $ServiceDeploymentCon
 
     $keyVaultName = $ServiceDeploymentContext.InstanceContext.KeyVaultName
     $tenantAdminSecretName = "DefaultTenantAdminPassword"
-    # Ensure a default tenancy administrator principal is setup
     $defaultTenantAdminSpName = '{0}{1}tenantadmin' -f $ServiceDeploymentContext.InstanceContext.Prefix, $ServiceDeploymentContext.InstanceContext.EnvironmentSuffix
-    $existingSp = Get-AzADServicePrincipal -DisplayName $defaultTenantAdminSpName
-    if (!$ServiceDeploymentContext.InstanceContext.DoNotUseGraph -and !$existingSp) {
-        Write-Host "Setting-up default tenant administrator"
-        $newSp = New-AzADServicePrincipal -DisplayName $defaultTenantAdminSpName -SkipAssignment
 
-        $ServiceDeploymentContext.InstanceContext.TenantAdminAppId = $newSp.ApplicationId
-        $ServiceDeploymentContext.InstanceContext.TenantAdminObjectId = $newSp.Id
-        $ServiceDeploymentContext.InstanceContext.TenantAdminSecret = (ConvertFrom-SecureString $newSp.Secret -AsPlainText)
-        Set-AzKeyVaultSecret -VaultName $keyVaultName -Name $tenantAdminSecretName -SecretValue $newSp.Secret | Out-Null
+    # Ensure a default tenancy administrator principal is setup/available
+    if ($ServiceDeploymentContext.InstanceContext.AadAppIds.ContainsKey($defaultTenantAdminSpName)) {
+        # Use AadAppId provided on the command-line
+        $ServiceDeploymentContext.InstanceContext.TenantAdminAppId = $ServiceDeploymentContext.InstanceContext.AadAppIds[$defaultTenantAdminSpName]
     }
-    elseif (!$existingSp) {
-        Write-Error "No graph token available - full access is required for at least the first deployment"
+    elseif (!$ServiceDeploymentContext.InstanceContext.DoNotUseGraph) {
+        # look-up from AAD directly, if we have access
+        $existingSp = Get-AzADServicePrincipal -DisplayName $defaultTenantAdminSpName        
+        if ($existingSp) {
+            $ServiceDeploymentContext.InstanceContext.TenantAdminAppId = $existingSp.ApplicationId
+        }
+        else {
+            Write-Host "Setting-up default tenant administrator"
+            $newSp = New-AzADServicePrincipal -DisplayName $defaultTenantAdminSpName -SkipAssignment
+
+            $ServiceDeploymentContext.InstanceContext.TenantAdminAppId = $newSp.ApplicationId
+            $ServiceDeploymentContext.InstanceContext.TenantAdminObjectId = $newSp.Id
+            Set-AzKeyVaultSecret -VaultName $keyVaultName -Name $tenantAdminSecretName -SecretValue $newSp.Secret | Out-Null
+        }
     }
     else {
-        # Read the existing tenant admin details
-        $ServiceDeploymentContext.InstanceContext.TenantAdminAppId = $existingSp.ApplicationId
-        $ServiceDeploymentContext.InstanceContext.TenantAdminObjectId = (Get-AzADServicePrincipal -ApplicationId $existingSp.ApplicationId).Id
-        $tenantAdminSecret = Get-AzKeyVaultSecret -VaultName $keyVaultName -Name $tenantAdminSecretName
-
-        # Add guard rails for if we've lost the keyvault secret, re-generate a new one
-        if (!$tenantAdminSecret) {
-            $newSpCred = $existingSp | New-AzADServicePrincipalCredential
-            Set-AzKeyVaultSecret -VaultName $keyVaultName -Name $tenantAdminSecretName -SecretValue $newSpCred.Secret | Out-Null
-            $tenantAdminSecret = Get-AzKeyVaultSecret -VaultName $keyVaultName -Name $tenantAdminSecretName
-        }
-        $ServiceDeploymentContext.InstanceContext.TenantAdminSecret = ($tenantAdminSecret).SecretValueText
+        Write-Error "Unable to determine the AAD ApplicationId for default tenant admnistrator - No graph token available and '{0}' not present in AadAppIds" -f $defaultTenantAdminSpName
     }
 
+    # Read the tenant admin credentials
+    $tenantAdminSecret = Get-AzKeyVaultSecret -VaultName $keyVaultName -Name $tenantAdminSecretName
+
+    # Add guard rails for if we've lost the keyvault secret, re-generate a new one (if we have AAD access)
+    if (!$tenantAdminSecret -and !$ServiceDeploymentContext.InstanceContext.DoNotUseGraph) {
+        $newSpCred = $existingSp | New-AzADServicePrincipalCredential
+        Set-AzKeyVaultSecret -VaultName $keyVaultName -Name $tenantAdminSecretName -SecretValue $newSpCred.Secret | Out-Null
+        $tenantAdminSecret = Get-AzKeyVaultSecret -VaultName $keyVaultName -Name $tenantAdminSecretName
+    }
+    elseif (!$tenantAdminSecret) {
+        Write-Error "The default tenant administrator credential was not available in the keyvault - access to AAD is required to resolve this issue"
+    }
+
+    $ServiceDeploymentContext.InstanceContext.TenantAdminSecret = ($tenantAdminSecret).SecretValueText
 }
