@@ -47,7 +47,7 @@ Function MarainDeployment([MarainServiceDeploymentContext] $ServiceDeploymentCon
             $ServiceDeploymentContext.InstanceContext.TenantAdminAppId = $existingSp.ApplicationId
         }
         else {
-            Write-Host "Setting-up default tenant administrator"
+            Write-Host "Creating default tenancy administrator service principal"
             $newSp = New-AzADServicePrincipal -DisplayName $defaultTenantAdminSpName -SkipAssignment
 
             $ServiceDeploymentContext.InstanceContext.TenantAdminAppId = $newSp.ApplicationId
@@ -56,7 +56,7 @@ Function MarainDeployment([MarainServiceDeploymentContext] $ServiceDeploymentCon
         }
     }
     else {
-        Write-Error "Unable to determine the AAD ApplicationId for default tenant admnistrator - No graph token available and '{0}' not present in AadAppIds" -f $defaultTenantAdminSpName
+        Write-Error "Unable to determine the AAD ApplicationId for default tenancy admnistrator - No graph token available and '{0}' not present in AadAppIds" -f $defaultTenantAdminSpName
     }
 
     # Read the tenant admin credentials
@@ -64,12 +64,13 @@ Function MarainDeployment([MarainServiceDeploymentContext] $ServiceDeploymentCon
 
     # Add guard rails for if we've lost the keyvault secret, re-generate a new one (if we have AAD access)
     if (!$tenantAdminSecret -and !$ServiceDeploymentContext.InstanceContext.DoNotUseGraph) {
+        Write-Host "Resetting credential for default tenancy admnistrator service principal"
         $newSpCred = $existingSp | New-AzADServicePrincipalCredential
         Set-AzKeyVaultSecret -VaultName $keyVaultName -Name $tenantAdminSecretName -SecretValue $newSpCred.Secret | Out-Null
         $tenantAdminSecret = Get-AzKeyVaultSecret -VaultName $keyVaultName -Name $tenantAdminSecretName
     }
     elseif (!$tenantAdminSecret) {
-        Write-Error "The default tenant administrator credential was not available in the keyvault - access to AAD is required to resolve this issue"
+        Write-Error "The default tenancy administrator credential was not available in the keyvault - access to AAD is required to resolve this issue"
     }
 
     $ServiceDeploymentContext.InstanceContext.TenantAdminSecret = ($tenantAdminSecret).SecretValueText
