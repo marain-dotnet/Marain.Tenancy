@@ -20,4 +20,5 @@ Function MarainDeployment([MarainServiceDeploymentContext] $ServiceDeploymentCon
         $InstanceResourceGroupName)
 
     $ServiceDeploymentContext.SetAppServiceDetails($DeploymentResult.Outputs.functionServicePrincipalId.Value)
+
 }
