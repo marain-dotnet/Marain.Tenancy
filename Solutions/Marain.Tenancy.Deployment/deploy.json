@@ -49,6 +49,9 @@
     "keyVaultDiagnosticStorageAccountName": "[substring(concat(variables('resourceNameRoot'), parameters('appName'), 'kvdiag', uniqueString(resourceGroup().id)), 0, 24)]",
     "tenantId": "[subscription().tenantID]",
     "subscriptionId": "[subscription().subscriptionID]",
+    "functionsAppDeployName": "[concat(deployment().name, '-functions-app')]",
+    "keyVaultDeployName": "[concat(deployment().name, '-key-vault')]",
+    "tenantStorageDeployName": "[concat(deployment().name, '-tenant-root-storage')]",
     "tagValues": {
       "prefix": "[parameters('marainPrefix')]",
       "appName": "[parameters('appName')]",
@@ -57,11 +60,11 @@
   },
   "resources": [
     {
-      "name": "tenant-root-storage",
+      "name": "[variables('tenantStorageDeployName')]",
       "type": "Microsoft.Resources/deployments",
       "apiVersion": "2016-09-01",
       "dependsOn": [
-        "functions-app"
+        "[variables('functionsAppDeployName')]"
       ],
       "properties": {
         "mode": "Incremental",
@@ -81,7 +84,7 @@
           },
           "storageAccountOwnerPrincipalIds": {
             "value": [
-              "[reference('functions-app').outputs.servicePrincipalId.value]"
+              "[reference(variables('functionsAppDeployName')).outputs.servicePrincipalId.value]"
             ]
           },
           "tagValues": {
@@ -91,7 +94,7 @@
       }
     },
     {
-      "name": "key-vault",
+      "name": "[variables('keyVaultDeployName')]",
       "type": "Microsoft.Resources/deployments",
       "apiVersion": "2016-09-01",
       "dependsOn": [],
@@ -115,12 +118,12 @@
       }
     },
     {
-      "name": "key-vault-secret-storage-key",
+      "name": "[concat(variables('keyVaultDeployName'), '-secret-storage-key')]",
       "type": "Microsoft.Resources/deployments",
       "apiVersion": "2016-09-01",
       "dependsOn": [
-        "tenant-root-storage",
-        "key-vault"
+        "[variables('tenantStorageDeployName')]",
+        "[variables('keyVaultDeployName')]"
       ],
       "properties": {
         "mode": "Incremental",
@@ -136,13 +139,13 @@
             "value": "[variables('tenancyStorageKeySecretName')]"
           },
           "contentValue": {
-            "value": "[reference('tenant-root-storage', '2016-09-01').outputs.storageAccountKey.value]"
+            "value": "[reference(variables('tenantStorageDeployName'), '2016-09-01').outputs.storageAccountKey.value]"
           }
         }
       }
     },
     {
-      "name": "functions-app",
+      "name": "[variables('functionsAppDeployName')]",
       "type": "Microsoft.Resources/deployments",
       "apiVersion": "2016-09-01",
       "dependsOn": [],
@@ -161,11 +164,11 @@
       }
     },
     {
-      "name": "functions-app-settings",
+      "name": "[concat(variables('functionsAppDeployName'), '-settings')]",
       "type": "Microsoft.Resources/deployments",
       "apiVersion": "2016-09-01",
       "dependsOn": [
-        "[concat('Microsoft.Resources/deployments/', 'functions-app')]"
+        "[variables('functionsAppDeployName')]"
       ],
       "properties": {
         "mode": "Incremental",
@@ -174,7 +177,7 @@
           "contentVersion": "1.0.0.0"
         },
         "parameters": {
-          "storageAccountConnectionString": { "value": "[reference('functions-app', '2016-09-01').outputs.storageAccountConnectionString.value]" },
+          "storageAccountConnectionString": { "value": "[reference(variables('functionsAppDeployName'), '2016-09-01').outputs.storageAccountConnectionString.value]" },
           "runFromPackage": { "value": "1" },
           "functionsAppName": { "value": "[variables('functionsAppName')]" },
           "tenantId": { "value": "[variables('tenantId')]" },
@@ -187,12 +190,12 @@
       }
     },
     {
-      "name": "function-key-vault-access",
+      "name": "[concat(deployment().name, '-function-key-vault-access')]",
       "type": "Microsoft.Resources/deployments",
       "apiVersion": "2016-09-01",
       "dependsOn": [
-        "functions-app",
-        "key-vault"
+        "[variables('functionsAppDeployName')]",
+        "[variables('keyVaultDeployName')]"
       ],
       "properties": {
         "mode": "Incremental",
@@ -235,7 +238,7 @@
     },
     "functionServicePrincipalId": {
       "type": "string",
-      "value": "[reference('functions-app').outputs.servicePrincipalId.value]"
+      "value": "[reference(variables('functionsAppDeployName')).outputs.servicePrincipalId.value]"
     }
   }
 }
