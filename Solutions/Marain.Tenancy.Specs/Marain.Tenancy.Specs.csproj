@@ -28,7 +28,7 @@
     <PackageReference Include="Corvus.Testing.AzureFunctions.SpecFlow" Version="0.7.0-preview.40" />
     <PackageReference Include="Corvus.Testing.SpecFlow" Version="0.7.0-preview.40" />
     <PackageReference Include="Marain.TenantManagement.Abstractions" Version="0.1.0-preview.16" />
-    <PackageReference Include="Microsoft.Extensions.Configuration" Version="2.2.0" />
+    <PackageReference Include="Microsoft.Extensions.Configuration" Version="3.1.5" />
     <PackageReference Include="Microsoft.Extensions.Configuration.EnvironmentVariables" Version="2.2.4" />
     <PackageReference Include="Microsoft.Extensions.Configuration.Json" Version="2.2.0" />
     <PackageReference Include="NUnit3TestAdapter" Version="3.16.1">
