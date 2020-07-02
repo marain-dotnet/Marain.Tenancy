@@ -84,3 +84,4 @@ jobs:
           SourceFolder: '$(Build.SourcesDirectory)/Solutions/Marain.Tenancy.Host.Functions/bin/$(BuildConfiguration)/publish/'
           Contents: '*.zip'
           TargetFolder: '$(Build.ArtifactStagingDirectory)/Release/Marain.Deployment.Functions'
+    netSdkVersion: '3.x'
