@@ -37,7 +37,6 @@ namespace Marain.Tenancy.Specs.Integration.Bindings
             functionsConfig.CopyToEnvironmentVariables(config.AsEnumerable());
 
             return functionsController.StartFunctionsInstance(
-                TestContext.CurrentContext.TestDirectory,
                 "Marain.Tenancy.Host.Functions",
                 7071,
                 "netcoreapp3.1",
