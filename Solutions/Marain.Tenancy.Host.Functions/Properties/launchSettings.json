@@ -2,7 +2,7 @@
   "profiles": {
     "Marain.Tenancy.Host.Functions": {
       "commandName": "Project",
-      "commandLineArgs": "host start -p 7071 --cors *"
+      "commandLineArgs": "host start -p 7071"
     }
   }
 }
