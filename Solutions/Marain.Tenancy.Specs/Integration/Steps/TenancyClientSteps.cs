@@ -9,7 +9,7 @@
     using Corvus.Tenancy;
     using Corvus.Tenancy.Exceptions;
     using Corvus.Testing.SpecFlow;
-    using Marain.TenantManagement.ServiceManifests;
+    //using Marain.TenantManagement.ServiceManifests;
     using Microsoft.Extensions.DependencyInjection;
     using Newtonsoft.Json;
     using Newtonsoft.Json.Linq;
@@ -116,19 +116,6 @@
                             break;
                         }
 
-                    case "ServiceManifest":
-                        {
-                            Assert.IsTrue(tenant.Properties.TryGet(key, out ServiceManifest actual), $"Property {key} should be present");
-                            ServiceManifest expectedValue = this.GetEmbeddedServiceManifest(value);
-
-                            var serializer = JsonSerializer.Create(this.jsonSerializerSettingsProvider.Instance);
-                            var expectedJson = JToken.FromObject(expectedValue, serializer);
-                            var actualJson = JToken.FromObject(actual, serializer);
-
-                            Assert.AreEqual(expectedJson, actualJson);
-                            break;
-                        }
-
                     default:
                         throw new InvalidOperationException($"Unknown data type '{type}'");
                 }
@@ -179,12 +166,6 @@
                     case "datetimeoffset":
                         {
                             propertiesToSetOrAdd.Add(key, DateTimeOffset.Parse(value));
-                            break;
-                        }
-
-                    case "ServiceManifest":
-                        {
-                            propertiesToSetOrAdd.Add(key, this.GetEmbeddedServiceManifest(value));
                             break;
                         }
 
@@ -362,18 +343,6 @@
         public void ThenItShouldThrowANotSupportedException()
         {
             Assert.IsInstanceOf<NotSupportedException>(this.scenarioContext.Get<Exception>());
-        }
-
-        private ServiceManifest GetEmbeddedServiceManifest(string resourceName)
-        {
-            using Stream resourceStream =
-                this.GetType().Assembly.GetManifestResourceStream($"Marain.Tenancy.Specs.Integration.Data.{resourceName}")
-                ?? throw new ArgumentException($"Could not find embedded resource with name '{resourceName}'");
-            
-            using var resourceReader = new StreamReader(resourceStream);
-            string resourceJson = resourceReader.ReadToEnd();
-
-            return JsonConvert.DeserializeObject<ServiceManifest>(resourceJson, this.jsonSerializerSettingsProvider.Instance);
         }
     }
 }
