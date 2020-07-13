@@ -43,8 +43,6 @@ namespace Marain.Tenancy.Specs.Integration.Bindings
 
                     serviceCollection.AddSingleton(sp => sp.GetRequiredService<IConfigurationRoot>().Get<TenancyClientOptions>());
                     serviceCollection.AddTenantProviderServiceClient();
-
-                    serviceCollection.AddMarainTenantManagement();
                 });
         }
     }
