@@ -4,6 +4,7 @@
 
 namespace Marain.Tenancy.OpenApi.Mappers
 {
+    using System.Threading.Tasks;
     using Corvus.Tenancy;
     using Menes;
     using Menes.Hal;
@@ -35,7 +36,7 @@ namespace Marain.Tenancy.OpenApi.Mappers
         }
 
         /// <inheritdoc/>
-        public HalDocument Map(TenantCollectionResult input)
+        public ValueTask<HalDocument> MapAsync(TenantCollectionResult input)
         {
             HalDocument response = this.halDocumentFactory.CreateHalDocument();
             foreach (string tenantId in input.Tenants)
@@ -54,7 +55,7 @@ namespace Marain.Tenancy.OpenApi.Mappers
                 }
             }
 
-            return response;
+            return new ValueTask<HalDocument>(response);
         }
     }
 }

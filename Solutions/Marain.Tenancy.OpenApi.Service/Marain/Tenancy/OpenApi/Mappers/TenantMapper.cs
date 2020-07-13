@@ -4,6 +4,7 @@
 
 namespace Marain.Tenancy.OpenApi.Mappers
 {
+    using System.Threading.Tasks;
     using Corvus.Tenancy;
     using Menes;
     using Menes.Hal;
@@ -36,13 +37,13 @@ namespace Marain.Tenancy.OpenApi.Mappers
         }
 
         /// <inheritdoc/>
-        public HalDocument Map(ITenant input)
+        public ValueTask<HalDocument> MapAsync(ITenant input)
         {
             HalDocument response = this.halDocumentFactory.CreateHalDocumentFrom(input);
             response.ResolveAndAddByOwnerAndRelationType(this.linkResolver, input, "self", ("tenantId", input.Id));
             response.ResolveAndAddByOwnerAndRelationType(this.linkResolver, input, "children", ("tenantId", input.Id));
 
-            return response;
+            return new ValueTask<HalDocument>(response);
         }
     }
 }

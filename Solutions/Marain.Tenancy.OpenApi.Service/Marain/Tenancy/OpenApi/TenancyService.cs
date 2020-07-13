@@ -189,7 +189,7 @@ namespace Marain.Tenancy.OpenApi
                 try
                 {
                     TenantCollectionResult result = await this.tenantStore.GetChildrenAsync(tenantId, maxItems ?? 20, continuationToken).ConfigureAwait(false);
-                    HalDocument document = this.tenantCollectionResultMapper.Map(result);
+                    HalDocument document = await this.tenantCollectionResultMapper.MapAsync(result);
                     if (result.ContinuationToken != null)
                     {
                         OpenApiWebLink link = maxItems.HasValue
@@ -256,7 +256,7 @@ namespace Marain.Tenancy.OpenApi
                     ITenant result = tenantId == RootTenant.RootTenantId
                         ? this.GetRedactedRootTenant()
                         : result = await this.tenantStore.GetTenantAsync(tenantId, etag).ConfigureAwait(false);
-                    OpenApiResult okResult = this.OkResult(this.tenantMapper.Map(result), "application/json");
+                    OpenApiResult okResult = this.OkResult(await this.tenantMapper.MapAsync(result), "application/json");
                     if (!string.IsNullOrEmpty(result.ETag))
                     {
                         okResult.Results.Add("ETag", result.ETag!);
@@ -363,7 +363,7 @@ namespace Marain.Tenancy.OpenApi
                         propertiesToRemove)
                         .ConfigureAwait(false);
 
-                    return this.OkResult(this.tenantMapper.Map(result), "application/json");
+                    return this.OkResult(await this.tenantMapper.MapAsync(result), "application/json");
                 }
                 catch (InvalidOperationException)
                 {
