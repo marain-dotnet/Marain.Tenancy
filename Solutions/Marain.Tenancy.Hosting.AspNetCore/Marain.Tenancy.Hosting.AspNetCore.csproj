@@ -16,12 +16,12 @@
     <PackageReference Include="Corvus.Azure.Storage.Tenancy" Version="1.0.0" />
     <PackageReference Include="Corvus.Tenancy.Abstractions" Version="1.0.0" />
     <PackageReference Include="Corvus.Tenancy.Storage.Azure.Blob" Version="1.0.0" />
-    <PackageReference Include="Endjin.RecommendedPractices" Version="1.0.0">
+    <PackageReference Include="Endjin.RecommendedPractices" Version="1.2.0">
       <PrivateAssets>all</PrivateAssets>
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
     </PackageReference>
-    <PackageReference Include="Menes.Abstractions" Version="1.0.0" />
-    <PackageReference Include="Menes.Hosting.AspNetCore" Version="1.0.0" />
+    <PackageReference Include="Menes.Abstractions" Version="1.1.0" />
+    <PackageReference Include="Menes.Hosting.AspNetCore" Version="1.1.0" />
     <PackageReference Include="Newtonsoft.Json" Version="11.0.2" />
   </ItemGroup>
 
