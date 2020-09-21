@@ -27,20 +27,9 @@ namespace Marain.Tenancy.ControlHost
         {
             IServiceCollection services = builder.Services;
 
-            services.AddLogging();
+            services.AddApplicationInsightsInstrumentationTelemetry();
 
-            // TODO: putting TelemetryClient in manually to work around regression
-            // introduced in Functions v3 - see:
-            // https://github.com/Azure/azure-functions-host/issues/5353
-            // Apparently this has been fixed:
-            // https://github.com/Azure/azure-functions-host/pull/5551
-            // but at time of writing this code (11th Feb 2020) that fix was not
-            // yet available for use.
-            string key = Environment.GetEnvironmentVariable("APPINSIGHTS_INSTRUMENTATIONKEY");
-            var tc = new TelemetryClient(string.IsNullOrWhiteSpace(key)
-                ? new TelemetryConfiguration()
-                : new TelemetryConfiguration(key));
-            services.AddSingleton(tc);
+            services.AddLogging();
 
             services.AddSingleton(sp => sp.GetRequiredService<IConfiguration>().GetSection("TenantCloudBlobContainerFactoryOptions").Get<TenantCloudBlobContainerFactoryOptions>());
 
