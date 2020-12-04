@@ -73,5 +73,5 @@ Function MarainDeployment([MarainServiceDeploymentContext] $ServiceDeploymentCon
         Write-Error "The default tenancy administrator credential was not available in the keyvault - access to AAD is required to resolve this issue"
     }
 
-    $ServiceDeploymentContext.InstanceContext.TenantAdminSecret = ($tenantAdminSecret).SecretValueText
+    $ServiceDeploymentContext.InstanceContext.TenantAdminSecret = ConvertFrom-SecureString $tenantAdminSecret.SecretValue -AsPlainText
 }
