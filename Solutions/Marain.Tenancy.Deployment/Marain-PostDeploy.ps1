@@ -25,10 +25,15 @@ Function MarainDeployment([MarainServiceDeploymentContext] $ServiceDeploymentCon
     # Ensure the tenancy instance is initialised
     try {
         Write-Host "Initialising marain tenancy instance..."
-        $cliOutput = & $ServiceDeploymentContext.InstanceContext.MarainCliPath init
-        if ($LASTEXITCODE -ne 0) {
-            Write-Error "Error whilst trying to initialise the marain tenancy instance: ExitCode=$LASTEXITCODE`n$cliOutput"
+        $scriptBlock = {  
+            $cliOutput = & $ServiceDeploymentContext.InstanceContext.MarainCliPath init
+            if ($LASTEXITCODE -ne 0) {
+                Write-Error "Error whilst trying to initialise the marain tenancy instance: ExitCode=$LASTEXITCODE`n$cliOutput"
+            }
         }
+        Invoke-CommandWithRetry -Command $scriptBlock `
+                                -RetryCount 5 `
+                                -RetryDelay 30
     }
     catch {
         throw $_
