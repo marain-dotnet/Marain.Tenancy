@@ -1,14 +1,14 @@
 {
-  "$schema": "https://schema.management.azure.com/schemas/2015-01-01/deploymentTemplate.json#",
+  "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
   "contentVersion": "1.0.0.0",
   "parameters": {
-    "marainPrefix": {
+    "stackName": {
       "type": "string"
     },
-    "appName": {
+    "serviceName": {
       "type": "string"
     },
-    "environmentSuffix": {
+    "environment": {
       "type": "string"
     },
     "tenancyStorageSku": {
@@ -40,22 +40,22 @@
     }
   },
   "variables": {
-    "resourceNameRoot": "[concat(parameters('marainPrefix'), parameters('environmentSuffix'))]",
-    "defaultName": "[concat(variables('resourceNameRoot'), parameters('appName'))]",
-    "tenancyStorageName": "[substring(concat(variables('resourceNameRoot'), parameters('appName'), uniqueString(resourceGroup().id)), 0, 24)]",
+    "resourceNameRoot": "[concat(parameters('stackName'), parameters('environment'))]",
+    "defaultName": "[concat(variables('resourceNameRoot'), parameters('serviceName'))]",
+    "tenancyStorageName": "[substring(concat(variables('resourceNameRoot'), parameters('serviceName'), uniqueString(resourceGroup().id)), 0, 24)]",
     "tenancyStorageKeySecretName": "TenancyStorageAccountKey",
     "functionsAppName": "[variables('defaultName')]",
-    "keyVaultName": "[substring(concat(variables('resourceNameRoot'), parameters('appName'), uniqueString(resourceGroup().id)), 0, 24)]",
-    "keyVaultDiagnosticStorageAccountName": "[substring(concat(variables('resourceNameRoot'), parameters('appName'), 'kvdiag', uniqueString(resourceGroup().id)), 0, 24)]",
+    "keyVaultName": "[substring(concat(variables('resourceNameRoot'), parameters('serviceName'), uniqueString(resourceGroup().id)), 0, 24)]",
+    "keyVaultDiagnosticStorageAccountName": "[substring(concat(variables('resourceNameRoot'), parameters('serviceName'), 'kvdiag', uniqueString(resourceGroup().id)), 0, 24)]",
     "tenantId": "[subscription().tenantID]",
     "subscriptionId": "[subscription().subscriptionID]",
     "functionsAppDeployName": "[concat(deployment().name, '-functions-app')]",
     "keyVaultDeployName": "[concat(deployment().name, '-key-vault')]",
     "tenantStorageDeployName": "[concat(deployment().name, '-tenant-root-storage')]",
     "tagValues": {
-      "prefix": "[parameters('marainPrefix')]",
-      "appName": "[parameters('appName')]",
-      "environment": "[parameters('environmentSuffix')]"
+      "stackName": "[parameters('stackName')]",
+      "serviceName": "[parameters('serviceName')]",
+      "environment": "[parameters('environment')]"
     }
   },
   "resources": [
@@ -235,6 +235,10 @@
     "keyVaultName": {
       "type": "string",
       "value": "[variables('keyVaultName')]"
+    },
+    "functionsAppName": {
+      "type": "string",
+      "value": "[variables('functionsAppName')]"
     },
     "functionServicePrincipalId": {
       "type": "string",
