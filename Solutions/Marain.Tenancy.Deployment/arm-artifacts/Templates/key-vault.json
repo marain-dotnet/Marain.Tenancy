@@ -94,7 +94,7 @@
     {
       "type": "Microsoft.Storage/storageAccounts",
       "name": "[parameters('diagnosticsStorageAccountName')]",
-      "apiVersion": "2015-05-01-preview",
+      "apiVersion": "2019-06-01",
       "location": "[resourceGroup().location]",
       "properties": {
         "accountType": "[parameters('diagnosticsStorageAccountType')]"
