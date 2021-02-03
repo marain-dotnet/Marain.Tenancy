@@ -6,6 +6,14 @@
       "type": "string",
       "minLength": 1
     },
+    "appServicePlanName": {
+      "type": "string",
+      "minLength": 1
+    },
+    "storageName": {
+      "type": "string",
+      "minLength": 1
+    },
     "functionsAppPackageFolder": {
       "type": "string",
       "defaultValue": "",
@@ -47,15 +55,13 @@
     }
   },
   "variables": {
-    "storageAccountName": "[substring(concat(parameters('functionsAppName'), 'func', uniqueString(resourceGroup().id)), 0, 24)]",
-    "hostingPlanName": "[parameters('functionsAppName')]",
-    "storageAccountid": "[concat(resourceGroup().id,'/providers/','Microsoft.Storage/storageAccounts/', variables('storageAccountName'))]",
+    "storageAccountid": "[concat(resourceGroup().id,'/providers/','Microsoft.Storage/storageAccounts/', parameters('storageName'))]",
     "packageUri": "[concat(parameters('_artifactsLocation'), '/', parameters('functionsAppPackageFolder'), '/', parameters('functionsAppPackageFileName'), parameters('_artifactsLocationSasToken'))]"
   },
   "resources": [
     {
       "type": "Microsoft.Storage/storageAccounts",
-      "name": "[variables('storageAccountName')]",
+      "name": "[parameters('storageName')]",
       "apiVersion": "2015-05-01-preview",
       "location": "[resourceGroup().location]",
       "properties": {
@@ -65,10 +71,10 @@
     {
       "type": "Microsoft.Web/serverfarms",
       "apiVersion": "2015-04-01",
-      "name": "[variables('hostingPlanName')]",
+      "name": "[parameters('appServicePlanName')]",
       "location": "[resourceGroup().location]",
       "properties": {
-        "name": "[variables('hostingPlanName')]",
+        "name": "[parameters('appServicePlanName')]",
         "computeMode": "Dynamic",
         "sku": "Dynamic"
       }
@@ -84,19 +90,19 @@
       },
       "properties": {
         "siteConfig": {
-          "serverFarmId": "[resourceId('Microsoft.Web/serverfarms', variables('hostingPlanName'))]",
+          "serverFarmId": "[resourceId('Microsoft.Web/serverfarms', parameters('appServicePlanName'))]",
           "appSettings": [
             {
               "name": "AzureWebJobsDashboard",
-              "value": "[concat('DefaultEndpointsProtocol=https;AccountName=', variables('storageAccountName'), ';AccountKey=', listKeys(variables('storageAccountid'),'2015-05-01-preview').key1)]"
+              "value": "[concat('DefaultEndpointsProtocol=https;AccountName=', parameters('storageName'), ';AccountKey=', listKeys(variables('storageAccountid'),'2015-05-01-preview').key1)]"
             },
             {
               "name": "AzureWebJobsStorage",
-              "value": "[concat('DefaultEndpointsProtocol=https;AccountName=', variables('storageAccountName'), ';AccountKey=', listKeys(variables('storageAccountid'),'2015-05-01-preview').key1)]"
+              "value": "[concat('DefaultEndpointsProtocol=https;AccountName=', parameters('storageName'), ';AccountKey=', listKeys(variables('storageAccountid'),'2015-05-01-preview').key1)]"
             },
             {
               "name": "WEBSITE_CONTENTAZUREFILECONNECTIONSTRING",
-              "value": "[concat('DefaultEndpointsProtocol=https;AccountName=', variables('storageAccountName'), ';AccountKey=', listKeys(variables('storageAccountid'),'2015-05-01-preview').key1)]"
+              "value": "[concat('DefaultEndpointsProtocol=https;AccountName=', parameters('storageName'), ';AccountKey=', listKeys(variables('storageAccountid'),'2015-05-01-preview').key1)]"
             },
             {
               "name": "WEBSITE_CONTENTSHARE",
@@ -149,14 +155,14 @@
         }
       ],
       "dependsOn": [
-        "[resourceId('Microsoft.Storage/storageAccounts', variables('storageAccountName'))]"
+        "[resourceId('Microsoft.Storage/storageAccounts', parameters('storageName'))]"
       ]
     }
   ],
   "outputs": {
     "storageAccountConnectionString": {
       "type": "string",
-      "value": "[concat('DefaultEndpointsProtocol=https;AccountName=', variables('storageAccountName'), ';AccountKey=', listKeys(variables('storageAccountid'),'2015-05-01-preview').key1)]"
+      "value": "[concat('DefaultEndpointsProtocol=https;AccountName=', parameters('storageName'), ';AccountKey=', listKeys(variables('storageAccountid'),'2015-05-01-preview').key1)]"
     },
     "servicePrincipalId": {
       "type": "string",

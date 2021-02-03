@@ -11,6 +11,24 @@
     "environment": {
       "type": "string"
     },
+    "tenancyStorageName": {
+      "type": "string"
+    },
+    "functionsAppName": {
+      "type": "string"
+    },
+    "functionsAppServicePlanName": {
+      "type": "string"
+    },
+    "functionsAppStorageName": {
+      "type": "string"
+    },
+    "keyVaultName": {
+      "type": "string"
+    },
+    "keyVaultDiagnosticsStorageName": {
+      "type": "string"
+    },
     "tenancyStorageSku": {
       "type": "string",
       "defaultValue": "Standard_LRS",
@@ -40,13 +58,7 @@
     }
   },
   "variables": {
-    "resourceNameRoot": "[concat(parameters('stackName'), parameters('environment'))]",
-    "defaultName": "[concat(variables('resourceNameRoot'), parameters('serviceName'))]",
-    "tenancyStorageName": "[substring(concat(variables('resourceNameRoot'), parameters('serviceName'), uniqueString(resourceGroup().id)), 0, 24)]",
     "tenancyStorageKeySecretName": "TenancyStorageAccountKey",
-    "functionsAppName": "[variables('defaultName')]",
-    "keyVaultName": "[substring(concat(variables('resourceNameRoot'), parameters('serviceName'), uniqueString(resourceGroup().id)), 0, 24)]",
-    "keyVaultDiagnosticStorageAccountName": "[substring(concat(variables('resourceNameRoot'), parameters('serviceName'), 'kvdiag', uniqueString(resourceGroup().id)), 0, 24)]",
     "tenantId": "[subscription().tenantID]",
     "subscriptionId": "[subscription().subscriptionID]",
     "functionsAppDeployName": "[concat(deployment().name, '-functions-app')]",
@@ -74,7 +86,7 @@
         },
         "parameters": {
           "storageAccountName": {
-            "value": "[variables('tenancyStorageName')]"
+            "value": "[parameters('tenancyStorageName')]"
           },
           "storageAccountType": {
             "value": "[parameters('tenancyStorageSku')]"
@@ -109,10 +121,10 @@
             "value": "[variables('tenantId')]"
           },
           "keyVaultName": {
-            "value": "[variables('keyVaultName')]"
+            "value": "[parameters('keyVaultName')]"
           },
           "diagnosticsStorageAccountName": {
-            "value": "[variables('keyVaultDiagnosticStorageAccountName')]"
+            "value": "[parameters('keyVaultDiagnosticsStorageName')]"
           }
         }
       }
@@ -133,7 +145,7 @@
         },
         "parameters": {
           "keyVaultName": {
-            "value": "[variables('keyVaultName')]"
+            "value": "[parameters('keyVaultName')]"
           },
           "secretName": {
             "value": "[variables('tenancyStorageKeySecretName')]"
@@ -156,7 +168,9 @@
           "contentVersion": "1.0.0.0"
         },
         "parameters": {
-          "functionsAppName": { "value": "[variables('functionsAppName')]" },
+          "functionsAppName": { "value": "[parameters('functionsAppName')]" },
+          "appServicePlanName": { "value": "[parameters('functionsAppServicePlanName')]" },
+          "storageName": { "value": "[parameters('functionsAppStorageName')]" },
           "easyAuthAadClientId": { "value": "[parameters('functionEasyAuthAadClientId')]" },
           "_artifactsLocation": { "value": "[parameters('_artifactsLocation')]" },
           "_artifactsLocationSasToken": { "value": "[parameters('_artifactsLocationSasToken')]" }
@@ -179,12 +193,12 @@
         "parameters": {
           "storageAccountConnectionString": { "value": "[reference(variables('functionsAppDeployName'), '2016-09-01').outputs.storageAccountConnectionString.value]" },
           "runFromPackage": { "value": "1" },
-          "functionsAppName": { "value": "[variables('functionsAppName')]" },
+          "functionsAppName": { "value": "[parameters('functionsAppName')]" },
           "tenantId": { "value": "[variables('tenantId')]" },
           "subscriptionId": { "value": "[variables('subscriptionId')]" },
           "applicationInsightsInstrumentationKey": { "value": "[parameters('appInsightsInstrumentationKey')]" },
-          "keyVaultName": { "value": "[variables('keyVaultName')]" },
-          "storageAccountName": { "value": "[variables('tenancyStorageName')]" },
+          "keyVaultName": { "value": "[parameters('keyVaultName')]" },
+          "storageAccountName": { "value": "[parameters('tenancyStorageName')]" },
           "storageAccountKeyName": { "value": "[variables('tenancyStorageKeySecretName')]" }
         }
       }
@@ -205,10 +219,10 @@
         },
         "parameters": {
           "keyVaultName": {
-            "value": "[variables('keyVaultName')]"
+            "value": "[parameters('keyVaultName')]"
           },
           "objectName": {
-            "value": "[variables('functionsAppName')]"
+            "value": "[parameters('functionsAppName')]"
           },
           "objectResourceGroup": {
             "value": "[resourceGroup().name]"
@@ -230,15 +244,15 @@
   "outputs": {
     "tenancyStorageAccountName": {
       "type": "string",
-      "value": "[variables('tenancyStorageName')]"
+      "value": "[parameters('tenancyStorageName')]"
     },
     "keyVaultName": {
       "type": "string",
-      "value": "[variables('keyVaultName')]"
+      "value": "[parameters('keyVaultName')]"
     },
     "functionsAppName": {
       "type": "string",
-      "value": "[variables('functionsAppName')]"
+      "value": "[parameters('functionsAppName')]"
     },
     "functionServicePrincipalId": {
       "type": "string",

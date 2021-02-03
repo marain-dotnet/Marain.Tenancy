@@ -32,7 +32,7 @@ Set-StrictMode -Version 4
 $here = Split-Path -Parent $PSCommandPath
 
 # Setup the Corvus.Deployment module
-$deployModuleVersion = "0.2.6-beta0001"           # control which version of the Corvus.Deployment module to use
+$deployModuleVersion = "0.2.7-uniqueSuffix0001"           # control which version of the Corvus.Deployment module to use
 Write-Host "Installing Corvus.Deployment module..."
 Install-Module -Name Corvus.Deployment -RequiredVersion $deployModuleVersion -Force -AllowPrerelease
 
@@ -77,7 +77,7 @@ try {
         -Value "TenancyReader" `
         -AllowedMemberTypes "User", "Application"
 
-    $keyVaultName = $deploymentConfig.KeyVaultName
+    $sharedKeyVaultName = $deploymentConfig.SharedKeyVaultName
     $tenantAdminAppId = try { $deploymentConfig.TenantAdminAppId } catch { $null }
     $tenantAdminSecretName = "DefaultTenantAdminPassword"
     $defaultTenantAdminSpName = '{0}.{1}.tenantadmin' -f $StackName, $Environment
@@ -93,7 +93,7 @@ try {
             Write-Host "Creating default tenancy administrator service principal"
             $newSp = New-AzADServicePrincipal -DisplayName $defaultTenantAdminSpName -SkipAssignment
 
-            Set-AzKeyVaultSecret -VaultName $keyVaultName -Name $tenantAdminSecretName -SecretValue $newSp.Secret | Out-Null
+            Set-AzKeyVaultSecret -VaultName $sharedKeyVaultName -Name $tenantAdminSecretName -SecretValue $newSp.Secret | Out-Null
         }
     }
     else {
@@ -101,18 +101,33 @@ try {
     }
 
     # Read the tenant admin credentials
-    $tenantAdminSecret = Get-AzKeyVaultSecret -VaultName $keyVaultName -Name $tenantAdminSecretName
+    $tenantAdminSecret = Get-AzKeyVaultSecret -VaultName $sharedKeyVaultName -Name $tenantAdminSecretName
 
     # Add guard rails for if we've lost the keyvault secret, re-generate a new one (if we have AAD access)
     if (!$tenantAdminSecret -and !$DoNotUseGraph) {
         Write-Host "Resetting credential for default tenancy admnistrator service principal"
         $newSpCred = $existingSp | New-AzADServicePrincipalCredential
-        Set-AzKeyVaultSecret -VaultName $keyVaultName -Name $tenantAdminSecretName -SecretValue $newSpCred.Secret | Out-Null
-        $tenantAdminSecret = Get-AzKeyVaultSecret -VaultName $keyVaultName -Name $tenantAdminSecretName
+        Set-AzKeyVaultSecret -VaultName $sharedKeyVaultName -Name $tenantAdminSecretName -SecretValue $newSpCred.Secret | Out-Null
+        $tenantAdminSecret = Get-AzKeyVaultSecret -VaultName $sharedKeyVaultName -Name $tenantAdminSecretName
     }
     elseif (!$tenantAdminSecret) {
         Write-Error "The default tenancy administrator credential was not available in the keyvault - access to AAD is required to resolve this issue"
     }
+
+    # Resource names
+    $serviceName = $deploymentConfig.ServiceName
+    $uniqueSuffix = Get-CorvusUniqueSuffix -SubscriptionId $SubscriptionId -StackName $StackName -ServiceInstance $ServiceInstance -Environment $Environment
+
+    function toResourceName($configValue, $serviceName, $resourceShortCode, $uniqueSuffix) {
+        return [string]::IsNullOrEmpty($configValue) ? ("{0}{1}{2}" -f $serviceName, $resourceShortCode, $uniqueSuffix): $configValue
+    }
+
+    $tenancyStorageName = toResourceName $deploymentConfig.TenancyStorageName $serviceName "st" $uniqueSuffix
+    $functionsAppName = toResourceName $deploymentConfig.FunctionsAppName $serviceName "api" $uniqueSuffix
+    $functionsAppServicePlanName = toResourceName $deploymentConfig.FunctionsAppServicePlanName $serviceName "api" $uniqueSuffix
+    $functionsAppStorageName = toResourceName $deploymentConfig.FunctionsAppStorageName $serviceName "api" $uniqueSuffix
+    $keyVaultName = toResourceName $deploymentConfig.KeyVaultName $serviceName "kv" $uniqueSuffix
+    $keyVaultDiagnosticsStorageName = toResourceName $deploymentConfig.KeyVaultDiagnosticsStorageName $serviceName "kv" $uniqueSuffix
     
     if (!$ApplicationDeploymentOnly) {
         Write-Host "Starting provisioning..."
@@ -120,8 +135,16 @@ try {
         # deploy ARM template
         $templateParameters = @{
             stackName = $StackName
-            serviceName = "tenancy"
+            serviceName = $serviceName
             environment = $Environment
+
+            tenancyStorageName = $tenancyStorageName
+            functionsAppName = $functionsAppName
+            functionsAppServicePlanName = $functionsAppServicePlanName
+            functionsAppStorageName = $functionsAppStorageName
+            keyVaultName = $keyVaultName
+            keyVaultDiagnosticsStorageName = $keyVaultDiagnosticsStorageName
+
             tenancyStorageSku = $deploymentConfig.TenancyStorageSku
             appInsightsInstrumentationKey = $deploymentConfig.AppInsightsInstrumentationKey
             functionEasyAuthAadClientId = $appRegistration.ApplicationId
@@ -135,20 +158,15 @@ try {
             -TemplateParameters $templateParameters `
             -AdditionalArtifactsFolderPath "$here/arm-artifacts" `
             -Verbose
-
-        $apiAppFunctionsAppName = $armResults.Outputs.functionsAppName.value
-    }
-    else {
-        # TODO: get the functions app name
     }
 
     Write-Host "Starting application deployment..."
 
     # deploy the application ZIP packages
-    $publishResults = Publish-CorvusAppServiceFromZipFile -Path (Resolve-Path $ApplicationZipPath).Path -AppServiceName $apiAppFunctionsAppName
+    $publishResults = Publish-CorvusAppServiceFromZipFile -Path (Resolve-Path $ApplicationZipPath).Path -AppServiceName $functionsAppName
 
     # Setup environment variables for marain cli
-    $env:TenancyClient:TenancyServiceBaseUri = "https://{0}.azurewebsites.net/" -f $apiAppFunctionsAppName
+    $env:TenancyClient:TenancyServiceBaseUri = "https://{0}.azurewebsites.net/" -f $functionsAppName
     $env:TenancyClient:ResourceIdForMsiAuthentication = $appRegistration.ApplicationId
     $env:AzureServicesAuthConnectionString = "RunAs=App;AppId={0};TenantId={1};AppKey={2}" -f `
                                                         $tenantAdminAppId,
