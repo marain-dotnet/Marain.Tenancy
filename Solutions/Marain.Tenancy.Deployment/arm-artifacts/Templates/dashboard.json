@@ -1,0 +1,84 @@
+{
+    "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+    "contentVersion": "1.0.0.0",
+    "parameters": {
+    },
+    "variables": {
+        "resourceGroupName": "[resourceGroup().name]",
+        "queryFormatString": "Resources\r\n| where resourceGroup=~'{0}'\r\n| project id, type, [\"Name\"]=tags.resourceName, Service=tags.serviceName, [\"Service Instance\"]=tags.serviceInstance, [\"Resource Description\"]=tags.serviceResourceDescription,Environment=tags.environment, resourceGroup"
+    },
+    "resources": [
+        {
+            "name": "[variables('resourceGroupName')]",
+            "type": "Microsoft.Portal/dashboards",
+            "location": "[resourceGroup().location]",
+            "tags": {
+                "hidden-title": "[variables('resourceGroupName')]"
+            },
+            "apiVersion": "2015-08-01-preview",
+            "properties": {
+                "lenses": {
+                    "0": {
+                        "order": 0,
+                        "parts": {
+                            "0": {
+                                "position": {
+                                    "x": 0,
+                                    "y": 0,
+                                    "colSpan": 21,
+                                    "rowSpan": 8
+                                },
+                                "metadata": {
+                                    "inputs": [
+                                        {
+                                            "name": "chartType",
+                                            "isOptional": true
+                                        },
+                                        {
+                                            "name": "isShared",
+                                            "isOptional": true
+                                        },
+                                        {
+                                            "name": "queryId",
+                                            "isOptional": true
+                                        },
+                                        {
+                                            "name": "partTitle",
+                                            "value": "Query 1",
+                                            "isOptional": true
+                                        },
+                                        {
+                                            "name": "formatResults",
+                                            "value": true,
+                                            "isOptional": true
+                                        },
+                                        {
+                                            "name": "query",
+                                            "value": "[format(variables('queryFormatString'), variables('resourceGroupName'))]",
+                                            "isOptional": true
+                                        }
+                                    ],
+                                    "type": "Extension/HubsExtension/PartType/ArgQueryGridTile",
+                                    "settings": {}
+                                }
+                            }
+                        }
+                    }
+                },
+                "metadata": {
+                    "model": {
+                        "timeRange": {
+                            "value": {
+                                "relative": {
+                                    "duration": 24,
+                                    "timeUnit": 1
+                                }
+                            },
+                            "type": "MsPortalFx.Composition.Configuration.ValueTypes.TimeRange"
+                        }
+                    }
+                }
+            }
+        }
+    ]
+}

@@ -2,14 +2,8 @@
   "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
   "contentVersion": "1.0.0.0",
   "parameters": {
-    "stackName": {
-      "type": "string"
-    },
-    "serviceName": {
-      "type": "string"
-    },
-    "environment": {
-      "type": "string"
+    "defaultTags": {
+      "type": "object"
     },
     "tenancyStorageName": {
       "type": "string"
@@ -63,12 +57,7 @@
     "subscriptionId": "[subscription().subscriptionID]",
     "functionsAppDeployName": "[concat(deployment().name, '-functions-app')]",
     "keyVaultDeployName": "[concat(deployment().name, '-key-vault')]",
-    "tenantStorageDeployName": "[concat(deployment().name, '-tenant-root-storage')]",
-    "tagValues": {
-      "stackName": "[parameters('stackName')]",
-      "serviceName": "[parameters('serviceName')]",
-      "environment": "[parameters('environment')]"
-    }
+    "tenantStorageDeployName": "[concat(deployment().name, '-tenant-root-storage')]"
   },
   "resources": [
     {
@@ -99,8 +88,11 @@
               "[reference(variables('functionsAppDeployName')).outputs.servicePrincipalId.value]"
             ]
           },
-          "tagValues": {
-            "value": "[variables('tagValues')]"
+          "defaultTags": {
+            "value": "[parameters('defaultTags')]"
+          },
+          "storageAccountDescription": {
+            "value": "Tenancy Storage Account"
           }
         }
       }
@@ -125,6 +117,9 @@
           },
           "diagnosticsStorageAccountName": {
             "value": "[parameters('keyVaultDiagnosticsStorageName')]"
+          },
+          "defaultTags": {
+            "value": "[parameters('defaultTags')]"
           }
         }
       }
@@ -172,8 +167,18 @@
           "appServicePlanName": { "value": "[parameters('functionsAppServicePlanName')]" },
           "storageName": { "value": "[parameters('functionsAppStorageName')]" },
           "easyAuthAadClientId": { "value": "[parameters('functionEasyAuthAadClientId')]" },
-          "_artifactsLocation": { "value": "[parameters('_artifactsLocation')]" },
-          "_artifactsLocationSasToken": { "value": "[parameters('_artifactsLocationSasToken')]" }
+          "defaultTags": {
+            "value": "[parameters('defaultTags')]"
+          },
+          "functionsAppDescription": {
+            "value": "API Functions App"
+          },
+          "appServicePlanDescription": {
+            "value": "API Functions App Service Plan"
+          },
+          "storageAccountDescription": {
+            "value": "API Functions Storage"
+          }
         }
       }
     },
@@ -237,6 +242,22 @@
               ]
             }
           }
+        }
+      }
+    },
+    {
+      "name": "[concat(deployment().name, '-dashboard')]",
+      "type": "Microsoft.Resources/deployments",
+      "apiVersion": "2016-09-01",
+      "dependsOn": [
+      ],
+      "properties": {
+        "mode": "Incremental",
+        "templateLink": {
+          "uri": "[concat(parameters('_artifactsLocation'), '/Templates/dashboard.json', parameters('_artifactsLocationSasToken'))]",
+          "contentVersion": "1.0.0.0"
+        },
+        "parameters": {
         }
       }
     }

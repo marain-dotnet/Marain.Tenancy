@@ -25,17 +25,22 @@
       "type": "array",
       "defaultValue": []
     },
-    "tagValues": {
+    "defaultTags": {
       "type": "object",
       "defaultValue": {}
+    },
+    "storageAccountDescription": {
+      "type": "string",
+      "defaultValue": "Storage Account"
     }
   },
   "variables": {
     "ownerRoleId": "[concat('/subscriptions/', subscription().subscriptionId, '/providers/Microsoft.Authorization/roleDefinitions/', '8e3af657-a8ff-443c-a75c-2fe8c4bcb635')]",
-    "localTags": {
-      "displayName": "storageAccountName"
+    "storageAccountAdditionalTags": {
+      "displayName": "StorageAccount",
+      "serviceResourceDescription": "[parameters('storageAccountDescription')]"
     },
-    "tags": "[union(parameters('tagValues'), variables('localTags'))]"
+    "storageAccountTags": "[union(parameters('defaultTags'), variables('storageAccountAdditionalTags'))]"
   },
   "resources": [
     {
@@ -47,7 +52,7 @@
         "name": "[parameters('storageAccountType')]"
       },
       "dependsOn": [],
-      "tags": "[variables('tags')]",
+      "tags": "[variables('storageAccountTags')]",
       "kind": "Storage"
     },
 

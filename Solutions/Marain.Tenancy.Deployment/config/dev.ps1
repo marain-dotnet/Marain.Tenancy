@@ -1,7 +1,7 @@
 @{
     AzureLocation = "uksouth"
     
-    AppInsightsInstrumentationKey = ''
+    AppInsightsInstrumentationKey = 'key'
     SharedKeyVaultName = "mikemarkv"
     
     TenancyStorageSku = "Standard_LRS"

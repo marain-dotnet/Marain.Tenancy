@@ -129,14 +129,20 @@ try {
     $keyVaultName = toResourceName $deploymentConfig.KeyVaultName $serviceName "kv" $uniqueSuffix
     $keyVaultDiagnosticsStorageName = toResourceName $deploymentConfig.KeyVaultDiagnosticsStorageName $serviceName "kv" $uniqueSuffix
     
+    # Tags
+    $defaultTags = @{
+        serviceName = $ServiceName
+        serviceInstance = $ServiceInstance
+        stackName = $StackName
+        environment = $Environment
+    }
+
     if (!$ApplicationDeploymentOnly) {
         Write-Host "Starting provisioning..."
 
         # deploy ARM template
         $templateParameters = @{
-            stackName = $StackName
-            serviceName = $serviceName
-            environment = $Environment
+            defaultTags = $defaultTags
 
             tenancyStorageName = $tenancyStorageName
             functionsAppName = $functionsAppName

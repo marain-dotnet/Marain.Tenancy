@@ -64,9 +64,31 @@
       "metadata": {
         "description": "Flag indicating whether diagnostics are enabled or not"
       }
+    },
+    "defaultTags": {
+      "type": "object",
+      "defaultValue": {}
+    },
+    "keyVaultDescription": {
+      "type": "string",
+      "defaultValue": "Key Vault"
+    },
+    "storageAccountDescription": {
+      "type": "string",
+      "defaultValue": "Key Vault Diagnostics Storage Account"
     }
   },
   "variables": {
+    "storageAccountAdditionalTags": {
+      "displayName": "KeyVaultDiagnosticsStorage",
+      "serviceResourceDescription": "[parameters('storageAccountDescription')]"
+    },
+     "keyVaultAdditionalTags": {
+      "displayName": "KeyVault",
+      "serviceResourceDescription": "[parameters('keyVaultDescription')]"
+    },
+    "storageAccountTags": "[union(parameters('defaultTags'), variables('storageAccountAdditionalTags'))]",
+    "keyVaultTags": "[union(parameters('defaultTags'), variables('keyVaultAdditionalTags'))]"
   },
   "resources": [
     {
@@ -76,16 +98,15 @@
       "location": "[resourceGroup().location]",
       "properties": {
         "accountType": "[parameters('diagnosticsStorageAccountType')]"
-      }
+      },
+      "tags": "[variables('storageAccountTags')]"
     },
     {
       "type": "Microsoft.KeyVault/vaults",
       "name": "[parameters('keyVaultName')]",
       "apiVersion": "2015-06-01",
       "location": "[resourceGroup().location]",
-      "tags": {
-        "displayName": "KeyVault"
-      },
+      "tags": "[variables('keyVaultTags')]",
       "properties": {
         "tenantId": "[parameters('tenantId')]",
         "accessPolicies": "[parameters('accessPolicies')]",
