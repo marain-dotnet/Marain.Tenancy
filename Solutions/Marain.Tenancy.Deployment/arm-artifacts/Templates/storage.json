@@ -1,5 +1,5 @@
 ﻿{
-  "$schema": "http://schema.management.azure.com/schemas/2015-01-01/deploymentTemplate.json#",
+  "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
   "contentVersion": "1.0.0.0",
   "parameters": {
     "storageAccountType": {
@@ -25,36 +25,41 @@
       "type": "array",
       "defaultValue": []
     },
-    "tagValues": {
+    "defaultTags": {
       "type": "object",
       "defaultValue": {}
+    },
+    "storageAccountDescription": {
+      "type": "string",
+      "defaultValue": "Storage Account"
     }
   },
   "variables": {
     "ownerRoleId": "[concat('/subscriptions/', subscription().subscriptionId, '/providers/Microsoft.Authorization/roleDefinitions/', '8e3af657-a8ff-443c-a75c-2fe8c4bcb635')]",
-    "localTags": {
-      "displayName": "storageAccountName"
+    "storageAccountAdditionalTags": {
+      "displayName": "StorageAccount",
+      "serviceResourceDescription": "[parameters('storageAccountDescription')]"
     },
-    "tags": "[union(parameters('tagValues'), variables('localTags'))]"
+    "storageAccountTags": "[union(parameters('defaultTags'), variables('storageAccountAdditionalTags'))]"
   },
   "resources": [
     {
       "name": "[parameters('storageAccountName')]",
       "type": "Microsoft.Storage/storageAccounts",
-      "location": "[resourceGroup().location]",
-      "apiVersion": "2016-01-01",
+      "location": "[parameters('storageAccountLocation')]",
+      "apiVersion": "2019-06-01",
       "sku": {
         "name": "[parameters('storageAccountType')]"
       },
       "dependsOn": [],
-      "tags": "[variables('tags')]",
+      "tags": "[variables('storageAccountTags')]",
       "kind": "Storage"
     },
 
     {
       "type": "Microsoft.Storage/storageAccounts/providers/roleAssignments",
       "name": "[concat(parameters('storageAccountName'), '/Microsoft.Authorization/', parameters('storageAccountOwnerPrincipalIds')[copyIndex()])]",
-      "location": "[resourceGroup().location]",
+      "location": "[parameters('storageAccountLocation')]",
       "apiVersion": "2018-07-01",
       "copy": {
         "name": "ownerscopy",
