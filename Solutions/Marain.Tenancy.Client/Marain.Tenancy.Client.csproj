@@ -25,7 +25,7 @@
 
   <ItemGroup>
     <PackageReference Include="Corvus.ContentHandling.Json" Version="1.0.0" />
-    <PackageReference Include="Corvus.Extensions" Version="1.0.0" />
+    <PackageReference Include="Corvus.Extensions" Version="1.1.2" />
     <PackageReference Include="Corvus.Identity.ManagedServiceIdentity.ClientAuthentication" Version="1.0.0" />
     <PackageReference Include="Microsoft.Extensions.DependencyInjection.Abstractions" Version="2.2.0" />
     <PackageReference Include="Microsoft.Rest.ClientRuntime" Version="2.3.21" />
