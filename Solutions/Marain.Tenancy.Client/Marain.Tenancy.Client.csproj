@@ -6,7 +6,7 @@
   -->
 
   <PropertyGroup>
-    <TargetFramework>netstandard2.1</TargetFramework>
+    <TargetFrameworks>netstandard2.0;netstandard2.1</TargetFrameworks>
     <RootNamespace />
     <OutputPath>bin\$(Configuration)\</OutputPath>
     <DocumentationFile>$(OutputPath)$(TargetFramework.ToLowerInvariant())\$(AssemblyName).xml</DocumentationFile>
