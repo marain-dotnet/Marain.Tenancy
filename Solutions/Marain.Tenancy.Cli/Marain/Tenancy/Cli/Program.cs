@@ -10,6 +10,8 @@ namespace Marain.Tenancy.Cli
     using Marain.Tenancy.Client;
     using Microsoft.Extensions.DependencyInjection;
     using Microsoft.Extensions.Hosting;
+    using Newtonsoft.Json;
+    using Newtonsoft.Json.Converters;
 
     /// <summary>
     /// The entry point for the application. Configures the commands.
@@ -27,7 +29,11 @@ namespace Marain.Tenancy.Cli
 
             builder.ConfigureServices((ctx, services) =>
             {
-                services.AddJsonSerializerSettings();
+                services.AddJsonNetSerializerSettingsProvider();
+                services.AddJsonNetPropertyBag();
+                services.AddJsonNetCultureInfoConverter();
+                services.AddJsonNetDateTimeOffsetToIso8601AndUnixTimeConverter();
+                services.AddSingleton<JsonConverter>(new StringEnumConverter(true));
 
                 var msiTokenSourceOptions = new AzureManagedIdentityTokenSourceOptions
                 {

@@ -9,6 +9,8 @@ namespace Marain.Tenancy.Specs.Integration.Bindings
     using Marain.Tenancy.Client;
     using Microsoft.Extensions.Configuration;
     using Microsoft.Extensions.DependencyInjection;
+    using Newtonsoft.Json;
+    using Newtonsoft.Json.Converters;
     using TechTalk.SpecFlow;
 
     /// <summary>
@@ -39,7 +41,11 @@ namespace Marain.Tenancy.Specs.Integration.Bindings
                         .Build();
                     serviceCollection.AddSingleton(config);
 
-                    serviceCollection.AddJsonSerializerSettings();
+                    serviceCollection.AddJsonNetSerializerSettingsProvider();
+                    serviceCollection.AddJsonNetPropertyBag();
+                    serviceCollection.AddJsonNetCultureInfoConverter();
+                    serviceCollection.AddJsonNetDateTimeOffsetToIso8601AndUnixTimeConverter();
+                    serviceCollection.AddSingleton<JsonConverter>(new StringEnumConverter(true));
 
                     serviceCollection.AddSingleton(sp => sp.GetRequiredService<IConfigurationRoot>().Get<TenancyClientOptions>());
                     serviceCollection.AddTenantProviderServiceClient();

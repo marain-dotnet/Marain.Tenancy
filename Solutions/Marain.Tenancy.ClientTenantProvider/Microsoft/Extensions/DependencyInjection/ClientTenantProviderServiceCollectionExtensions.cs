@@ -45,7 +45,7 @@ namespace Microsoft.Extensions.DependencyInjection
                 IPropertyBagFactory propertyBagFactory = s.GetRequiredService<IPropertyBagFactory>();
                 ITenant fetchedRootTenant = tenantMapper.MapTenant(tenancyService.GetTenant(RootTenant.RootTenantId));
                 var localRootTenant = new RootTenant(propertyBagFactory);
-                IReadOnlyDictionary<string, object> propertiesToSetOrAdd = ((IJsonNetPropertyBag)fetchedRootTenant.Properties).AsDictionary();
+                IReadOnlyDictionary<string, object> propertiesToSetOrAdd = fetchedRootTenant.Properties.AsDictionary();
                 localRootTenant.UpdateProperties(propertiesToSetOrAdd);
                 return localRootTenant;
             });

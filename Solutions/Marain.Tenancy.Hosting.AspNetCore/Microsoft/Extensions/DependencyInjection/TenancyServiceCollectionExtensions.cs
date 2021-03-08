@@ -10,6 +10,8 @@ namespace Microsoft.Extensions.DependencyInjection
     using Marain.Tenancy.OpenApi;
     using Marain.Tenancy.OpenApi.Mappers;
     using Menes;
+    using Newtonsoft.Json;
+    using Newtonsoft.Json.Converters;
 
     /// <summary>
     /// Extension methods for configuring DI for the Operations Open API services.
@@ -36,10 +38,17 @@ namespace Microsoft.Extensions.DependencyInjection
             services.AddHalDocumentMapper<TenantCollectionResult, TenantCollectionResultMapper>();
 
             services.AddLogging();
-            services.AddRootTenant();
 
             services.AddSingleton<TenancyService>();
             services.AddSingleton<IOpenApiService, TenancyService>(s => s.GetRequiredService<TenancyService>());
+
+            // v2.0+ of Menes no longer registers all of the JsonConverters from Corvus.Extensions.Newtonsoft.Json. To
+            // avoid the risk of breaking existing serialized data, we need to manually add them.
+            services.AddJsonNetSerializerSettingsProvider();
+            services.AddJsonNetPropertyBag();
+            services.AddJsonNetCultureInfoConverter();
+            services.AddJsonNetDateTimeOffsetToIso8601AndUnixTimeConverter();
+            services.AddSingleton<JsonConverter>(new StringEnumConverter(true));
 
             services.AddOpenApiHttpRequestHosting<SimpleOpenApiContext>((config) =>
             {
