@@ -36,7 +36,7 @@ namespace Marain.Tenancy.Client
                 return services;
             }
 
-            services.AddContentSerialization();
+            services.AddContentTypeBasedSerializationSupport();
             services.AddSingleton((Func<IServiceProvider, ITenancyService>)(sp =>
             {
                 TenancyClientOptions options = sp.GetRequiredService<TenancyClientOptions>();
