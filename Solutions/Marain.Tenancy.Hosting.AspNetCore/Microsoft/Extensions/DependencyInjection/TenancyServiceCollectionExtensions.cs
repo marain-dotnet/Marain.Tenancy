@@ -38,7 +38,6 @@ namespace Microsoft.Extensions.DependencyInjection
             services.AddHalDocumentMapper<TenantCollectionResult, TenantCollectionResultMapper>();
 
             services.AddLogging();
-            services.AddRootTenant();
 
             services.AddSingleton<TenancyService>();
             services.AddSingleton<IOpenApiService, TenancyService>(s => s.GetRequiredService<TenancyService>());
