@@ -24,10 +24,10 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="Corvus.ContentHandling.Json" Version="2.0.3" />
+    <PackageReference Include="Corvus.ContentHandling.Json" Version="2.0.4" />
     <PackageReference Include="Corvus.Extensions" Version="1.1.2" />
-    <PackageReference Include="Corvus.Identity.ManagedServiceIdentity.ClientAuthentication" Version="1.0.3" />
-    <PackageReference Include="Microsoft.Extensions.DependencyInjection.Abstractions" Version="3.1.12" />
+    <PackageReference Include="Corvus.Identity.ManagedServiceIdentity.ClientAuthentication" Version="1.0.4" />
+    <PackageReference Include="Microsoft.Extensions.DependencyInjection.Abstractions" Version="3.1.13" />
     <PackageReference Include="Microsoft.Rest.ClientRuntime" Version="2.3.22" />
   </ItemGroup>
 
