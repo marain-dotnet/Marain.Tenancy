@@ -13,12 +13,12 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="Corvus.Tenancy.Storage.Azure.Blob" Version="2.0.1" />
+    <PackageReference Include="Corvus.Tenancy.Storage.Azure.Blob" Version="2.0.2" />
     <PackageReference Include="Endjin.RecommendedPractices" Version="1.2.0">
       <PrivateAssets>all</PrivateAssets>
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
     </PackageReference>
-    <PackageReference Include="Menes.Hosting.AspNetCore" Version="2.0.0" />
+    <PackageReference Include="Menes.Hosting.AspNetCore" Version="2.0.1" />
   </ItemGroup>
 
   <ItemGroup>
