@@ -189,7 +189,7 @@ namespace Marain.Tenancy.OpenApi
                 try
                 {
                     TenantCollectionResult result = await this.tenantStore.GetChildrenAsync(tenantId, maxItems ?? 20, continuationToken).ConfigureAwait(false);
-                    HalDocument document = await this.tenantCollectionResultMapper.MapAsync(result);
+                    HalDocument document = await this.tenantCollectionResultMapper.MapAsync(result).ConfigureAwait(false);
                     if (result.ContinuationToken != null)
                     {
                         OpenApiWebLink link = maxItems.HasValue
@@ -256,7 +256,7 @@ namespace Marain.Tenancy.OpenApi
                     ITenant result = tenantId == RootTenant.RootTenantId
                         ? this.GetRedactedRootTenant()
                         : result = await this.tenantStore.GetTenantAsync(tenantId, etag).ConfigureAwait(false);
-                    OpenApiResult okResult = this.OkResult(await this.tenantMapper.MapAsync(result), "application/json");
+                    OpenApiResult okResult = this.OkResult(await this.tenantMapper.MapAsync(result).ConfigureAwait(false), "application/json");
                     if (!string.IsNullOrEmpty(result.ETag))
                     {
                         okResult.Results.Add("ETag", result.ETag!);
@@ -363,7 +363,10 @@ namespace Marain.Tenancy.OpenApi
                         propertiesToRemove)
                         .ConfigureAwait(false);
 
-                    return this.OkResult(await this.tenantMapper.MapAsync(result), "application/json");
+                    return this.OkResult(
+                        await this.tenantMapper
+                            .MapAsync(result)
+                            .ConfigureAwait(false), "application/json");
                 }
                 catch (InvalidOperationException)
                 {
@@ -411,22 +414,21 @@ namespace Marain.Tenancy.OpenApi
                 throw new OpenApiNotFoundException();
             }
 
-            using (IOperationHolder<RequestTelemetry> opHolder = this.telemetryClient.StartOperation<RequestTelemetry>(DeleteChildTenantOperationId))
+            using IOperationHolder<RequestTelemetry> opHolder = this.telemetryClient.StartOperation<RequestTelemetry>(DeleteChildTenantOperationId);
+
+            try
             {
-                try
-                {
-                    this.logger.LogInformation($"Attempting to delete {childTenantId}");
-                    await this.tenantStore.DeleteTenantAsync(childTenantId).ConfigureAwait(false);
-                    return this.OkResult();
-                }
-                catch (TenantNotFoundException)
-                {
-                    return this.NotFoundResult();
-                }
-                catch (TenantConflictException)
-                {
-                    return this.ConflictResult();
-                }
+                this.logger.LogInformation($"Attempting to delete {childTenantId}");
+                await this.tenantStore.DeleteTenantAsync(childTenantId).ConfigureAwait(false);
+                return this.OkResult();
+            }
+            catch (TenantNotFoundException)
+            {
+                return this.NotFoundResult();
+            }
+            catch (TenantConflictException)
+            {
+                return this.ConflictResult();
             }
         }
 
