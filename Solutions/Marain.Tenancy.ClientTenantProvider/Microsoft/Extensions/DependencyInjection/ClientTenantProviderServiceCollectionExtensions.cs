@@ -31,10 +31,7 @@ namespace Microsoft.Extensions.DependencyInjection
                 return services;
             }
 
-            services.AddContent(contentFactory =>
-            {
-                contentFactory.RegisterTransientContent<Tenant>();
-            });
+            services.AddContent(contentFactory => contentFactory.RegisterTransientContent<Tenant>());
 
             // Construct a root tenant from the tenant retrieved from the service, using the
             // root tenant ID.

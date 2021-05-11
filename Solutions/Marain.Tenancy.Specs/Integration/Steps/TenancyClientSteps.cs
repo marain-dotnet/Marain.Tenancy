@@ -20,7 +20,6 @@
         private readonly ScenarioContext scenarioContext;
         private readonly ITenantStore store;
         private readonly IJsonNetPropertyBagFactory propertyBagFactory;
-        private readonly IJsonSerializerSettingsProvider jsonSerializerSettingsProvider;
 
         public TenancyClientSteps(FeatureContext featureContext, ScenarioContext scenarioContext)
         {
@@ -29,7 +28,6 @@
 
             this.store = ContainerBindings.GetServiceProvider(this.featureContext).GetRequiredService<ITenantStore>();
             this.propertyBagFactory = ContainerBindings.GetServiceProvider(this.featureContext).GetRequiredService<IJsonNetPropertyBagFactory>();
-            this.jsonSerializerSettingsProvider = ContainerBindings.GetServiceProvider(this.featureContext).GetRequiredService<IJsonSerializerSettingsProvider>();
         }
 
         [Given("I get the tenant id of the tenant called \"(.*)\" and call it \"(.*)\"")]

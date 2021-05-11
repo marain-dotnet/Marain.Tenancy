@@ -4,6 +4,7 @@
 
 namespace Marain.Tenancy.Specs.Integration.Bindings
 {
+    using System;
     using System.Threading.Tasks;
     using Corvus.Testing.AzureFunctions;
     using Corvus.Testing.AzureFunctions.SpecFlow;
@@ -20,6 +21,10 @@ namespace Marain.Tenancy.Specs.Integration.Bindings
     [Binding]
     public static class FunctionBindings
     {
+        public const int TenancyApiPort = 7071;
+
+        public static readonly Uri TenancyApiBaseUri = new Uri($"http://localhost:{TenancyApiPort}");
+
         /// <summary>
         /// Runs the public API function.
         /// </summary>
@@ -38,7 +43,7 @@ namespace Marain.Tenancy.Specs.Integration.Bindings
 
             return functionsController.StartFunctionsInstance(
                 "Marain.Tenancy.Host.Functions",
-                7071,
+                TenancyApiPort,
                 "netcoreapp3.1",
                 "csharp",
                 functionsConfig);

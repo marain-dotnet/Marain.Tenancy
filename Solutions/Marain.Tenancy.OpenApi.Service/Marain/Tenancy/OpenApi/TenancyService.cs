@@ -12,6 +12,7 @@ namespace Marain.Tenancy.OpenApi
     using Corvus.Json;
     using Corvus.Tenancy;
     using Corvus.Tenancy.Exceptions;
+    using Marain.Tenancy.OpenApi.Configuration;
     using Marain.Tenancy.OpenApi.Mappers;
     using Menes;
     using Menes.Exceptions;
@@ -62,7 +63,7 @@ namespace Marain.Tenancy.OpenApi
         private readonly TenantMapper tenantMapper;
         private readonly TenantCollectionResultMapper tenantCollectionResultMapper;
         private readonly IOpenApiWebLinkResolver linkResolver;
-        private readonly IJsonSerializerSettingsProvider serializerSettingsProvider;
+        private readonly TenantCacheConfiguration cacheConfiguration;
         private readonly ILogger<TenancyService> logger;
         private readonly IPropertyBagFactory propertyBagFactory;
         private ITenant? redactedRootTenant;
@@ -75,7 +76,7 @@ namespace Marain.Tenancy.OpenApi
         /// <param name="tenantMapper">The mapper from tenants to tenant resources.</param>
         /// <param name="tenantCollectionResultMapper">The mapper from tenant collection results to the result resource.</param>
         /// <param name="linkResolver">The link resolver.</param>
-        /// <param name="serializerSettingsProvider">The serializer settings provider.</param>
+        /// <param name="cacheConfiguration">Cache configuration.</param>
         /// <param name="logger">The logger for the service.</param>
         public TenancyService(
             ITenantStore tenantStore,
@@ -83,14 +84,14 @@ namespace Marain.Tenancy.OpenApi
             TenantMapper tenantMapper,
             TenantCollectionResultMapper tenantCollectionResultMapper,
             IOpenApiWebLinkResolver linkResolver,
-            IJsonSerializerSettingsProvider serializerSettingsProvider,
+            TenantCacheConfiguration cacheConfiguration,
             ILogger<TenancyService> logger)
         {
             this.tenantStore = tenantStore ?? throw new ArgumentNullException(nameof(tenantStore));
             this.tenantMapper = tenantMapper ?? throw new ArgumentNullException(nameof(tenantMapper));
             this.tenantCollectionResultMapper = tenantCollectionResultMapper ?? throw new ArgumentNullException(nameof(tenantCollectionResultMapper));
             this.linkResolver = linkResolver ?? throw new ArgumentNullException(nameof(linkResolver));
-            this.serializerSettingsProvider = serializerSettingsProvider ?? throw new ArgumentNullException(nameof(serializerSettingsProvider));
+            this.cacheConfiguration = cacheConfiguration ?? throw new ArgumentNullException(nameof(cacheConfiguration));
             this.logger = logger ?? throw new ArgumentNullException(nameof(logger));
             this.propertyBagFactory = propertyBagFactory;
         }
@@ -239,10 +240,17 @@ namespace Marain.Tenancy.OpenApi
                 ITenant result = tenantId == RootTenant.RootTenantId
                     ? this.GetRedactedRootTenant()
                     : result = await this.tenantStore.GetTenantAsync(tenantId, etag).ConfigureAwait(false);
+
                 OpenApiResult okResult = this.OkResult(await this.tenantMapper.MapAsync(result).ConfigureAwait(false), "application/json");
+
                 if (!string.IsNullOrEmpty(result.ETag))
                 {
                     okResult.Results.Add("ETag", result.ETag!);
+                }
+
+                if (!string.IsNullOrEmpty(this.cacheConfiguration.GetTenantResponseCacheControlHeaderValue))
+                {
+                    okResult.Results.Add("Cache-Control", this.cacheConfiguration.GetTenantResponseCacheControlHeaderValue);
                 }
 
                 return okResult;

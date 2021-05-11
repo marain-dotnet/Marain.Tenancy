@@ -55,6 +55,10 @@ paths:
         '200':
           description: Successful operation
           headers:
+            Cache-Control:
+              description: Caching instructions for clients
+              schema:
+                type: string
             ETag:
               description: The etag for the updated tenant
               schema:
