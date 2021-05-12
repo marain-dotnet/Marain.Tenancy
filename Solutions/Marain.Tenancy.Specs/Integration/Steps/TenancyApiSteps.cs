@@ -66,7 +66,7 @@ namespace Marain.Tenancy.Specs.Integration.Steps
         {
             HttpResponseMessage response = this.ScenarioContext.Get<HttpResponseMessage>();
             string path = this.ScenarioContext.Get<string>(name);
-            
+
             return this.SendGetRequest(FunctionBindings.TenancyApiBaseUri, path, response.Headers.ETag.Tag);
         }
 
@@ -128,7 +128,7 @@ namespace Marain.Tenancy.Specs.Integration.Steps
                 request.Headers.Add("If-None-Match", etag);
             }
 
-            HttpResponseMessage response = await HttpClient.SendAsync(request);
+            HttpResponseMessage response = await HttpClient.SendAsync(request).ConfigureAwait(false);
 
             this.ScenarioContext.Set(response);
 
