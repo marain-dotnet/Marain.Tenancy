@@ -25,9 +25,11 @@ namespace Marain.Tenancy.Client.Models
         /// <summary>
         /// Initializes a new instance of the GetTenantHeaders class.
         /// </summary>
+        /// <param name="cacheControl">Caching instructions for clients</param>
         /// <param name="eTag">The etag for the updated tenant</param>
-        public GetTenantHeaders(string eTag = default(string))
+        public GetTenantHeaders(string cacheControl = default(string), string eTag = default(string))
         {
+            CacheControl = cacheControl;
             ETag = eTag;
             CustomInit();
         }
@@ -36,6 +38,12 @@ namespace Marain.Tenancy.Client.Models
         /// An initialization method that performs custom operations like setting defaults
         /// </summary>
         partial void CustomInit();
+
+        /// <summary>
+        /// Gets or sets caching instructions for clients
+        /// </summary>
+        [JsonProperty(PropertyName = "Cache-Control")]
+        public string CacheControl { get; set; }
 
         /// <summary>
         /// Gets or sets the etag for the updated tenant

@@ -314,8 +314,6 @@ components:
           enum: [add, replace, remove]
         value: 
           description: The value to add or set
-          # We need to set type to none to work around https://github.com/menes-dotnet/Menes/issues/37
-          type: none
           anyOf:
             - type: string
             - type: object
