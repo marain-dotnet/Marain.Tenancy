@@ -19,6 +19,7 @@ param(
 	[string] $ResourceGroupLocation = "northeurope",
 	[string] $ArtifactStagingDirectory = ".",
 	[string] $ArtifactStorageContainerName = "stageartifacts",
+	[string] $TenantCacheControlHeaderValue = "max-age=600",
 	[switch] $IsDeveloperEnvironment,
 	[switch] $UpdateLocalConfigFiles,
 	[switch] $SkipDeployment
@@ -139,6 +140,8 @@ Process{
 			$parameters["prefix"] = $Prefix
 			$parameters["appName"] = $AppName
 			$parameters["environment"] = $Suffix
+
+			$parameters["tenantCacheControlHeaderValue"] = $TenantCacheControlHeaderValue
 
 			$parameters["functionEasyAuthAadClientId"] = $EasyAuthAppAd.AppId
 
