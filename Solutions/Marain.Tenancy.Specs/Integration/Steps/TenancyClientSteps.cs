@@ -16,18 +16,16 @@
     [Binding]
     public class TenancyClientSteps
     {
-        private readonly FeatureContext featureContext;
         private readonly ScenarioContext scenarioContext;
         private readonly ITenantStore store;
         private readonly IJsonNetPropertyBagFactory propertyBagFactory;
 
         public TenancyClientSteps(FeatureContext featureContext, ScenarioContext scenarioContext)
         {
-            this.featureContext = featureContext;
             this.scenarioContext = scenarioContext;
 
-            this.store = ContainerBindings.GetServiceProvider(this.featureContext).GetRequiredService<ITenantStore>();
-            this.propertyBagFactory = ContainerBindings.GetServiceProvider(this.featureContext).GetRequiredService<IJsonNetPropertyBagFactory>();
+            this.store = ContainerBindings.GetServiceProvider(featureContext).GetRequiredService<ITenantStore>();
+            this.propertyBagFactory = ContainerBindings.GetServiceProvider(featureContext).GetRequiredService<IJsonNetPropertyBagFactory>();
         }
 
         [Given("I get the tenant id of the tenant called \"(.*)\" and call it \"(.*)\"")]
@@ -134,7 +132,7 @@
 
         [Given("I update the properties of the tenant called \"(.*)\"")]
         [When("I update the properties of the tenant called \"(.*)\"")]
-        public void WhenIUpdateThePropertiesOfTheTenantCalled(string tenantName, Table table)
+        public Task WhenIUpdateThePropertiesOfTheTenantCalled(string tenantName, Table table)
         {
             ITenant tenant = this.scenarioContext.Get<ITenant>(tenantName);
             var propertiesToSetOrAdd = new Dictionary<string, object>();
@@ -169,7 +167,7 @@
                 }
             }
 
-            this.store.UpdateTenantAsync(tenant.Id, propertiesToSetOrAdd: propertiesToSetOrAdd);
+            return this.store.UpdateTenantAsync(tenant.Id, propertiesToSetOrAdd: propertiesToSetOrAdd);
         }
 
         [When(@"I rename the tenant called ""(.*)"" to ""(.*)"" and update its properties")]
