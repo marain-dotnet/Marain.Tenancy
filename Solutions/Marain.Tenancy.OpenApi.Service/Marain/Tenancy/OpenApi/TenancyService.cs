@@ -250,7 +250,11 @@ namespace Marain.Tenancy.OpenApi
 
                 if (!string.IsNullOrEmpty(this.cacheConfiguration.GetTenantResponseCacheControlHeaderValue))
                 {
-                    okResult.Results.Add("Cache-Control", this.cacheConfiguration.GetTenantResponseCacheControlHeaderValue);
+                    okResult.Results.Add("Cache-Control", this.cacheConfiguration.GetTenantResponseCacheControlHeaderValue!);
+                }
+                else
+                {
+                    this.logger.LogWarning("Tenancy cache configuration does not contain a GetTenantResponseCacheControlHeaderValue so no cache header will be sent on the returned tenant.")
                 }
 
                 return okResult;

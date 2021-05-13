@@ -12,8 +12,6 @@ namespace Marain.Tenancy.OpenApi.Configuration
         /// <summary>
         /// Gets or sets the value that will be returned in the cache-control header.
         /// </summary>
-    #nullable disable
-        public string GetTenantResponseCacheControlHeaderValue { get; set; }
-    #nullable enable
+        public string? GetTenantResponseCacheControlHeaderValue { get; set; }
     }
 }

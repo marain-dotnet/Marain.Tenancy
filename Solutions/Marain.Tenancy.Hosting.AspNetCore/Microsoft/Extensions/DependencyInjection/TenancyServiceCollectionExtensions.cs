@@ -56,7 +56,7 @@ namespace Microsoft.Extensions.DependencyInjection
             services.AddSingleton(
                 sp => sp.GetRequiredService<IConfiguration>()
                         .GetSection("TenantCacheConfiguration")
-                        .Get<TenantCacheConfiguration>());
+                        .Get<TenantCacheConfiguration>() ?? new TenantCacheConfiguration());
 
             services.AddOpenApiHttpRequestHosting<SimpleOpenApiContext>((config) =>
             {
