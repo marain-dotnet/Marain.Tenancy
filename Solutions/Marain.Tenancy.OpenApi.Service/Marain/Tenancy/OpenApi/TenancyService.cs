@@ -254,7 +254,7 @@ namespace Marain.Tenancy.OpenApi
                 }
                 else
                 {
-                    this.logger.LogWarning("Tenancy cache configuration does not contain a GetTenantResponseCacheControlHeaderValue so no cache header will be sent on the returned tenant.")
+                    this.logger.LogWarning("Tenancy cache configuration does not contain a GetTenantResponseCacheControlHeaderValue so no cache header will be sent on the returned tenant.");
                 }
 
                 return okResult;
