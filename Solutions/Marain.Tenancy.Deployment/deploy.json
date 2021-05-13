@@ -34,7 +34,6 @@
     },
     "tenantCacheControlHeaderValue": {
       "type": "string",
-      "minLength": 1,
       "defaultValue": "max-age=600"
     },
     "_artifactsLocation": {

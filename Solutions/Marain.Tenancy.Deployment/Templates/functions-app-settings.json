@@ -14,8 +14,7 @@
       "minLength": 1
     },
     "tenantCacheControlHeaderValue": {
-      "type": "string",
-      "minLength": 1
+      "type": "string"
     },
     "keyVaultName": {
       "type": "string",
