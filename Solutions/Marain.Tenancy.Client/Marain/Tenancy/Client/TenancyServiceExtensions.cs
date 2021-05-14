@@ -177,7 +177,8 @@ namespace Marain.Tenancy.Client
             /// The name for the new tenant
             /// </param>
             /// <param name='wellKnownChildTenantGuid'>
-            /// The name for the new tenant
+            /// The well known Guid for the new tenant. If provided, this will be used to
+            /// create the child tenant Id.
             /// </param>
             public static CreateChildTenantHeaders CreateChildTenant(this ITenancyService operations, string tenantId, string tenantName, System.Guid? wellKnownChildTenantGuid = default(System.Guid?))
             {
@@ -200,7 +201,8 @@ namespace Marain.Tenancy.Client
             /// The name for the new tenant
             /// </param>
             /// <param name='wellKnownChildTenantGuid'>
-            /// The name for the new tenant
+            /// The well known Guid for the new tenant. If provided, this will be used to
+            /// create the child tenant Id.
             /// </param>
             /// <param name='cancellationToken'>
             /// The cancellation token.

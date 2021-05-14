@@ -211,8 +211,8 @@ components:
       properties:
         _links:
           type: object
-          title: Hyperlink
-          description: Represents a hyperlink from the cotntaining resource to a URI.
+          title: A hyperlink to a related URI.
+          description: Represents a hyperlink from the containing resource to a URI.
           additionalProperties:
             oneOf:
             - $ref: '#/components/schemas/Link'
@@ -350,7 +350,7 @@ components:
       name: wellKnownChildTenantGuid
       in: query
       x-ms-parameter-location: method
-      description: The name for the new tenant
+      description: The well known Guid for the new tenant. If provided, this will be used to create the child tenant Id.
       required: false
       schema:
         type: string
