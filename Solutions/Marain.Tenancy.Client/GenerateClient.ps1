@@ -6,8 +6,7 @@ Write-Output "Downloading Swagger from local API instance to " $tmp
 
 Invoke-WebRequest http://localhost:7071/api/swagger -o $tmp
 
-$OutputFolder = Join-Path $PSScriptRoot "Marain\Tenancy\Client\"
-
+$OutputFolder = (Join-Path $PSScriptRoot "Marain\Tenancy\Client\").Replace("\", "/")    # because apparently they don't test autorest on Windows these days
 
 # If you do not have autorest, install it with:
 #   npm install -g autorest

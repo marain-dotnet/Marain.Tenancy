@@ -3,5 +3,13 @@
   "AzureWebJobsStorage": "UseDevelopmentStorage=true",
   "FUNCTIONS_WORKER_RUNTIME": "dotnet",
   "FUNCTIONS_EXTENSION_VERSION": "~2",
-  "APPINSIGHTS_INSTRUMENTATIONKEY": ""
+  "APPINSIGHTS_INSTRUMENTATIONKEY": "",
+
+  "TenantCloudBlobContainerFactoryOptions:AzureServicesAuthConnectionString": "",
+
+  "TenantCacheConfiguration:GetTenantResponseCacheControlHeaderValue": "max-age=600",
+
+  "RootTenantBlobStorageConfigurationOptions:AccountName": "",
+  "RootTenantBlobStorageConfigurationOptions:RootTenantBlobStorageConfiguration:KeyVaultName": "",
+  "RootTenantBlobStorageConfigurationOptions:RootTenantBlobStorageConfiguration:AccountKeySecretName": ""
 }

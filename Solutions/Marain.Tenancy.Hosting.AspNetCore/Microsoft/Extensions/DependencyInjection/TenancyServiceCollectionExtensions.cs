@@ -8,8 +8,10 @@ namespace Microsoft.Extensions.DependencyInjection
     using System.Linq;
     using Corvus.Tenancy;
     using Marain.Tenancy.OpenApi;
+    using Marain.Tenancy.OpenApi.Configuration;
     using Marain.Tenancy.OpenApi.Mappers;
     using Menes;
+    using Microsoft.Extensions.Configuration;
     using Newtonsoft.Json;
     using Newtonsoft.Json.Converters;
 
@@ -49,6 +51,12 @@ namespace Microsoft.Extensions.DependencyInjection
             services.AddJsonNetCultureInfoConverter();
             services.AddJsonNetDateTimeOffsetToIso8601AndUnixTimeConverter();
             services.AddSingleton<JsonConverter>(new StringEnumConverter(true));
+
+            // Add caching config.
+            services.AddSingleton(
+                sp => sp.GetRequiredService<IConfiguration>()
+                        .GetSection("TenantCacheConfiguration")
+                        .Get<TenantCacheConfiguration>() ?? new TenantCacheConfiguration());
 
             services.AddOpenApiHttpRequestHosting<SimpleOpenApiContext>((config) =>
             {

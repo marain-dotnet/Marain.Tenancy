@@ -13,6 +13,9 @@
       "type": "string",
       "minLength": 1
     },
+    "tenantCacheControlHeaderValue": {
+      "type": "string"
+    },
     "keyVaultName": {
       "type": "string",
       "minLength": 1
@@ -65,7 +68,8 @@
         "TenantCloudBlobContainerFactoryOptions:AzureServicesAuthConnectionString": "",
         "RootTenantBlobStorageConfigurationOptions:AccountName": "[parameters('storageAccountName')]",
         "RootTenantBlobStorageConfigurationOptions:KeyVaultName": "[parameters('keyVaultName')]",
-        "RootTenantBlobStorageConfigurationOptions:AccountKeySecretName": "[parameters('storageAccountKeyName')]"
+        "RootTenantBlobStorageConfigurationOptions:AccountKeySecretName": "[parameters('storageAccountKeyName')]",
+        "TenantCacheConfiguration:GetTenantResponseCacheControlHeaderValue": "[parameters('tenantCacheControlHeaderValue')]"
       }
     }
   ],

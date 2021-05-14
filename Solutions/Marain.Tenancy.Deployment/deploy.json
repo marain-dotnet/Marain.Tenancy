@@ -32,6 +32,10 @@
         "description": "Enable EasyAuth for AAD using the specified Client ID/App ID"
       }
     },
+    "tenantCacheControlHeaderValue": {
+      "type": "string",
+      "defaultValue": "max-age=600"
+    },
     "_artifactsLocation": {
       "type": "string"
     },
@@ -183,6 +187,7 @@
           "tenantId": { "value": "[variables('tenantId')]" },
           "subscriptionId": { "value": "[variables('subscriptionId')]" },
           "applicationInsightsInstrumentationKey": { "value": "[parameters('appInsightsInstrumentationKey')]" },
+          "tenantCacheControlHeaderValue": { "value": "[parameters('tenantCacheControlHeaderValue')]" },
           "keyVaultName": { "value": "[variables('keyVaultName')]" },
           "storageAccountName": { "value": "[variables('tenancyStorageName')]" },
           "storageAccountKeyName": { "value": "[variables('tenancyStorageKeySecretName')]" }

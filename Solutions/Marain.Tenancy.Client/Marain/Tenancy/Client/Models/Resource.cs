@@ -24,8 +24,7 @@ namespace Marain.Tenancy.Client.Models
         /// <summary>
         /// Initializes a new instance of the Resource class.
         /// </summary>
-        /// <param name="_links">Represents a hyperlink from the cotntaining
-        /// resource to a URI.</param>
+        /// <param name="_links">A hyperlink to a related URI.</param>
         public Resource(IDictionary<string, object> _links = default(IDictionary<string, object>), IDictionary<string, object> _embedded = default(IDictionary<string, object>))
         {
             this._links = _links;
@@ -39,9 +38,11 @@ namespace Marain.Tenancy.Client.Models
         partial void CustomInit();
 
         /// <summary>
-        /// Gets or sets represents a hyperlink from the cotntaining resource
-        /// to a URI.
+        /// Gets or sets a hyperlink to a related URI.
         /// </summary>
+        /// <remarks>
+        /// Represents a hyperlink from the containing resource to a URI.
+        /// </remarks>
         [JsonProperty(PropertyName = "_links")]
         public IDictionary<string, object> _links { get; set; }
 

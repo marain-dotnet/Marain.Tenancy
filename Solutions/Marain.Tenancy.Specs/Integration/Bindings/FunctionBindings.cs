@@ -4,6 +4,7 @@
 
 namespace Marain.Tenancy.Specs.Integration.Bindings
 {
+    using System;
     using System.Threading.Tasks;
     using Corvus.Testing.AzureFunctions;
     using Corvus.Testing.AzureFunctions.SpecFlow;
@@ -20,17 +21,20 @@ namespace Marain.Tenancy.Specs.Integration.Bindings
     [Binding]
     public static class FunctionBindings
     {
+        public const int TenancyApiPort = 7071;
+
+        public static readonly Uri TenancyApiBaseUri = new Uri($"http://localhost:{TenancyApiPort}");
+
         /// <summary>
         /// Runs the public API function.
         /// </summary>
         /// <param name="featureContext">The current feature context.</param>
-        /// <param name="scenarioContext">The current scenario context.</param>
         /// <returns>A task that completes when the functions have been started.</returns>
-        [BeforeScenario("useTenancyFunction", Order = ContainerBeforeScenarioOrder.ServiceProviderAvailable)]
-        public static Task RunPublicApiFunction(FeatureContext featureContext, ScenarioContext scenarioContext)
+        [BeforeFeature("useTenancyFunction", Order = ContainerBeforeFeatureOrder.ServiceProviderAvailable)]
+        public static Task RunPublicApiFunction(FeatureContext featureContext)
         {
-            FunctionsController functionsController = FunctionsBindings.GetFunctionsController(scenarioContext);
-            FunctionConfiguration functionsConfig = FunctionsBindings.GetFunctionConfiguration(scenarioContext);
+            FunctionsController functionsController = FunctionsBindings.GetFunctionsController(featureContext);
+            FunctionConfiguration functionsConfig = FunctionsBindings.GetFunctionConfiguration(featureContext);
 
             IConfigurationRoot config = ContainerBindings.GetServiceProvider(featureContext).GetRequiredService<IConfigurationRoot>();
 
@@ -38,7 +42,7 @@ namespace Marain.Tenancy.Specs.Integration.Bindings
 
             return functionsController.StartFunctionsInstance(
                 "Marain.Tenancy.Host.Functions",
-                7071,
+                TenancyApiPort,
                 "netcoreapp3.1",
                 "csharp",
                 functionsConfig);
@@ -47,13 +51,13 @@ namespace Marain.Tenancy.Specs.Integration.Bindings
         /// <summary>
         /// Tear down the running functions instances for the feature.
         /// </summary>
-        /// <param name="scenarioContext">The current scenario context.</param>
-        [AfterScenario(Order = 100)]
-        public static void TeardownFunctionsAfterScenario(ScenarioContext scenarioContext)
+        /// <param name="featureContext">The current scenario context.</param>
+        [AfterFeature(Order = 100)]
+        public static void TeardownFunctionsAfterScenario(FeatureContext featureContext)
         {
-            if (scenarioContext.TryGetValue(out FunctionsController functionsController))
+            if (featureContext.TryGetValue(out FunctionsController functionsController))
             {
-                scenarioContext.RunAndStoreExceptions(functionsController.TeardownFunctions);
+                featureContext.RunAndStoreExceptions(functionsController.TeardownFunctions);
             }
         }
     }

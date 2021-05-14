@@ -2,7 +2,6 @@ trigger:
   branches:
     include:
     - master
-    - feature/*
   tags:
     include:
     - '*'
@@ -25,10 +24,12 @@ jobs:
       - powershell: |
           Write-Host "##vso[task.setvariable variable=RootTenantBlobStorageConfigurationOptions__AccountName]$Env:ENDJIN_AZURESTORAGECONNECTIONSTRING"
           Write-Host "##vso[task.setvariable variable=TenantCloudBlobContainerFactoryOptions__AzureServicesAuthConnectionString]$Env:ENDJIN_AZURESERVICESAUTHCONNECTIONSTRING"
+          Write-Host "##vso[task.setvariable variable=TenantCacheConfiguration__GetTenantResponseCacheControlHeaderValue]$Env:TENANTCACHECONFIGURATION__GETTENANTRESPONSECACHECONTROLHEADERVALUE"
         displayName: 'Set Azure Connection String Environment Variable'
         env:
           ENDJIN_AZURESTORAGECONNECTIONSTRING: $(Endjin_AzureStorageConnectionString)
           ENDJIN_AZURESERVICESAUTHCONNECTIONSTRING: $(Endjin_AzureServicesAuthConnectionString)
+          TENANTCACHECONFIGURATION__GETTENANTRESPONSECACHECONTROLHEADERVALUE: $(TenantCacheConfiguration__GetTenantResponseCacheControlHeaderValue)
       - task: Npm@1
         displayName: 'Install Latest Azure Functions V3 Runtime'
         inputs:
