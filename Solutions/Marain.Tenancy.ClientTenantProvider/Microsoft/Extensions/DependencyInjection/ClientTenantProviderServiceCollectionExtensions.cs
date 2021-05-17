@@ -7,7 +7,6 @@ namespace Microsoft.Extensions.DependencyInjection
     using System.Collections.Generic;
     using System.Linq;
     using Corvus.ContentHandling;
-    using Corvus.Extensions.Json;
     using Corvus.Json;
     using Corvus.Tenancy;
     using Marain.Tenancy;
@@ -67,7 +66,7 @@ namespace Microsoft.Extensions.DependencyInjection
                 return services;
             }
 
-            services.AddTenancyClient();
+            services.AddTenancyClient(true);
             services.AddTenantServiceClientRootTenant();
             services.AddSingleton<ITenantMapper, TenantMapper>();
             services.AddSingleton<ITenantProvider, ClientTenantProvider>();
