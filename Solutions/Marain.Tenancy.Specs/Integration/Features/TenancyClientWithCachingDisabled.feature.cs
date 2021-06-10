@@ -24,6 +24,7 @@ namespace Marain.Tenancy.Specs.Integration.Features
     [NUnit.Framework.CategoryAttribute("perFeatureContainer")]
     [NUnit.Framework.CategoryAttribute("withTenancyClient")]
     [NUnit.Framework.CategoryAttribute("useTenancyFunction")]
+    [NUnit.Framework.CategoryAttribute("disableTenantCaching")]
     public partial class TenancyClientFeature
     {
         
@@ -32,7 +33,8 @@ namespace Marain.Tenancy.Specs.Integration.Features
         private string[] _featureTags = new string[] {
                 "perFeatureContainer",
                 "withTenancyClient",
-                "useTenancyFunction"};
+                "useTenancyFunction",
+                "disableTenantCaching"};
         
 #line 1 "TenancyClient.feature"
 #line hidden
@@ -45,7 +47,8 @@ namespace Marain.Tenancy.Specs.Integration.Features
                     "ccess the standard ITenantProvider via the client API.", ProgrammingLanguage.CSharp, new string[] {
                         "perFeatureContainer",
                         "withTenancyClient",
-                        "useTenancyFunction"});
+                        "useTenancyFunction",
+                        "disableTenantCaching"});
             testRunner.OnFeatureStart(featureInfo);
         }
         
@@ -90,7 +93,7 @@ namespace Marain.Tenancy.Specs.Integration.Features
             string[] tagsOfScenario = ((string[])(null));
             System.Collections.Specialized.OrderedDictionary argumentsOfScenario = new System.Collections.Specialized.OrderedDictionary();
             TechTalk.SpecFlow.ScenarioInfo scenarioInfo = new TechTalk.SpecFlow.ScenarioInfo("Get a tenant that does not exist", null, tagsOfScenario, argumentsOfScenario, this._featureTags);
-#line 10
+#line 11
 this.ScenarioInitialize(scenarioInfo);
 #line hidden
             bool isScenarioIgnored = default(bool);
@@ -110,10 +113,10 @@ this.ScenarioInitialize(scenarioInfo);
             else
             {
                 this.ScenarioStart();
-#line 11
+#line 12
  testRunner.When("I get a tenant with id \"NotFound\"", ((string)(null)), ((TechTalk.SpecFlow.Table)(null)), "When ");
 #line hidden
-#line 12
+#line 13
  testRunner.Then("it should throw a TenantNotFoundException", ((string)(null)), ((TechTalk.SpecFlow.Table)(null)), "Then ");
 #line hidden
             }
@@ -127,7 +130,7 @@ this.ScenarioInitialize(scenarioInfo);
             string[] tagsOfScenario = ((string[])(null));
             System.Collections.Specialized.OrderedDictionary argumentsOfScenario = new System.Collections.Specialized.OrderedDictionary();
             TechTalk.SpecFlow.ScenarioInfo scenarioInfo = new TechTalk.SpecFlow.ScenarioInfo("Get a tenant with an etag retrieved from a created tenant", null, tagsOfScenario, argumentsOfScenario, this._featureTags);
-#line 14
+#line 15
 this.ScenarioInitialize(scenarioInfo);
 #line hidden
             bool isScenarioIgnored = default(bool);
@@ -147,21 +150,21 @@ this.ScenarioInitialize(scenarioInfo);
             else
             {
                 this.ScenarioStart();
-#line 15
+#line 16
  testRunner.Given("I create a child tenant called \"ChildTenant1\" for the root tenant", ((string)(null)), ((TechTalk.SpecFlow.Table)(null)), "Given ");
 #line hidden
-#line 16
+#line 17
  testRunner.And("I get the tenant id of the tenant called \"ChildTenant1\" and call it \"ChildTenantI" +
                         "d\"", ((string)(null)), ((TechTalk.SpecFlow.Table)(null)), "And ");
 #line hidden
-#line 17
+#line 18
  testRunner.And("I get the ETag of the tenant called \"ChildTenant1\" and call it \"ChildTenantETag\"", ((string)(null)), ((TechTalk.SpecFlow.Table)(null)), "And ");
 #line hidden
-#line 18
+#line 19
  testRunner.When("I get the tenant with the id called \"ChildTenantId\" and the ETag called \"ChildTen" +
                         "antETag\"", ((string)(null)), ((TechTalk.SpecFlow.Table)(null)), "When ");
 #line hidden
-#line 19
+#line 20
  testRunner.Then("it should throw a TenantNotModifiedException", ((string)(null)), ((TechTalk.SpecFlow.Table)(null)), "Then ");
 #line hidden
             }
@@ -175,7 +178,7 @@ this.ScenarioInitialize(scenarioInfo);
             string[] tagsOfScenario = ((string[])(null));
             System.Collections.Specialized.OrderedDictionary argumentsOfScenario = new System.Collections.Specialized.OrderedDictionary();
             TechTalk.SpecFlow.ScenarioInfo scenarioInfo = new TechTalk.SpecFlow.ScenarioInfo("Get a tenant with an etag retrieved from a tenant got from the repo", null, tagsOfScenario, argumentsOfScenario, this._featureTags);
-#line 21
+#line 22
 this.ScenarioInitialize(scenarioInfo);
 #line hidden
             bool isScenarioIgnored = default(bool);
@@ -195,24 +198,24 @@ this.ScenarioInitialize(scenarioInfo);
             else
             {
                 this.ScenarioStart();
-#line 22
+#line 23
  testRunner.Given("I create a child tenant called \"ChildTenant1\" for the root tenant", ((string)(null)), ((TechTalk.SpecFlow.Table)(null)), "Given ");
 #line hidden
-#line 23
+#line 24
  testRunner.And("I get the tenant id of the tenant called \"ChildTenant1\" and call it \"ChildTenantI" +
                         "d\"", ((string)(null)), ((TechTalk.SpecFlow.Table)(null)), "And ");
 #line hidden
-#line 24
+#line 25
  testRunner.And("I get the tenant with the id called \"ChildTenantId\" and call it \"Result\"", ((string)(null)), ((TechTalk.SpecFlow.Table)(null)), "And ");
 #line hidden
-#line 25
+#line 26
  testRunner.And("I get the ETag of the tenant called \"Result\" and call it \"ResultETag\"", ((string)(null)), ((TechTalk.SpecFlow.Table)(null)), "And ");
 #line hidden
-#line 26
+#line 27
  testRunner.When("I get the tenant with the id called \"ChildTenantId\" and the ETag called \"ResultET" +
                         "ag\"", ((string)(null)), ((TechTalk.SpecFlow.Table)(null)), "When ");
 #line hidden
-#line 27
+#line 28
  testRunner.Then("it should throw a TenantNotModifiedException", ((string)(null)), ((TechTalk.SpecFlow.Table)(null)), "Then ");
 #line hidden
             }
@@ -226,7 +229,7 @@ this.ScenarioInitialize(scenarioInfo);
             string[] tagsOfScenario = ((string[])(null));
             System.Collections.Specialized.OrderedDictionary argumentsOfScenario = new System.Collections.Specialized.OrderedDictionary();
             TechTalk.SpecFlow.ScenarioInfo scenarioInfo = new TechTalk.SpecFlow.ScenarioInfo("Create a child tenant", null, tagsOfScenario, argumentsOfScenario, this._featureTags);
-#line 29
+#line 30
 this.ScenarioInitialize(scenarioInfo);
 #line hidden
             bool isScenarioIgnored = default(bool);
@@ -246,17 +249,17 @@ this.ScenarioInitialize(scenarioInfo);
             else
             {
                 this.ScenarioStart();
-#line 30
+#line 31
  testRunner.Given("I create a child tenant called \"ChildTenant1\" for the root tenant", ((string)(null)), ((TechTalk.SpecFlow.Table)(null)), "Given ");
 #line hidden
-#line 31
+#line 32
  testRunner.When("I get the tenant id of the tenant called \"ChildTenant1\" and call it \"ChildTenantI" +
                         "d\"", ((string)(null)), ((TechTalk.SpecFlow.Table)(null)), "When ");
 #line hidden
-#line 32
+#line 33
  testRunner.And("I get the tenant with the id called \"ChildTenantId\" and call it \"Result\"", ((string)(null)), ((TechTalk.SpecFlow.Table)(null)), "And ");
 #line hidden
-#line 33
+#line 34
  testRunner.Then("the tenant called \"ChildTenant1\" should have the same ID as the tenant called \"Re" +
                         "sult\"", ((string)(null)), ((TechTalk.SpecFlow.Table)(null)), "Then ");
 #line hidden
@@ -271,7 +274,7 @@ this.ScenarioInitialize(scenarioInfo);
             string[] tagsOfScenario = ((string[])(null));
             System.Collections.Specialized.OrderedDictionary argumentsOfScenario = new System.Collections.Specialized.OrderedDictionary();
             TechTalk.SpecFlow.ScenarioInfo scenarioInfo = new TechTalk.SpecFlow.ScenarioInfo("Update a child tenant", null, tagsOfScenario, argumentsOfScenario, this._featureTags);
-#line 35
+#line 36
 this.ScenarioInitialize(scenarioInfo);
 #line hidden
             bool isScenarioIgnored = default(bool);
@@ -291,7 +294,7 @@ this.ScenarioInitialize(scenarioInfo);
             else
             {
                 this.ScenarioStart();
-#line 36
+#line 37
  testRunner.Given("I create a child tenant called \"ChildTenant1\" for the root tenant", ((string)(null)), ((TechTalk.SpecFlow.Table)(null)), "Given ");
 #line hidden
                 TechTalk.SpecFlow.Table table4 = new TechTalk.SpecFlow.Table(new string[] {
@@ -310,17 +313,17 @@ this.ScenarioInitialize(scenarioInfo);
                             "ThirdKey",
                             "1999-01-17",
                             "datetimeoffset"});
-#line 37
+#line 38
  testRunner.When("I update the properties of the tenant called \"ChildTenant1\"", ((string)(null)), table4, "When ");
 #line hidden
-#line 42
+#line 43
  testRunner.And("I get the tenant id of the tenant called \"ChildTenant1\" and call it \"ChildTenantI" +
                         "d\"", ((string)(null)), ((TechTalk.SpecFlow.Table)(null)), "And ");
 #line hidden
-#line 43
+#line 44
  testRunner.And("I get the tenant with the id called \"ChildTenantId\" and call it \"Result\"", ((string)(null)), ((TechTalk.SpecFlow.Table)(null)), "And ");
 #line hidden
-#line 44
+#line 45
  testRunner.Then("the tenant called \"ChildTenant1\" should have the same ID as the tenant called \"Re" +
                         "sult\"", ((string)(null)), ((TechTalk.SpecFlow.Table)(null)), "Then ");
 #line hidden
@@ -340,7 +343,7 @@ this.ScenarioInitialize(scenarioInfo);
                             "ThirdKey",
                             "1999-01-17",
                             "datetimeoffset"});
-#line 45
+#line 46
  testRunner.And("the tenant called \"Result\" should have the properties", ((string)(null)), table5, "And ");
 #line hidden
             }
@@ -354,7 +357,7 @@ this.ScenarioInitialize(scenarioInfo);
             string[] tagsOfScenario = ((string[])(null));
             System.Collections.Specialized.OrderedDictionary argumentsOfScenario = new System.Collections.Specialized.OrderedDictionary();
             TechTalk.SpecFlow.ScenarioInfo scenarioInfo = new TechTalk.SpecFlow.ScenarioInfo("Add, update, and remove properties of a child tenant", null, tagsOfScenario, argumentsOfScenario, this._featureTags);
-#line 51
+#line 52
 this.ScenarioInitialize(scenarioInfo);
 #line hidden
             bool isScenarioIgnored = default(bool);
@@ -374,7 +377,7 @@ this.ScenarioInitialize(scenarioInfo);
             else
             {
                 this.ScenarioStart();
-#line 52
+#line 53
  testRunner.Given("I create a child tenant called \"ChildTenant1\" for the root tenant", ((string)(null)), ((TechTalk.SpecFlow.Table)(null)), "Given ");
 #line hidden
                 TechTalk.SpecFlow.Table table6 = new TechTalk.SpecFlow.Table(new string[] {
@@ -393,7 +396,7 @@ this.ScenarioInitialize(scenarioInfo);
                             "ThirdKey",
                             "1999-01-17",
                             "datetimeoffset"});
-#line 53
+#line 54
  testRunner.And("I update the properties of the tenant called \"ChildTenant1\"", ((string)(null)), table6, "And ");
 #line hidden
                 TechTalk.SpecFlow.Table table7 = new TechTalk.SpecFlow.Table(new string[] {
@@ -421,22 +424,22 @@ this.ScenarioInitialize(scenarioInfo);
                             "",
                             "",
                             "remove"});
-#line 58
+#line 59
  testRunner.When("I rename the tenant called \"ChildTenant1\" to \"RenamedChildTenant1\" and update its" +
                         " properties", ((string)(null)), table7, "When ");
 #line hidden
-#line 64
+#line 65
  testRunner.And("I get the tenant id of the tenant called \"ChildTenant1\" and call it \"ChildTenantI" +
                         "d\"", ((string)(null)), ((TechTalk.SpecFlow.Table)(null)), "And ");
 #line hidden
-#line 65
+#line 66
  testRunner.And("I get the tenant with the id called \"ChildTenantId\" and call it \"Result\"", ((string)(null)), ((TechTalk.SpecFlow.Table)(null)), "And ");
 #line hidden
-#line 66
+#line 67
  testRunner.Then("the tenant called \"ChildTenant1\" should have the same ID as the tenant called \"Re" +
                         "sult\"", ((string)(null)), ((TechTalk.SpecFlow.Table)(null)), "Then ");
 #line hidden
-#line 67
+#line 68
  testRunner.And("the tenant called \"Result\" should now have the name \"RenamedChildTenant1\"", ((string)(null)), ((TechTalk.SpecFlow.Table)(null)), "And ");
 #line hidden
                 TechTalk.SpecFlow.Table table8 = new TechTalk.SpecFlow.Table(new string[] {
@@ -459,7 +462,7 @@ this.ScenarioInitialize(scenarioInfo);
                             "FifthKey",
                             "This is a new string",
                             "string"});
-#line 68
+#line 69
  testRunner.And("the tenant called \"Result\" should have the properties", ((string)(null)), table8, "And ");
 #line hidden
             }
@@ -473,7 +476,7 @@ this.ScenarioInitialize(scenarioInfo);
             string[] tagsOfScenario = ((string[])(null));
             System.Collections.Specialized.OrderedDictionary argumentsOfScenario = new System.Collections.Specialized.OrderedDictionary();
             TechTalk.SpecFlow.ScenarioInfo scenarioInfo = new TechTalk.SpecFlow.ScenarioInfo("Create a child of a child", null, tagsOfScenario, argumentsOfScenario, this._featureTags);
-#line 75
+#line 76
 this.ScenarioInitialize(scenarioInfo);
 #line hidden
             bool isScenarioIgnored = default(bool);
@@ -493,21 +496,21 @@ this.ScenarioInitialize(scenarioInfo);
             else
             {
                 this.ScenarioStart();
-#line 76
+#line 77
  testRunner.Given("I create a child tenant called \"ChildTenant1\" for the root tenant", ((string)(null)), ((TechTalk.SpecFlow.Table)(null)), "Given ");
 #line hidden
-#line 77
+#line 78
  testRunner.And("I create a child tenant called \"ChildTenant2\" for the tenant called \"ChildTenant1" +
                         "\"", ((string)(null)), ((TechTalk.SpecFlow.Table)(null)), "And ");
 #line hidden
-#line 78
+#line 79
  testRunner.When("I get the tenant id of the tenant called \"ChildTenant2\" and call it \"ChildTenantI" +
                         "d\"", ((string)(null)), ((TechTalk.SpecFlow.Table)(null)), "When ");
 #line hidden
-#line 79
+#line 80
  testRunner.And("I get the tenant with the id called \"ChildTenantId\" and call it \"Result\"", ((string)(null)), ((TechTalk.SpecFlow.Table)(null)), "And ");
 #line hidden
-#line 80
+#line 81
  testRunner.Then("the tenant called \"ChildTenant2\" should have the same ID as the tenant called \"Re" +
                         "sult\"", ((string)(null)), ((TechTalk.SpecFlow.Table)(null)), "Then ");
 #line hidden
@@ -522,7 +525,7 @@ this.ScenarioInitialize(scenarioInfo);
             string[] tagsOfScenario = ((string[])(null));
             System.Collections.Specialized.OrderedDictionary argumentsOfScenario = new System.Collections.Specialized.OrderedDictionary();
             TechTalk.SpecFlow.ScenarioInfo scenarioInfo = new TechTalk.SpecFlow.ScenarioInfo("Get children", null, tagsOfScenario, argumentsOfScenario, this._featureTags);
-#line 82
+#line 83
 this.ScenarioInitialize(scenarioInfo);
 #line hidden
             bool isScenarioIgnored = default(bool);
@@ -542,30 +545,30 @@ this.ScenarioInitialize(scenarioInfo);
             else
             {
                 this.ScenarioStart();
-#line 83
+#line 84
  testRunner.Given("I create a child tenant called \"ChildTenant1\" for the root tenant", ((string)(null)), ((TechTalk.SpecFlow.Table)(null)), "Given ");
 #line hidden
-#line 84
+#line 85
  testRunner.And("I create a child tenant called \"ChildTenant2\" for the tenant called \"ChildTenant1" +
                         "\"", ((string)(null)), ((TechTalk.SpecFlow.Table)(null)), "And ");
 #line hidden
-#line 85
+#line 86
  testRunner.And("I create a child tenant called \"ChildTenant3\" for the tenant called \"ChildTenant1" +
                         "\"", ((string)(null)), ((TechTalk.SpecFlow.Table)(null)), "And ");
 #line hidden
-#line 86
+#line 87
  testRunner.And("I create a child tenant called \"ChildTenant4\" for the tenant called \"ChildTenant1" +
                         "\"", ((string)(null)), ((TechTalk.SpecFlow.Table)(null)), "And ");
 #line hidden
-#line 87
+#line 88
  testRunner.And("I create a child tenant called \"ChildTenant5\" for the tenant called \"ChildTenant1" +
                         "\"", ((string)(null)), ((TechTalk.SpecFlow.Table)(null)), "And ");
 #line hidden
-#line 88
+#line 89
  testRunner.When("I get the tenant id of the tenant called \"ChildTenant1\" and call it \"ChildTenantI" +
                         "d\"", ((string)(null)), ((TechTalk.SpecFlow.Table)(null)), "When ");
 #line hidden
-#line 89
+#line 90
  testRunner.And("I get the children of the tenant with the id called \"ChildTenantId\" with maxItems" +
                         " 20 and call them \"Result\"", ((string)(null)), ((TechTalk.SpecFlow.Table)(null)), "And ");
 #line hidden
@@ -579,7 +582,7 @@ this.ScenarioInitialize(scenarioInfo);
                             "ChildTenant4"});
                 table9.AddRow(new string[] {
                             "ChildTenant5"});
-#line 90
+#line 91
  testRunner.Then("the ids of the children called \"Result\" should match the ids of the tenants calle" +
                         "d", ((string)(null)), table9, "Then ");
 #line hidden
@@ -594,7 +597,7 @@ this.ScenarioInitialize(scenarioInfo);
             string[] tagsOfScenario = ((string[])(null));
             System.Collections.Specialized.OrderedDictionary argumentsOfScenario = new System.Collections.Specialized.OrderedDictionary();
             TechTalk.SpecFlow.ScenarioInfo scenarioInfo = new TechTalk.SpecFlow.ScenarioInfo("Get children when no child tenants exist", null, tagsOfScenario, argumentsOfScenario, this._featureTags);
-#line 97
+#line 98
 this.ScenarioInitialize(scenarioInfo);
 #line hidden
             bool isScenarioIgnored = default(bool);
@@ -614,18 +617,18 @@ this.ScenarioInitialize(scenarioInfo);
             else
             {
                 this.ScenarioStart();
-#line 98
+#line 99
  testRunner.Given("I create a child tenant called \"ChildTenant1\" for the root tenant", ((string)(null)), ((TechTalk.SpecFlow.Table)(null)), "Given ");
 #line hidden
-#line 99
+#line 100
  testRunner.When("I get the tenant id of the tenant called \"ChildTenant1\" and call it \"ChildTenantI" +
                         "d\"", ((string)(null)), ((TechTalk.SpecFlow.Table)(null)), "When ");
 #line hidden
-#line 100
+#line 101
  testRunner.And("I get the children of the tenant with the id called \"ChildTenantId\" with maxItems" +
                         " 20 and call them \"Result\"", ((string)(null)), ((TechTalk.SpecFlow.Table)(null)), "And ");
 #line hidden
-#line 101
+#line 102
  testRunner.Then("there should be no ids in the children called \"Result\"", ((string)(null)), ((TechTalk.SpecFlow.Table)(null)), "Then ");
 #line hidden
             }
@@ -639,7 +642,7 @@ this.ScenarioInitialize(scenarioInfo);
             string[] tagsOfScenario = ((string[])(null));
             System.Collections.Specialized.OrderedDictionary argumentsOfScenario = new System.Collections.Specialized.OrderedDictionary();
             TechTalk.SpecFlow.ScenarioInfo scenarioInfo = new TechTalk.SpecFlow.ScenarioInfo("Get children when there is a single child tenant", null, tagsOfScenario, argumentsOfScenario, this._featureTags);
-#line 103
+#line 104
 this.ScenarioInitialize(scenarioInfo);
 #line hidden
             bool isScenarioIgnored = default(bool);
@@ -659,18 +662,18 @@ this.ScenarioInitialize(scenarioInfo);
             else
             {
                 this.ScenarioStart();
-#line 104
+#line 105
  testRunner.Given("I create a child tenant called \"ChildTenant1\" for the root tenant", ((string)(null)), ((TechTalk.SpecFlow.Table)(null)), "Given ");
 #line hidden
-#line 105
+#line 106
  testRunner.And("I create a child tenant called \"ChildTenant2\" for the tenant called \"ChildTenant1" +
                         "\"", ((string)(null)), ((TechTalk.SpecFlow.Table)(null)), "And ");
 #line hidden
-#line 106
+#line 107
  testRunner.When("I get the tenant id of the tenant called \"ChildTenant1\" and call it \"ChildTenantI" +
                         "d\"", ((string)(null)), ((TechTalk.SpecFlow.Table)(null)), "When ");
 #line hidden
-#line 107
+#line 108
  testRunner.And("I get the children of the tenant with the id called \"ChildTenantId\" with maxItems" +
                         " 20 and call them \"Result\"", ((string)(null)), ((TechTalk.SpecFlow.Table)(null)), "And ");
 #line hidden
@@ -678,7 +681,7 @@ this.ScenarioInitialize(scenarioInfo);
                             "TenantName"});
                 table10.AddRow(new string[] {
                             "ChildTenant2"});
-#line 108
+#line 109
  testRunner.Then("the ids of the children called \"Result\" should match the ids of the tenants calle" +
                         "d", ((string)(null)), table10, "Then ");
 #line hidden
@@ -693,7 +696,7 @@ this.ScenarioInitialize(scenarioInfo);
             string[] tagsOfScenario = ((string[])(null));
             System.Collections.Specialized.OrderedDictionary argumentsOfScenario = new System.Collections.Specialized.OrderedDictionary();
             TechTalk.SpecFlow.ScenarioInfo scenarioInfo = new TechTalk.SpecFlow.ScenarioInfo("Get children with continuation token", null, tagsOfScenario, argumentsOfScenario, this._featureTags);
-#line 112
+#line 113
 this.ScenarioInitialize(scenarioInfo);
 #line hidden
             bool isScenarioIgnored = default(bool);
@@ -713,41 +716,41 @@ this.ScenarioInitialize(scenarioInfo);
             else
             {
                 this.ScenarioStart();
-#line 113
+#line 114
  testRunner.Given("I create a child tenant called \"ChildTenant1\" for the root tenant", ((string)(null)), ((TechTalk.SpecFlow.Table)(null)), "Given ");
 #line hidden
-#line 114
+#line 115
  testRunner.And("I create a child tenant called \"ChildTenant2\" for the tenant called \"ChildTenant1" +
                         "\"", ((string)(null)), ((TechTalk.SpecFlow.Table)(null)), "And ");
 #line hidden
-#line 115
+#line 116
  testRunner.And("I create a child tenant called \"ChildTenant3\" for the tenant called \"ChildTenant1" +
                         "\"", ((string)(null)), ((TechTalk.SpecFlow.Table)(null)), "And ");
 #line hidden
-#line 116
+#line 117
  testRunner.And("I create a child tenant called \"ChildTenant4\" for the tenant called \"ChildTenant1" +
                         "\"", ((string)(null)), ((TechTalk.SpecFlow.Table)(null)), "And ");
 #line hidden
-#line 117
+#line 118
  testRunner.And("I create a child tenant called \"ChildTenant5\" for the tenant called \"ChildTenant1" +
                         "\"", ((string)(null)), ((TechTalk.SpecFlow.Table)(null)), "And ");
 #line hidden
-#line 118
+#line 119
  testRunner.When("I get the tenant id of the tenant called \"ChildTenant1\" and call it \"ChildTenantI" +
                         "d\"", ((string)(null)), ((TechTalk.SpecFlow.Table)(null)), "When ");
 #line hidden
-#line 119
+#line 120
  testRunner.And("I get the children of the tenant with the id called \"ChildTenantId\" with maxItems" +
                         " 2 and call them \"Result\"", ((string)(null)), ((TechTalk.SpecFlow.Table)(null)), "And ");
 #line hidden
-#line 120
+#line 121
  testRunner.And("I get the children of the tenant with the id called \"ChildTenantId\" with maxItems" +
                         " 20 and continuation token \"Result\" and call them \"Result2\"", ((string)(null)), ((TechTalk.SpecFlow.Table)(null)), "And ");
 #line hidden
-#line 121
+#line 122
  testRunner.Then("there should be 2 tenants in \"Result\"", ((string)(null)), ((TechTalk.SpecFlow.Table)(null)), "Then ");
 #line hidden
-#line 122
+#line 123
  testRunner.And("there should be 2 tenants in \"Result2\"", ((string)(null)), ((TechTalk.SpecFlow.Table)(null)), "And ");
 #line hidden
                 TechTalk.SpecFlow.Table table11 = new TechTalk.SpecFlow.Table(new string[] {
@@ -760,7 +763,7 @@ this.ScenarioInitialize(scenarioInfo);
                             "ChildTenant3"});
                 table11.AddRow(new string[] {
                             "ChildTenant2"});
-#line 123
+#line 124
  testRunner.And("the ids of the children called \"Result\" and \"Result2\" should each match 2 of the " +
                         "ids of the tenants called", ((string)(null)), table11, "And ");
 #line hidden
@@ -775,7 +778,7 @@ this.ScenarioInitialize(scenarioInfo);
             string[] tagsOfScenario = ((string[])(null));
             System.Collections.Specialized.OrderedDictionary argumentsOfScenario = new System.Collections.Specialized.OrderedDictionary();
             TechTalk.SpecFlow.ScenarioInfo scenarioInfo = new TechTalk.SpecFlow.ScenarioInfo("Delete a child", null, tagsOfScenario, argumentsOfScenario, this._featureTags);
-#line 130
+#line 131
 this.ScenarioInitialize(scenarioInfo);
 #line hidden
             bool isScenarioIgnored = default(bool);
@@ -795,37 +798,37 @@ this.ScenarioInitialize(scenarioInfo);
             else
             {
                 this.ScenarioStart();
-#line 131
+#line 132
  testRunner.Given("I create a child tenant called \"ChildTenant1\" for the root tenant", ((string)(null)), ((TechTalk.SpecFlow.Table)(null)), "Given ");
 #line hidden
-#line 132
+#line 133
  testRunner.And("I create a child tenant called \"ChildTenant2\" for the tenant called \"ChildTenant1" +
                         "\"", ((string)(null)), ((TechTalk.SpecFlow.Table)(null)), "And ");
 #line hidden
-#line 133
+#line 134
  testRunner.And("I create a child tenant called \"ChildTenant3\" for the tenant called \"ChildTenant1" +
                         "\"", ((string)(null)), ((TechTalk.SpecFlow.Table)(null)), "And ");
 #line hidden
-#line 134
+#line 135
  testRunner.And("I create a child tenant called \"ChildTenant4\" for the tenant called \"ChildTenant1" +
                         "\"", ((string)(null)), ((TechTalk.SpecFlow.Table)(null)), "And ");
 #line hidden
-#line 135
+#line 136
  testRunner.And("I create a child tenant called \"ChildTenant5\" for the tenant called \"ChildTenant1" +
                         "\"", ((string)(null)), ((TechTalk.SpecFlow.Table)(null)), "And ");
 #line hidden
-#line 136
+#line 137
  testRunner.When("I get the tenant id of the tenant called \"ChildTenant1\" and call it \"ChildTenantI" +
                         "d\"", ((string)(null)), ((TechTalk.SpecFlow.Table)(null)), "When ");
 #line hidden
-#line 137
+#line 138
  testRunner.And("I get the tenant id of the tenant called \"ChildTenant3\" and call it \"DeletedChild" +
                         "TenantId\"", ((string)(null)), ((TechTalk.SpecFlow.Table)(null)), "And ");
 #line hidden
-#line 138
+#line 139
  testRunner.And("I delete the tenant with the id called \"DeletedChildTenantId\"", ((string)(null)), ((TechTalk.SpecFlow.Table)(null)), "And ");
 #line hidden
-#line 139
+#line 140
  testRunner.And("I get the children of the tenant with the id called \"ChildTenantId\" with maxItems" +
                         " 20 and call them \"Result\"", ((string)(null)), ((TechTalk.SpecFlow.Table)(null)), "And ");
 #line hidden
@@ -837,7 +840,7 @@ this.ScenarioInitialize(scenarioInfo);
                             "ChildTenant4"});
                 table12.AddRow(new string[] {
                             "ChildTenant5"});
-#line 140
+#line 141
  testRunner.Then("the ids of the children called \"Result\" should match the ids of the tenants calle" +
                         "d", ((string)(null)), table12, "Then ");
 #line hidden
@@ -852,7 +855,7 @@ this.ScenarioInitialize(scenarioInfo);
             string[] tagsOfScenario = ((string[])(null));
             System.Collections.Specialized.OrderedDictionary argumentsOfScenario = new System.Collections.Specialized.OrderedDictionary();
             TechTalk.SpecFlow.ScenarioInfo scenarioInfo = new TechTalk.SpecFlow.ScenarioInfo("Root tenant has empty properties", null, tagsOfScenario, argumentsOfScenario, this._featureTags);
-#line 146
+#line 147
 this.ScenarioInitialize(scenarioInfo);
 #line hidden
             bool isScenarioIgnored = default(bool);
@@ -872,10 +875,10 @@ this.ScenarioInitialize(scenarioInfo);
             else
             {
                 this.ScenarioStart();
-#line 147
+#line 148
  testRunner.When("I get the tenant with id \"f26450ab1668784bb327951c8b08f347\" and call it \"Root\"", ((string)(null)), ((TechTalk.SpecFlow.Table)(null)), "When ");
 #line hidden
-#line 148
+#line 149
  testRunner.Then("the tenant called \"Root\" should have no properties", ((string)(null)), ((TechTalk.SpecFlow.Table)(null)), "Then ");
 #line hidden
             }
@@ -889,7 +892,7 @@ this.ScenarioInitialize(scenarioInfo);
             string[] tagsOfScenario = ((string[])(null));
             System.Collections.Specialized.OrderedDictionary argumentsOfScenario = new System.Collections.Specialized.OrderedDictionary();
             TechTalk.SpecFlow.ScenarioInfo scenarioInfo = new TechTalk.SpecFlow.ScenarioInfo("Updates to root tenant are prohibited", null, tagsOfScenario, argumentsOfScenario, this._featureTags);
-#line 150
+#line 151
 this.ScenarioInitialize(scenarioInfo);
 #line hidden
             bool isScenarioIgnored = default(bool);
@@ -909,11 +912,11 @@ this.ScenarioInitialize(scenarioInfo);
             else
             {
                 this.ScenarioStart();
-#line 151
+#line 152
  testRunner.When("I try to update the properties of the tenant with id \"f26450ab1668784bb327951c8b0" +
                         "8f347\"", ((string)(null)), ((TechTalk.SpecFlow.Table)(null)), "When ");
 #line hidden
-#line 152
+#line 153
  testRunner.Then("it should throw a NotSupportedException", ((string)(null)), ((TechTalk.SpecFlow.Table)(null)), "Then ");
 #line hidden
             }
