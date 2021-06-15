@@ -33,7 +33,7 @@ namespace Marain.Tenancy.ControlHost
 
             services.AddSingleton(sp => sp.GetRequiredService<IConfiguration>().GetSection("TenantCloudBlobContainerFactoryOptions").Get<TenantCloudBlobContainerFactoryOptions>());
 
-            services.AddTenancyApiOnBlobStorage(this.GetRootTenantStorageConfiguration, this.ConfigureOpenApiHost);
+            services.AddTenancyApiOnBlobStorageWithOpenApiActionResultHosting(this.GetRootTenantStorageConfiguration, this.ConfigureOpenApiHost);
         }
 
         private BlobStorageConfiguration GetRootTenantStorageConfiguration(IServiceProvider serviceProvider)

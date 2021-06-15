@@ -7,6 +7,7 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "DevOps", "DevOps", "{D29CAB
 	ProjectSection(SolutionItems) = preProject
 		..\azure-pipelines.release.yml = ..\azure-pipelines.release.yml
 		..\azure-pipelines.yml = ..\azure-pipelines.yml
+		..\GitVersion.yml = ..\GitVersion.yml
 	EndProjectSection
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Marain.Tenancy.OpenApi.Service", "Marain.Tenancy.OpenApi.Service\Marain.Tenancy.OpenApi.Service.csproj", "{CFD86B72-E715-4C79-A5B5-A86648617581}"
