@@ -69,6 +69,13 @@ namespace Marain.Tenancy
                 throw new TenantNotModifiedException();
             }
 
+            // It's possible that if caching is enabled, we'll have a response containing the same etag as specified in
+            // the parameters. In this case, for the sake of consistency, we'll throw the TenantNotModifiedException.
+            if (tenant.Response.StatusCode == HttpStatusCode.OK && !string.IsNullOrEmpty(eTag) && eTag == tenant.Headers.ETag)
+            {
+                throw new TenantNotModifiedException();
+            }
+
             return this.TenantMapper.MapTenant(tenant.Body);
         }
     }

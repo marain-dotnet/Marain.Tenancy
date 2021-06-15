@@ -4,11 +4,15 @@
     using System.Collections.Generic;
     using System.Linq;
     using System.Threading.Tasks;
+    using CacheCow.Client.Headers;
     using Corvus.Extensions.Json;
     using Corvus.Tenancy;
     using Corvus.Tenancy.Exceptions;
     using Corvus.Testing.SpecFlow;
+    using Marain.Tenancy.Client;
+    using Marain.Tenancy.Client.Models;
     using Microsoft.Extensions.DependencyInjection;
+    using Microsoft.Rest;
     using Newtonsoft.Json.Linq;
     using NUnit.Framework;
     using TechTalk.SpecFlow;
@@ -18,6 +22,7 @@
     {
         private readonly ScenarioContext scenarioContext;
         private readonly ITenantStore store;
+        private readonly ITenancyService client;
         private readonly IJsonNetPropertyBagFactory propertyBagFactory;
 
         public TenancyClientSteps(FeatureContext featureContext, ScenarioContext scenarioContext)
@@ -25,6 +30,7 @@
             this.scenarioContext = scenarioContext;
 
             this.store = ContainerBindings.GetServiceProvider(featureContext).GetRequiredService<ITenantStore>();
+            this.client = ContainerBindings.GetServiceProvider(featureContext).GetRequiredService<ITenancyService>();
             this.propertyBagFactory = ContainerBindings.GetServiceProvider(featureContext).GetRequiredService<IJsonNetPropertyBagFactory>();
         }
 
@@ -311,6 +317,25 @@
         {
             ITenant tenant = this.scenarioContext.Get<ITenant>(tenantName);
             this.scenarioContext.Set(tenant.ETag, eTagName);
+        }
+
+        [When(@"I use the client to get the tenant with the id called ""(.*)"" and call the response ""(.*)""")]
+        public async Task WhenIUseTheClientToGetTheTenantWithTheIdCalledAndCallTheResponse(string tenantIdName, string responseName)
+        {
+            string tenantId = this.scenarioContext.Get<string>(tenantIdName);
+            HttpOperationResponse<object, GetTenantHeaders> response = await this.client.GetTenantWithHttpMessagesAsync(tenantId).ConfigureAwait(false);
+
+            this.scenarioContext.Set(response, responseName);
+        }
+
+        [Then(@"the tenant response called ""(.*)"" was retrieved from the cache")]
+        public void ThenTheTenantResponseCalledWasRetrievedFromTheCache(string responseName)
+        {
+            HttpOperationResponse<object, GetTenantHeaders> response = this.scenarioContext.Get<HttpOperationResponse<object, GetTenantHeaders>>(responseName);
+            Assert.IsTrue(response.Response.Headers.Contains(CacheCowHeader.Name));
+
+            string values = response.Response.Headers.GetValues(CacheCowHeader.Name).First();
+            Assert.IsTrue(values.Contains($"{CacheCowHeader.ExtensionNames.RetrievedFromCache}=true"), $"Expected CacheCow header to specify that result was retrieved from cache, but it did not: '{values}'");
         }
 
         [When(@"I get the tenant with the id called ""(.*)"" and the ETag called ""(.*)""")]
