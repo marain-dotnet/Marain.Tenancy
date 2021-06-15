@@ -27,7 +27,7 @@ Scenario: Get the root tenant
 	Then I receive an 'OK' response
 	And the response content should have a string property called 'name' with value 'Root'
 	And the response should not contain an 'Etag' header
-	And the response should contain a 'Cache-Control' header with value 'max-age=600'
+	And the response should contain a 'Cache-Control' header with value 'max-age=300'
 
 Scenario: Retrieve a newly created tenant using the location header returned from the create request
 	Given I have used the API to create a new tenant
@@ -37,7 +37,7 @@ Scenario: Retrieve a newly created tenant using the location header returned fro
 	Then I receive an 'OK' response
 	And the response content should have a string property called 'name' with value 'Test'
 	And the response should contain an 'Etag' header
-	And the response should contain a 'Cache-Control' header with value 'max-age=600'
+	And the response should contain a 'Cache-Control' header with value 'max-age=300'
 
 Scenario: Request a tenant using the etag from a previous request
 	Given I have used the API to create a new tenant

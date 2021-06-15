@@ -10,7 +10,7 @@
 
     "TenantCloudBlobContainerFactoryOptions__AzureServicesAuthConnectionString": "",
 
-    "TenantCacheConfiguration__GetTenantResponseCacheControlHeaderValue": "max-age=600",
+    "TenantCacheConfiguration__GetTenantResponseCacheControlHeaderValue": "max-age=300",
 
     "RootTenantBlobStorageConfigurationOptions__AccountName": "",
     "RootTenantBlobStorageConfigurationOptions__RootTenantBlobStorageConfiguration__KeyVaultName": "",

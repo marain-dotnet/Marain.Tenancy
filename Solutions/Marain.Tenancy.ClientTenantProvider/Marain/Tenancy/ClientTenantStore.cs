@@ -232,7 +232,14 @@ namespace Marain.Tenancy
                 }
             }
 
-            HttpOperationResponse<object> result = await this.TenantService.UpdateTenantWithHttpMessagesAsync(tenantId, patch).ConfigureAwait(false);
+            var headers = new Dictionary<string, List<string>>
+            {
+                {
+                    "Cache-Control",
+                    new List<string> { "no-store" }
+                },
+            };
+            HttpOperationResponse<object> result = await this.TenantService.UpdateTenantWithHttpMessagesAsync(tenantId, patch, headers).ConfigureAwait(false);
 
             if (result.Response.StatusCode == HttpStatusCode.NotFound)
             {

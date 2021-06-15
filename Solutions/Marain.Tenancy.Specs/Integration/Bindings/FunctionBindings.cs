@@ -39,6 +39,7 @@ namespace Marain.Tenancy.Specs.Integration.Bindings
             IConfigurationRoot config = ContainerBindings.GetServiceProvider(featureContext).GetRequiredService<IConfigurationRoot>();
 
             functionsConfig.CopyToEnvironmentVariables(config.AsEnumerable());
+            functionsConfig.EnvironmentVariables.Add("TenantCacheConfiguration__GetTenantResponseCacheControlHeaderValue", "max-age=300");
 
             return functionsController.StartFunctionsInstance(
                 "Marain.Tenancy.Host.Functions",

@@ -28,9 +28,7 @@ namespace Marain.Tenancy.Specs.Integration.Bindings
                 featureContext,
                 serviceCollection =>
                 {
-                    var configData = new Dictionary<string, string>
-                    {
-                    };
+                    var configData = new Dictionary<string, string>();
 
                     IConfigurationRoot config = new ConfigurationBuilder()
                         .AddInMemoryCollection(configData)
