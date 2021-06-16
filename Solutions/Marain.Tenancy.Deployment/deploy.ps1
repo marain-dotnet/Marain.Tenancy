@@ -19,7 +19,7 @@ param(
 	[string] $ResourceGroupLocation = "northeurope",
 	[string] $ArtifactStagingDirectory = ".",
 	[string] $ArtifactStorageContainerName = "stageartifacts",
-	[string] $TenantCacheControlHeaderValue = "max-age=600",
+	[string] $TenantCacheControlHeaderValue = "max-age=300",
 	[switch] $IsDeveloperEnvironment,
 	[switch] $UpdateLocalConfigFiles,
 	[switch] $SkipDeployment

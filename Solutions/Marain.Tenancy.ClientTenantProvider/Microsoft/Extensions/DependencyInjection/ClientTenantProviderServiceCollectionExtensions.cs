@@ -7,7 +7,6 @@ namespace Microsoft.Extensions.DependencyInjection
     using System.Collections.Generic;
     using System.Linq;
     using Corvus.ContentHandling;
-    using Corvus.Extensions.Json;
     using Corvus.Json;
     using Corvus.Tenancy;
     using Marain.Tenancy;
@@ -54,20 +53,30 @@ namespace Microsoft.Extensions.DependencyInjection
         /// Adds services an Azure Blob storage-based implementation of <see cref="ITenantProvider"/>.
         /// </summary>
         /// <param name="services">The service collection.</param>
+        /// <param name="enableResponseCaching">Flag indicating whether or not response caching should be enabled for
+        /// GET operations.</param>
         /// <returns>The modified service collection.</returns>
         /// <remarks>
-        /// Applications using this must also make <see cref="TenancyClientOptions"/> available via
-        /// DI.
+        /// <para>
+        /// Applications using this must also make <see cref="TenancyClientOptions"/> available via DI.
+        /// </para>
+        /// <para>
+        /// If you are intending to use <see cref="ITenantProvider" /> to retrieve tenants, you are advised to set
+        /// <c>enableResponseCaching</c> to true. However, if you are planning to create or update tenants using
+        /// <see cref="ITenantStore" /> to create and update tenants, you should set it to false to ensure that you
+        /// always retrieve the latest version of a tenant.
+        /// </para>
         /// </remarks>
         public static IServiceCollection AddTenantProviderServiceClient(
-            this IServiceCollection services)
+            this IServiceCollection services,
+            bool enableResponseCaching = true)
         {
             if (services.Any(s => typeof(ITenantProvider).IsAssignableFrom(s.ServiceType)))
             {
                 return services;
             }
 
-            services.AddTenancyClient();
+            services.AddTenancyClient(enableResponseCaching);
             services.AddTenantServiceClientRootTenant();
             services.AddSingleton<ITenantMapper, TenantMapper>();
             services.AddSingleton<ITenantProvider, ClientTenantProvider>();
