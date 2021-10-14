@@ -4,7 +4,6 @@
 
 namespace Microsoft.Extensions.DependencyInjection
 {
-    using System;
     using System.Linq;
     using Corvus.Tenancy;
     using Marain.Tenancy.OpenApi;
@@ -24,11 +23,8 @@ namespace Microsoft.Extensions.DependencyInjection
         /// Add services required by the Operations Status API.
         /// </summary>
         /// <param name="services">The service collection.</param>
-        /// <param name="configureHost">Optional callback for additional host configuration.</param>
         /// <returns>The service collection, to enable chaining.</returns>
-        public static IServiceCollection AddTenancyApi(
-            this IServiceCollection services,
-            Action<IOpenApiHostConfiguration> configureHost = null)
+        public static IServiceCollection AddTenancyApi(this IServiceCollection services)
         {
             if (services.Any(s => typeof(TenancyService).IsAssignableFrom(s.ServiceType)))
             {
@@ -58,11 +54,12 @@ namespace Microsoft.Extensions.DependencyInjection
                         .GetSection("TenantCacheConfiguration")
                         .Get<TenantCacheConfiguration>() ?? new TenantCacheConfiguration());
 
-            services.AddOpenApiHttpRequestHosting<SimpleOpenApiContext>((config) =>
-            {
-                config.Documents.RegisterOpenApiServiceWithEmbeddedDefinition<TenancyService>();
-                configureHost?.Invoke(config);
-            });
+            services.AddOpenApiAspNetPipelineHosting<SimpleOpenApiContext>(
+                config =>
+                {
+                    config.Documents.RegisterOpenApiServiceWithEmbeddedDefinition<TenancyService>();
+                    config.Documents.AddSwaggerEndpoint();
+                });
 
             return services;
         }

@@ -38,15 +38,13 @@ namespace Microsoft.Extensions.DependencyInjection
         /// <param name="getRootTenantStorageConfiguration">
         /// A function that will retrieve storage configuration for the root tenant.
         /// </param>
-        /// <param name="configureHost">The optional action to configure the host.</param>
         /// <returns>The modified service collection.</returns>
         public static IServiceCollection AddTenancyApiOnBlobStorage(
             this IServiceCollection services,
-            Func<IServiceProvider, BlobStorageConfiguration> getRootTenantStorageConfiguration,
-            Action<IOpenApiHostConfiguration> configureHost = null)
+            Func<IServiceProvider, BlobStorageConfiguration> getRootTenantStorageConfiguration)
         {
             services.AddTenancyBlobContainer(getRootTenantStorageConfiguration);
-            services.AddTenancyApi(configureHost);
+            services.AddTenancyApi();
             return services;
         }
     }

@@ -1,10 +1,10 @@
 namespace Marain.Tenancy.Host.AspNetCore
 {
     using Corvus.Azure.Storage.Tenancy;
-
+    using Marain.Tenancy.OpenApi.Configuration;
     using Menes;
     using Menes.Auditing.AuditLogSinks.Development;
-
+    using Menes.Hosting.AspNetCore;
     using Microsoft.AspNetCore.Builder;
     using Microsoft.AspNetCore.Hosting;
     using Microsoft.Extensions.Configuration;
@@ -19,10 +19,16 @@ namespace Marain.Tenancy.Host.AspNetCore
         // For more information on how to configure your application, visit https://go.microsoft.com/fwlink/?LinkID=398940
         public void ConfigureServices(IServiceCollection services)
         {
-            services.AddTenancyApiOnBlobStorage(this.GetRootTenantStorageConfiguration, this.ConfigureOpenApiHost);
-            services.AddSingleton(sp => sp.GetRequiredService<IConfiguration>().GetSection("TenantCloudBlobContainerFactoryOptions").Get<TenantCloudBlobContainerFactoryOptions>());
+            services.AddTenancyApiOnBlobStorage(this.GetRootTenantStorageConfiguration);
             services.AddOpenApiAuditing();
-            services.AddControllers();
+
+            services.AddSingleton(sp => sp.GetRequiredService<IConfiguration>().GetSection("TenantCloudBlobContainerFactoryOptions").Get<TenantCloudBlobContainerFactoryOptions>());
+
+            services.AddSingleton(
+                sp => sp.GetRequiredService<IConfiguration>()
+                        .GetSection("TenantCacheConfiguration")
+                        .Get<TenantCacheConfiguration>() ?? new TenantCacheConfiguration());
+
 #if DEBUG
             services.AddAuditLogSink<ConsoleAuditLogSink>();
 #endif
@@ -36,32 +42,20 @@ namespace Marain.Tenancy.Host.AspNetCore
                 app.UseDeveloperExceptionPage();
             }
 
-            app.UseRouting();
-            app.UseEndpoints(endpoints =>
-            {
-                endpoints.MapControllers();
-            });
+            app.UseMenesCatchAll();
         }
 
         private BlobStorageConfiguration GetRootTenantStorageConfiguration(IServiceProvider serviceProvider)
         {
             IConfiguration config = serviceProvider.GetRequiredService<IConfiguration>();
-            return config.GetSection("RootTenantBlobStorageConfigurationOptions").Get<BlobStorageConfiguration>();
-        }
+            BlobStorageConfiguration rootTenantBlobStorageConfig = config.GetSection("RootTenantBlobStorageConfigurationOptions").Get<BlobStorageConfiguration>();
 
-        private void ConfigureOpenApiHost(IOpenApiHostConfiguration config)
-        {
-            if (config == null)
+            if (string.IsNullOrEmpty(rootTenantBlobStorageConfig?.AccountName))
             {
-                throw new ArgumentNullException(nameof(config), "AddTenancyApi callback: config");
+                throw new Exception("Missing RootTenantBlobStorageConfigurationOptions");
             }
 
-            if (config.Documents == null)
-            {
-                throw new ArgumentNullException(nameof(config.Documents), "AddTenancyApi callback: config.Documents");
-            }
-
-            config.Documents.AddSwaggerEndpoint();
+            return rootTenantBlobStorageConfig;
         }
     }
 }
