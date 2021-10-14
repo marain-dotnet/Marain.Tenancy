@@ -14,10 +14,6 @@ namespace Marain.Tenancy.Host.AspNetCore
             Host.CreateDefaultBuilder(args)
                 .ConfigureWebHostDefaults(webBuilder =>
                 {
-                    webBuilder.ConfigureKestrel(serverOptions =>
-                    {
-                        // Set properties and call methods on options
-                    });
                     webBuilder.UseStartup<Startup>();
                 });
     }
