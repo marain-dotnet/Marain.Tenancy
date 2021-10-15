@@ -9,6 +9,26 @@ It is built for netstandard2.0.
 
 ## Getting Started
 
+### Local Development
+
+You need a `local.settings.json` file - use `local.settings.template.json` which you can copy or rename.
+
+You'll see these keys:
+
+```
+    "RootTenantBlobStorageConfigurationOptions__AccountName": "",
+    "RootTenantBlobStorageConfigurationOptions__RootTenantBlobStorageConfiguration__KeyVaultName": "",
+    "RootTenantBlobStorageConfigurationOptions__RootTenantBlobStorageConfiguration__AccountKeySecretName": ""
+```
+
+The quickest way to get started is to put a full storage account connection string in `RootTenantBlobStorageConfigurationOptions__AccountName`
+
+You can use development storage emulator:
+
+```
+    "RootTenantBlobStorageConfigurationOptions__AccountName": "DefaultEndpointsProtocol=http;AccountName=devstoreaccount1;AccountKey=Eby8vdM02xNOcqFlqUwJPLlmEtlCDXJ1OUzFT50uSRZ6IFsuFq2UVErCz4I6tq/K1SZFPTOtr/KBHBeksoGMGw==;BlobEndpoint=http://127.0.0.1:10000/devstoreaccount1;QueueEndpoint=http://127.0.0.1:10001/devstoreaccount1;TableEndpoint=http://127.0.0.1:10002/devstoreaccount1;"
+```
+
 The solution currently offers two hosting options; an Azure Functions Host and an Asp.Net Core Host. 
 
 The Asp.Net Core Host also has a Docker Compose file that can be used to run the application locally.
