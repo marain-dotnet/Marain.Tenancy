@@ -23,12 +23,10 @@ namespace Marain.Tenancy.Host.AspNetCore
             services.AddOpenApiAuditing();
 
             services.AddSingleton(sp => sp.GetRequiredService<IConfiguration>().GetSection("TenantCloudBlobContainerFactoryOptions").Get<TenantCloudBlobContainerFactoryOptions>());
-
             services.AddSingleton(
                 sp => sp.GetRequiredService<IConfiguration>()
                         .GetSection("TenantCacheConfiguration")
                         .Get<TenantCacheConfiguration>() ?? new TenantCacheConfiguration());
-
 #if DEBUG
             services.AddAuditLogSink<ConsoleAuditLogSink>();
 #endif
@@ -48,6 +46,7 @@ namespace Marain.Tenancy.Host.AspNetCore
         private BlobStorageConfiguration GetRootTenantStorageConfiguration(IServiceProvider serviceProvider)
         {
             IConfiguration config = serviceProvider.GetRequiredService<IConfiguration>();
+
             BlobStorageConfiguration rootTenantBlobStorageConfig = config.GetSection("RootTenantBlobStorageConfigurationOptions").Get<BlobStorageConfiguration>();
 
             if (string.IsNullOrEmpty(rootTenantBlobStorageConfig?.AccountName))

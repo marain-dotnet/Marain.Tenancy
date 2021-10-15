@@ -1,9 +1,10 @@
 namespace Marain.Tenancy.Host.AspNetCore
 {
     using Microsoft.AspNetCore.Hosting;
+    using Microsoft.Extensions.Configuration;
     using Microsoft.Extensions.Hosting;
 
-    public static class Program
+    public class Program
     {
         public static void Main(string[] args)
         {
@@ -12,6 +13,10 @@ namespace Marain.Tenancy.Host.AspNetCore
 
         public static IHostBuilder CreateHostBuilder(string[] args) =>
             Host.CreateDefaultBuilder(args)
+                .ConfigureAppConfiguration((hostingContext, config) =>
+                {
+                    config.AddEnvironmentVariables();
+                })
                 .ConfigureWebHostDefaults(webBuilder =>
                 {
                     webBuilder.UseStartup<Startup>();
