@@ -14,8 +14,10 @@ The solution currently offers two hosting options; an Azure Functions Host and a
 The Asp.Net Core Host also has a Docker Compose file that can be used to run the application locally.
 
 Well known URLs:
-http://localhost:{PORT}/swagger
-http://localhost:{PORT}/f26450ab1668784bb327951c8b08f347/marain/tenant
+
+http://localhost:{PORT}/swagger - OpenAPI definition.
+
+http://localhost:{PORT}/f26450ab1668784bb327951c8b08f347/marain/tenant - root tenant.
 
 ## Features
 
