@@ -7,6 +7,16 @@ This provides a Tenancy API.
 
 It is built for netstandard2.0.
 
+## Getting Started
+
+The solution currently offers two hosting options; an Azure Functions Host and an Asp.Net Core Host. 
+
+The Asp.Net Core Host also has a Docker Compose file that can be used to run the application locally.
+
+Well known URLs:
+http://localhost:{PORT}/swagger
+http://localhost:{PORT}/f26450ab1668784bb327951c8b08f347/marain/tenant
+
 ## Features
 
 ## Licenses
