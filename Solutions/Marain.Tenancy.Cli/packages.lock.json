@@ -87,20 +87,20 @@
       },
       "Corvus.ContentHandling": {
         "type": "Transitive",
-        "resolved": "2.0.10",
-        "contentHash": "7mMAdkqmAYtcK00NCdJtfkznrkLXbFbvuxOT0h2io4c+t4OAY+cw7FtdYdMQTjiAzLSExH3W4zYjcz24Y4ydag==",
+        "resolved": "2.0.11",
+        "contentHash": "W4yuYfITGgwPg8KRFlLurwUp9aAsOggedBbtbLPPSmJTJzDK3BMiJnEJh/j0Rc2P37oqv3j8jhf3aOfvn7s5XQ==",
         "dependencies": {
           "Microsoft.CodeAnalysis.CSharp": "3.11.0",
-          "Microsoft.Extensions.DependencyInjection.Abstractions": "3.1.19",
+          "Microsoft.Extensions.DependencyInjection.Abstractions": "3.1.20",
           "System.Runtime.Loader": "4.3.0"
         }
       },
       "Corvus.ContentHandling.Json": {
         "type": "Transitive",
-        "resolved": "2.0.10",
-        "contentHash": "y32Qtky0mgBVzh/kgxkiz9K8ka5YQKm81Ogb4FjLD+DAEjbdwzYgDM+RH4FsfKbHfKzr/9m1uNprRyEm1+SgQA==",
+        "resolved": "2.0.11",
+        "contentHash": "aYnqiQB7nCe+Pq4szhsdBYRpaXcdZX0u77JL57YAKg/Jfty9p5xVB+9cwi+O7z6boD/xOyYjkr44qMvt06i/ng==",
         "dependencies": {
-          "Corvus.ContentHandling": "2.0.10",
+          "Corvus.ContentHandling": "2.0.11",
           "Corvus.Extensions.Newtonsoft.Json": "2.0.5",
           "Newtonsoft.Json": "11.0.2"
         }
@@ -140,10 +140,10 @@
       },
       "Corvus.Tenancy.Abstractions": {
         "type": "Transitive",
-        "resolved": "2.0.11",
-        "contentHash": "4iTMVGnbJAMW0h/xkGrwh3wWCIPkm6x6eMf6jQlDtJfheAIm1F0pz4Lq8nrBwp2kOgKJgUvGYTHYEPLbPstEpg==",
+        "resolved": "2.0.12",
+        "contentHash": "M9//ReUw9Us9CS7U/jIt4/fntv6a7G0oqH+BylgS2juFakOoYgXWQ0t2LcjwytM/+vBdGb0nq0JtP4A1v5wt0A==",
         "dependencies": {
-          "Corvus.ContentHandling.Json": "2.0.10",
+          "Corvus.ContentHandling.Json": "2.0.11",
           "Corvus.Extensions": "1.1.4",
           "Microsoft.Extensions.Primitives": "3.1.20"
         }
@@ -1741,7 +1741,7 @@
         "type": "Project",
         "dependencies": {
           "CacheCow.Client": "2.8.3",
-          "Corvus.ContentHandling.Json": "2.0.10",
+          "Corvus.ContentHandling.Json": "2.0.11",
           "Corvus.Extensions": "1.1.4",
           "Corvus.Identity.ManagedServiceIdentity.ClientAuthentication": "1.0.7",
           "Microsoft.Extensions.DependencyInjection.Abstractions": "3.1.0",
@@ -1751,7 +1751,7 @@
       "marain.tenancy.clienttenantprovider": {
         "type": "Project",
         "dependencies": {
-          "Corvus.Tenancy.Abstractions": "2.0.11",
+          "Corvus.Tenancy.Abstractions": "2.0.12",
           "Marain.Tenancy.Client": "1.0.0",
           "Microsoft.AspNetCore.WebUtilities": "2.2.0"
         }
