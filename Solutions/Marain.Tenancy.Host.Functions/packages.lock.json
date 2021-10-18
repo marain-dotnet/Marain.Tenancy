@@ -2257,7 +2257,6 @@
         "type": "Project",
         "dependencies": {
           "Corvus.Azure.Storage.Tenancy": "2.0.12",
-          "Corvus.Tenancy.Abstractions": "2.0.12",
           "Menes.Abstractions": "2.0.1",
           "Microsoft.ApplicationInsights": "2.18.0",
           "Microsoft.AspNetCore.JsonPatch": "2.2.0",
