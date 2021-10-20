@@ -4,11 +4,11 @@
     ".NETCoreApp,Version=v3.1": {
       "Corvus.Testing.AzureFunctions.SpecFlow.NUnit": {
         "type": "Direct",
-        "requested": "[1.4.5, )",
-        "resolved": "1.4.5",
-        "contentHash": "eE1Br/PmesozRzMSpGlapFhUUYW7qT7i+VDUpEcEsdxJrqqefJuwTBPhZJf9amPEoKN2/Qh/EqibYzqRNy58Yw==",
+        "requested": "[1.4.6, )",
+        "resolved": "1.4.6",
+        "contentHash": "/8bUlkeVbPRcdtPCdvPfa00HtJbcZtXj89dk6biXK1s2shCntbQQWW9N3t31hARMFOen6F/ViHVWW4Ok+Yh6Pw==",
         "dependencies": {
-          "Corvus.Testing.AzureFunctions.SpecFlow": "1.4.5",
+          "Corvus.Testing.AzureFunctions.SpecFlow": "1.4.6",
           "Microsoft.NET.Test.Sdk": "[16.10.0, 17.0.0)",
           "Moq": "4.16.1",
           "SpecFlow.NUnit.Runners": "3.9.22",
@@ -87,10 +87,10 @@
       },
       "Corvus.Azure.Storage.Tenancy": {
         "type": "Transitive",
-        "resolved": "2.0.12",
-        "contentHash": "dYLIDvvr7t/N+RNgGbf2huLdyHd2OzbpHPwVFE8LWA2DTyO4V9nvxl0nptG3a0Z7/di/q//FT5QweMBMrtrOpA==",
+        "resolved": "2.0.13",
+        "contentHash": "naqlx/mpp9OXw0DWQCUMZ93mmyLiLDdk+SSxR9iBMdZXgy/76iO331C5L1Ee24pKizqIq8tmibN35sUr9KN8KA==",
         "dependencies": {
-          "Corvus.Tenancy.Abstractions": "2.0.12",
+          "Corvus.Tenancy.Abstractions": "2.0.13",
           "Microsoft.Azure.Cosmos.Table": "1.0.8",
           "Microsoft.Azure.KeyVault": "3.0.5",
           "Microsoft.Azure.Services.AppAuthentication": "1.6.2",
@@ -162,8 +162,8 @@
       },
       "Corvus.Tenancy.Abstractions": {
         "type": "Transitive",
-        "resolved": "2.0.12",
-        "contentHash": "M9//ReUw9Us9CS7U/jIt4/fntv6a7G0oqH+BylgS2juFakOoYgXWQ0t2LcjwytM/+vBdGb0nq0JtP4A1v5wt0A==",
+        "resolved": "2.0.13",
+        "contentHash": "uZxeWtTHYmjI580a+MnrwvgW5KLjhXbDA6o0A5Xo1xPRC3cn2xPXXvfO+ClHtJuyh2bzL8gaWjXyj85N4q5oVg==",
         "dependencies": {
           "Corvus.ContentHandling.Json": "2.0.11",
           "Corvus.Extensions": "1.1.4",
@@ -172,43 +172,42 @@
       },
       "Corvus.Tenancy.Storage.Azure.Blob": {
         "type": "Transitive",
-        "resolved": "2.0.12",
-        "contentHash": "vgPfcT+xzowTt6qF11mqquqYOhZKCqKas7CTmmr1K7z6P7Jl3gWM1hs+ZN7KZwQLxz45UXzC4io+WRWVMu/97A==",
+        "resolved": "2.0.13",
+        "contentHash": "dOiRROsPh90WZsejYWSQlIspeC9sGbpzuVFrc+GbfbFoUNvxSpxsFdD2ZNsdOWWE+gBYOIRHMMek1hL2welMTw==",
         "dependencies": {
-          "Corvus.Azure.Storage.Tenancy": "2.0.12",
-          "Corvus.Tenancy.Abstractions": "2.0.12"
+          "Corvus.Azure.Storage.Tenancy": "2.0.13",
+          "Corvus.Tenancy.Abstractions": "2.0.13"
         }
       },
       "Corvus.Testing.AzureFunctions": {
         "type": "Transitive",
-        "resolved": "1.4.5",
-        "contentHash": "cg+Z904qRJr0ZO1zC+kTs4bdJi+HMTFzCNZJB/TR72gZn8nR6HTWUXSsvhjLdtReh3Dc4EKJwq6LErgIXBWlAQ==",
+        "resolved": "1.4.6",
+        "contentHash": "dOoUYwj72I23Egq+FVd5kq+hP2zgw1VdJX1FHoz0ls5n7eBTt9YXHe4rsjNvEZzmQMN1cDv7zoBXX1jGiIB1dg==",
         "dependencies": {
-          "Microsoft.Extensions.Logging.Abstractions": "3.1.19",
+          "Microsoft.Extensions.Logging.Abstractions": "3.1.20",
           "System.Management": "4.7.0"
         }
       },
       "Corvus.Testing.AzureFunctions.SpecFlow": {
         "type": "Transitive",
-        "resolved": "1.4.5",
-        "contentHash": "XM033EbN++ehztEEPTugkDTOAg5nzGwR9rt6vRQpxRkkSeunerENIo7TWmKxLvvweV+VjFo3w/JsrUQtBXI96A==",
+        "resolved": "1.4.6",
+        "contentHash": "kNwjluoe+fTid58d2YOGCgYbw3eWRqItC8HQ5N4rGsl4ZjuG1IOeFP/zjCG96NllRRVDRYoNguEQIregT04bnQ==",
         "dependencies": {
-          "Corvus.Testing.AzureFunctions": "1.4.5",
-          "Corvus.Testing.SpecFlow": "1.4.5",
-          "Microsoft.Extensions.Logging.Console": "3.1.19",
+          "Corvus.Testing.AzureFunctions": "1.4.6",
+          "Corvus.Testing.SpecFlow": "1.4.6",
+          "Microsoft.Extensions.Logging.Console": "3.1.20",
           "NUnit": "3.13.2",
           "SpecFlow": "3.9.22"
         }
       },
       "Corvus.Testing.SpecFlow": {
         "type": "Transitive",
-        "resolved": "1.4.5",
-        "contentHash": "wECzJlyMgoKZv6fI0y69IDs8oZ20FoZ2vluJqg5uID8shy+HmzN86ZG7rKXxZUyqSmszKoNrF23zNrr4v8545w==",
+        "resolved": "1.4.6",
+        "contentHash": "EmakRYEWtLqOXJXV8vOq4bOikivszKcclnRClM65IULefSCY1Cm+pP5wvJusetZWRQ7xXjvI9Hzp25T1MJmVBQ==",
         "dependencies": {
-          "Corvus.Testing.AzureFunctions": "1.4.5",
-          "Microsoft.Extensions.Configuration.Abstractions": "3.1.19",
-          "Microsoft.Extensions.DependencyInjection": "3.1.19",
-          "Microsoft.Extensions.DependencyInjection.Abstractions": "3.1.19",
+          "Microsoft.Extensions.Configuration.Abstractions": "3.1.20",
+          "Microsoft.Extensions.DependencyInjection": "3.1.20",
+          "Microsoft.Extensions.DependencyInjection.Abstractions": "3.1.20",
           "NUnit": "3.13.2",
           "SpecFlow": "3.9.22",
           "System.Management": "4.7.0"
@@ -677,10 +676,10 @@
       },
       "Microsoft.Extensions.DependencyInjection": {
         "type": "Transitive",
-        "resolved": "3.1.19",
-        "contentHash": "cdBicT5kRGBVWilW0QUFYmeqYNgBP3NHwrnsuJj0QqivA74OHcUiS18EFLMRmqwZ746mbnptfSZ4Lh997KsUew==",
+        "resolved": "3.1.20",
+        "contentHash": "JAV97hx4y7qJ5mnjnUOSd+xDnMj2+51c8KVirhuU+rOW1LUnsmjhin86Tep6Q5tOHmNPOmmo6OHEFCdbZj5+zw==",
         "dependencies": {
-          "Microsoft.Extensions.DependencyInjection.Abstractions": "3.1.19"
+          "Microsoft.Extensions.DependencyInjection.Abstractions": "3.1.20"
         }
       },
       "Microsoft.Extensions.DependencyInjection.Abstractions": {
@@ -735,13 +734,13 @@
       },
       "Microsoft.Extensions.Logging": {
         "type": "Transitive",
-        "resolved": "3.1.19",
-        "contentHash": "Wv/p90AEtp69cPuQQKAFQCS2tIefqaT6elTx3AwLgltkDXvzGVPbXI7NcfOWh3TNdDcfwV7U6YFC0WrNVA88WA==",
+        "resolved": "3.1.20",
+        "contentHash": "/CuUfjdPd0X6upL/783pzJTSGLm1XTHlonKcRYi5oGVHuN0ESHRjWwmBvrAPf8TXXL901K9oyxJ9mtG9pTmF8Q==",
         "dependencies": {
-          "Microsoft.Extensions.Configuration.Binder": "3.1.19",
-          "Microsoft.Extensions.DependencyInjection": "3.1.19",
-          "Microsoft.Extensions.Logging.Abstractions": "3.1.19",
-          "Microsoft.Extensions.Options": "3.1.19"
+          "Microsoft.Extensions.Configuration.Binder": "3.1.20",
+          "Microsoft.Extensions.DependencyInjection": "3.1.20",
+          "Microsoft.Extensions.Logging.Abstractions": "3.1.20",
+          "Microsoft.Extensions.Options": "3.1.20"
         }
       },
       "Microsoft.Extensions.Logging.Abstractions": {
@@ -751,21 +750,21 @@
       },
       "Microsoft.Extensions.Logging.Configuration": {
         "type": "Transitive",
-        "resolved": "3.1.19",
-        "contentHash": "7OCff9UJ9j20HM+6DkyshiSTQHJP4l0+CmNattTYqNO1kRxwupSnwfIAwWDEYj4cX1Wpp3sfTGbu92hjF625nw==",
+        "resolved": "3.1.20",
+        "contentHash": "+k33hBevAq2hZi4tHnsQwtZDXAkD79MTntOvX5ID6kMgU6piqthMLMoK5uMJAh7vec8ORMhwSIkhjYaQ7wx4gw==",
         "dependencies": {
-          "Microsoft.Extensions.Logging": "3.1.19",
-          "Microsoft.Extensions.Options.ConfigurationExtensions": "3.1.19"
+          "Microsoft.Extensions.Logging": "3.1.20",
+          "Microsoft.Extensions.Options.ConfigurationExtensions": "3.1.20"
         }
       },
       "Microsoft.Extensions.Logging.Console": {
         "type": "Transitive",
-        "resolved": "3.1.19",
-        "contentHash": "qofNSCPx5RkwsVbt8Y2QizHAx5iYDWxaXHvsXcRHtHZfJ/nnq08zjORcQ6zZUfNqyEWYZAoTfgv9gCWN59BodA==",
+        "resolved": "3.1.20",
+        "contentHash": "v9GpjBR3YBNSnbNj1C4hQmRofUDpya1CgQwZo3IuXbun2JbSmHs1sVxuMyEh8sdU7Bo8gGyA3zdtEwE+16oiVA==",
         "dependencies": {
-          "Microsoft.Extensions.Configuration.Abstractions": "3.1.19",
-          "Microsoft.Extensions.Logging": "3.1.19",
-          "Microsoft.Extensions.Logging.Configuration": "3.1.19"
+          "Microsoft.Extensions.Configuration.Abstractions": "3.1.20",
+          "Microsoft.Extensions.Logging": "3.1.20",
+          "Microsoft.Extensions.Logging.Configuration": "3.1.20"
         }
       },
       "Microsoft.Extensions.ObjectPool": {
@@ -1580,7 +1579,7 @@
       "System.Net.Http": {
         "type": "Transitive",
         "resolved": "4.3.4",
-        "contentHash": "aOa2d51SEbmM+H+Csw7yJOuNZoHkrP2XnAurye5HWYgGVVU54YZDvsLUYRv6h18X3sPnjNCANmN7ZhIPiqMcjA==",
+        "contentHash": "Fj7e73NNHwof97gFPTJuq8gv6G895yxkZt14DVnZdEh4gvKl8WrksCwNjIp/JeYX/yu/qxM/iOv9ai+ZY3Fp7Q==",
         "dependencies": {
           "Microsoft.NETCore.Platforms": "1.1.1",
           "System.Collections": "4.3.0",
@@ -2452,7 +2451,7 @@
       "marain.tenancy.clienttenantprovider": {
         "type": "Project",
         "dependencies": {
-          "Corvus.Tenancy.Abstractions": "2.0.12",
+          "Corvus.Tenancy.Abstractions": "2.0.13",
           "Marain.Tenancy.Client": "1.0.0",
           "Microsoft.AspNetCore.WebUtilities": "2.2.0"
         }
@@ -2460,7 +2459,7 @@
       "marain.tenancy.hosting.aspnetcore": {
         "type": "Project",
         "dependencies": {
-          "Corvus.Tenancy.Storage.Azure.Blob": "2.0.12",
+          "Corvus.Tenancy.Storage.Azure.Blob": "2.0.13",
           "Marain.Tenancy.OpenApi.Service": "1.0.0",
           "Menes.Hosting.AspNetCore": "2.0.1"
         }
@@ -2468,7 +2467,7 @@
       "marain.tenancy.openapi.service": {
         "type": "Project",
         "dependencies": {
-          "Corvus.Azure.Storage.Tenancy": "2.0.12",
+          "Corvus.Azure.Storage.Tenancy": "2.0.13",
           "Menes.Abstractions": "2.0.1",
           "Microsoft.ApplicationInsights": "2.18.0",
           "Microsoft.AspNetCore.JsonPatch": "2.2.0",
