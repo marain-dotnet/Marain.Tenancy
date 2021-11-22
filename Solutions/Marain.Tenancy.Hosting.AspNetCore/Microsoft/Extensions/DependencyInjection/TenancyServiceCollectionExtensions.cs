@@ -31,20 +31,7 @@ namespace Microsoft.Extensions.DependencyInjection
             this IServiceCollection services,
             Action<IOpenApiHostConfiguration> configureHost = null)
         {
-            if (services.Any(s => typeof(TenancyService).IsAssignableFrom(s.ServiceType)))
-            {
-                return services;
-            }
-
-            services.AddEverythingExceptHosting();
-
-            services.AddOpenApiHttpRequestHosting<SimpleOpenApiContext>((config) =>
-            {
-                config.Documents.RegisterOpenApiServiceWithEmbeddedDefinition<TenancyService>();
-                configureHost?.Invoke(config);
-            });
-
-            return services;
+            return AddTenancyApiWithOpenApiActionResultHosting(services, configureHost);
         }
 
         /// <summary>
