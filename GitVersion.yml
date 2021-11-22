@@ -20,7 +20,6 @@ branches:
     - feature
     - support
     - hotfix
-next-version: "2.0"
   develop:
     mode: ContinuousDeployment
     tag: alpha
