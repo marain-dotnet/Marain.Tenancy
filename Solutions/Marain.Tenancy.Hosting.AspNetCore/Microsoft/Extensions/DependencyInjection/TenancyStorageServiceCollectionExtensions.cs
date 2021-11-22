@@ -32,7 +32,7 @@ namespace Microsoft.Extensions.DependencyInjection
         }
 
         /// <summary>
-        /// Add the temnancy api.
+        /// Add the tenancy api.
         /// </summary>
         /// <param name="services">The service collection.</param>
         /// <param name="getRootTenantStorageConfiguration">
@@ -40,14 +40,58 @@ namespace Microsoft.Extensions.DependencyInjection
         /// </param>
         /// <param name="configureHost">The optional action to configure the host.</param>
         /// <returns>The modified service collection.</returns>
+        [Obsolete("Use AddTenancyApiOnBlobStorageWithOpenApiActionResultHosting, or consider changing to AddTenancyApiOnBlobStorageWithAspNetPipelineHosting")]
         public static IServiceCollection AddTenancyApiOnBlobStorage(
             this IServiceCollection services,
             Func<IServiceProvider, BlobStorageConfiguration> getRootTenantStorageConfiguration,
             Action<IOpenApiHostConfiguration> configureHost = null)
         {
-            services.AddTenancyBlobContainer(getRootTenantStorageConfiguration);
+            AddTenancyApiOnBlobStorageCore(services, getRootTenantStorageConfiguration);
             services.AddTenancyApi(configureHost);
             return services;
+        }
+
+        /// <summary>
+        /// Add the tenancy api.
+        /// </summary>
+        /// <param name="services">The service collection.</param>
+        /// <param name="getRootTenantStorageConfiguration">
+        /// A function that will retrieve storage configuration for the root tenant.
+        /// </param>
+        /// <param name="configureHost">The optional action to configure the host.</param>
+        /// <returns>The modified service collection.</returns>
+        public static IServiceCollection AddTenancyApiOnBlobStorageWithOpenApiActionResultHosting(
+            this IServiceCollection services,
+            Func<IServiceProvider, BlobStorageConfiguration> getRootTenantStorageConfiguration,
+            Action<IOpenApiHostConfiguration> configureHost = null)
+        {
+            AddTenancyApiOnBlobStorageCore(services, getRootTenantStorageConfiguration);
+            services.AddTenancyApiWithOpenApiActionResultHosting(configureHost);
+            return services;
+        }
+
+        /// <summary>
+        /// Add the tenancy api.
+        /// </summary>
+        /// <param name="services">The service collection.</param>
+        /// <param name="getRootTenantStorageConfiguration">
+        /// A function that will retrieve storage configuration for the root tenant.
+        /// </param>
+        /// <param name="configureHost">The optional action to configure the host.</param>
+        /// <returns>The modified service collection.</returns>
+        public static IServiceCollection AddTenancyApiOnBlobStorageWithAspNetPipelineHosting(
+            this IServiceCollection services,
+            Func<IServiceProvider, BlobStorageConfiguration> getRootTenantStorageConfiguration,
+            Action<IOpenApiHostConfiguration> configureHost = null)
+        {
+            AddTenancyApiOnBlobStorageCore(services, getRootTenantStorageConfiguration);
+            services.AddTenancyApiWithAspNetPipelineHosting(configureHost);
+            return services;
+        }
+
+        private static void AddTenancyApiOnBlobStorageCore(IServiceCollection services, Func<IServiceProvider, BlobStorageConfiguration> getRootTenantStorageConfiguration)
+        {
+            services.AddTenancyBlobContainer(getRootTenantStorageConfiguration);
         }
     }
 }

@@ -36,7 +36,7 @@ namespace Marain.Tenancy.Specs.Integration.Bindings
                         .AddJsonFile("local.settings.json", true, true)
                         .Build();
 
-                    serviceCollection.AddTenancyApiOnBlobStorage(
+                    serviceCollection.AddTenancyApiOnBlobStorageWithOpenApiActionResultHosting(
                         _ => config.GetSection("RootTenantBlobStorageConfigurationOptions").Get<BlobStorageConfiguration>());
                 });
         }
