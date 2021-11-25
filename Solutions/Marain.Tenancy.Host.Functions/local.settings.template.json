@@ -8,12 +8,13 @@
     "APPINSIGHTS_INSTRUMENTATIONKEY": "",
     "AI:DeveloperMode": "true",
 
-    "TenantCloudBlobContainerFactoryOptions__AzureServicesAuthConnectionString": "",
-
     "TenantCacheConfiguration__GetTenantResponseCacheControlHeaderValue": "max-age=300",
 
-    "RootTenantBlobStorageConfigurationOptions__AccountName": "",
-    "RootTenantBlobStorageConfigurationOptions__RootTenantBlobStorageConfiguration__KeyVaultName": "",
-    "RootTenantBlobStorageConfigurationOptions__RootTenantBlobStorageConfiguration__AccountKeySecretName": ""
+    "RootBlobStorageConfiguration__ConnectionStringPlainText": "UseDevelopmentStorage=true"
+
+    // Or, e.g.:
+    //"RootBlobStorageConfiguration__AccountName": "",
+    //"RootBlobStorageConfiguration__AccessKeyInKeyVault__VaultName": "",
+    //"RootBlobStorageConfiguration__AccessKeyInKeyVault__SecretName": ""
   }
 }

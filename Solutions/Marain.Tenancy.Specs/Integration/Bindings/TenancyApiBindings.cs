@@ -5,10 +5,11 @@
 namespace Marain.Tenancy.Specs.Integration.Bindings
 {
     using System.Collections.Generic;
-    using Corvus.Azure.Storage.Tenancy;
+
     using Corvus.Testing.SpecFlow;
+
     using Microsoft.Extensions.Configuration;
-    using Microsoft.Extensions.DependencyInjection;
+
     using TechTalk.SpecFlow;
 
     /// <summary>
@@ -36,8 +37,11 @@ namespace Marain.Tenancy.Specs.Integration.Bindings
                         .AddJsonFile("local.settings.json", true, true)
                         .Build();
 
-                    serviceCollection.AddTenancyApiOnBlobStorageWithOpenApiActionResultHosting(
-                        _ => config.GetSection("RootTenantBlobStorageConfigurationOptions").Get<BlobStorageConfiguration>());
+                    ////BlobContainerConfiguration rootStorageConfiguration = config
+                    ////    .GetSection("RootBlobStorageConfiguration")
+                    ////    .Get<BlobContainerConfiguration>();
+                    ////serviceCollection.AddTenantStoreOnAzureBlobStorage(
+                    ////    _ => );
                 });
         }
     }

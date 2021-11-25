@@ -1,13 +1,17 @@
-﻿<Project Sdk="Microsoft.NET.Sdk" ToolsVersion="Current">
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
   <Import Project="$(EndjinProjectPropsPath)" Condition="$(EndjinProjectPropsPath) != ''" />
 
   <PropertyGroup>
     <TargetFramework>netcoreapp3.1</TargetFramework>
-    <IsPackable>false</IsPackable>
-  </PropertyGroup>
+    <Nullable>enable</Nullable>
 
-  <PropertyGroup>
-    <AzureFunctionsVersion>v3</AzureFunctionsVersion>
+    <RootNamespace>Marain.Tenancy.Storage.Azure.BlobStorage.Specs</RootNamespace>
+
+    <!--
+    CS1591 and SA1600: XML doc warnings. This is a test project. We don't really need XML docs on everything.
+    -->
+    <NoWarn>$(NoWarn);CS1591;SA1600</NoWarn>
   </PropertyGroup>
 
   <PropertyGroup>
@@ -35,26 +39,34 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="Corvus.Monitoring.ApplicationInsights" Version="1.3.2" />
+    <PackageReference Include="Corvus.Testing.AzureFunctions.SpecFlow.NUnit" Version="1.4.6" />
     <PackageReference Include="Endjin.RecommendedPractices" Version="1.2.0">
       <PrivateAssets>all</PrivateAssets>
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
     </PackageReference>
-    <PackageReference Include="Microsoft.Azure.Functions.Extensions" Version="1.1.0" />
-    <PackageReference Include="Microsoft.NET.Sdk.Functions" Version="3.0.13" />
-    <PackageReference Include="Microsoft.OpenApi.Readers" Version="1.2.3" />
-    <PackageReference Include="Microsoft.Extensions.Logging.Console" Version="[3.1.*,)" />
+    <PackageReference Include="FluentAssertions" Version="6.1.0" />
+    <PackageReference Include="Microsoft.Extensions.Configuration" Version="[3.1.*,)" />
+    <PackageReference Include="Microsoft.Extensions.Configuration.Binder" Version="[3.1.*,)" />
+    <PackageReference Include="Microsoft.Extensions.Configuration.EnvironmentVariables" Version="[3.1.*,)" />
+    <PackageReference Include="Microsoft.Extensions.Configuration.Json" Version="[3.1.*,)" />
   </ItemGroup>
+
   <ItemGroup>
-    <ProjectReference Include="..\Marain.Tenancy.Hosting.AspNetCore\Marain.Tenancy.Hosting.AspNetCore.csproj" />
+    <Folder Include="Drivers\" />
+    <Folder Include="Support\" />
+  </ItemGroup>
+
+  <ItemGroup>
     <ProjectReference Include="..\Marain.Tenancy.Storage.Azure.BlobStorage\Marain.Tenancy.Storage.Azure.BlobStorage.csproj" />
   </ItemGroup>
+
   <ItemGroup>
-    <None Update="host.json">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </None>
     <None Update="local.settings.json">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
+    <None Update="specflow.json">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
   </ItemGroup>
+
 </Project>
