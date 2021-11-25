@@ -56,7 +56,7 @@ namespace Marain.Tenancy.Storage.Azure.BlobStorage.Specs.StepDefinitions
             this.AddTenantToDelete(newTenant.Id);
         }
 
-        [When(@"I create a child of the tenant called '([^']*)' named '([^']*)' labelled '([^']*)'")]
+        [When(@"I create a child of the tenant labelled '([^']*)' named '([^']*)' labelled '([^']*)'")]
         public async Task GivenICreateAChildOfAChildOfTheRootTenantAsync(
             string parentTenantLabel, string newTenantName, string newTenantLabel)
         {
@@ -67,7 +67,7 @@ namespace Marain.Tenancy.Storage.Azure.BlobStorage.Specs.StepDefinitions
             this.AddTenantToDelete(newTenant.Id);
         }
 
-        [When(@"I create a well known child of the tenant called '([^']*)' named '([^']*)' with a Guid of '([^']*)' labelled '([^']*)'")]
+        [When(@"I create a well known child of the tenant labelled '([^']*)' named '([^']*)' with a Guid of '([^']*)' labelled '([^']*)'")]
         public async Task GivenICreateAWellKnownChildOfAChildOfATenantAsync(
             string parentTenantLabel, string newTenantName, Guid wellKnownId, string newTenantLabel)
         {
@@ -78,8 +78,7 @@ namespace Marain.Tenancy.Storage.Azure.BlobStorage.Specs.StepDefinitions
             this.AddTenantToDelete(newTenant.Id);
         }
 
-        // TODO: the tenant called  -> the tenant labelled
-        [When(@"I try to create a well known child of the tenant called '([^']*)' named '([^']*)' with a Guid of '([^']*)'")]
+        [When(@"I try to create a well known child of the tenant labelled '([^']*)' named '([^']*)' with a Guid of '([^']*)'")]
         public async Task GivenITryToCreateAWellKnownChildOfAChildOfATenantAsync(
             string parentTenantLabel, string newTenantName, Guid wellKnownId)
         {

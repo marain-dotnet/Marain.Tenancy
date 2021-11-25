@@ -12,8 +12,6 @@ Scenario: Delete a child
     And the tenant labelled 'ParentTenant' has a child tenant called 'ChildTenant3' labelled 'ChildTenant3'
     And the tenant labelled 'ParentTenant' has a child tenant called 'ChildTenant4' labelled 'ChildTenant4'
     And the tenant labelled 'ParentTenant' has a child tenant called 'ChildTenant5' labelled 'ChildTenant5'
-    #When I get the tenant id of the tenant called "ChildTenant1" and call it "ChildTenantId"
-    #And I get the tenant id of the tenant called "ChildTenant3" and call it "DeletedChildTenantId"
     When I delete the tenant with the id from label 'ChildTenant3'
     And I get the children of the tenant with the label 'ParentTenant' with maxItems 20
     Then the ids of all the children across all pages should match these tenant ids

@@ -58,7 +58,7 @@ namespace Marain.Tenancy.Storage.Azure.BlobStorage.Specs.StepDefinitions
             this.Tenants.Add(updatedTenantLabel, updatedTenant);
         }
 
-        [Then(@"the tenant called '([^']*)' should have the properties")]
+        [Then(@"the tenant labelled '([^']*)' should have the properties")]
         public void ThenTheTenantCalledShouldHaveTheProperties(string tenantLabel, Table propertyTable)
         {
             ITenant tenant = this.Tenants[tenantLabel];
