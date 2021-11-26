@@ -63,7 +63,7 @@ namespace Marain.Tenancy.Storage.Azure.BlobStorage.Specs.Bindings
         }
 
         [Given("the root tenant has a child tenant called '([^']*)' labelled '([^']*)' with these properties")]
-        public async Task GivenTheRootTenantHasAWellKnownChildTenantWithPropertiesCalled(
+        public async Task GivenTheRootTenantHasAChildTenantWithPropertiesCalled(
             string tenantName, string tenantLabel, Table propertyTable)
         {
             ITenant newTenant = await this.containerSetup.EnsureChildTenantExistsAsync(

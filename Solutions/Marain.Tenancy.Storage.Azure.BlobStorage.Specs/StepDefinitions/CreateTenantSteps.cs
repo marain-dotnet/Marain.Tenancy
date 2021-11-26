@@ -78,7 +78,7 @@ namespace Marain.Tenancy.Storage.Azure.BlobStorage.Specs.StepDefinitions
             ITenant newTenant = await this.TenantStore.CreateWellKnownChildTenantAsync(
                 parent.Id, wellKnownId, newTenantName);
             this.Tenants.Add(newTenantLabel, newTenant);
-            this.AddTenantToDelete(newTenant.Id);
+            this.AddWellKnownTenantToDelete(newTenant.Id);
         }
 
         [When(@"I try to create a well known child of the tenant labelled '([^']*)' named '([^']*)' with a Guid of '([^']*)'")]

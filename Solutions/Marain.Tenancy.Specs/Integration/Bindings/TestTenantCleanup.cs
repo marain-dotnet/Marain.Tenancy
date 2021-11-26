@@ -17,8 +17,14 @@ namespace Marain.Tenancy.Specs.Integration.Bindings
     {
         private static readonly HttpClient HttpClient = new HttpClient();
         private readonly HashSet<(string ParentId, string TenantId)> tenantsToDelete = new();
+        private readonly HashSet<(string ParentId, string TenantId)> wellKnownTenantsToDelete = new();
 
         public  void AddTenantToDelete(string parentId, string id)
+        {
+            this.tenantsToDelete.Add((parentId, id));
+        }
+
+        public void AddWellKnownTenantToDelete(string parentId, string id)
         {
             this.tenantsToDelete.Add((parentId, id));
         }
