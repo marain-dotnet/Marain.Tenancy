@@ -19,6 +19,8 @@ namespace Marain.Tenancy.Storage.Azure.BlobStorage.Specs.Bindings
 
         public HashSet<string> TenantsToDelete { get; } = new HashSet<string>();
 
+        public HashSet<string> WellKnownTenantsToDelete { get; } = new HashSet<string>();
+
         public ScenarioDiContainer DiContainer { get; }
     }
 }

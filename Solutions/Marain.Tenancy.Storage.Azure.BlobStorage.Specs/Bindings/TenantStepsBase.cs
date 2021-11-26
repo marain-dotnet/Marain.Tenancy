@@ -29,6 +29,8 @@ namespace Marain.Tenancy.Storage.Azure.BlobStorage.Specs.Bindings
 
         public HashSet<string> TenantsToDelete => this.tenantProperties.TenantsToDelete;
 
+        public HashSet<string> WellKnownTenantsToDelete => this.tenantProperties.WellKnownTenantsToDelete;
+
         public ITenantStore TenantStore => this.DiContainer.TenantStore;
 
         /// <summary>
@@ -45,6 +47,11 @@ namespace Marain.Tenancy.Storage.Azure.BlobStorage.Specs.Bindings
         public void AddTenantToDelete(string id)
         {
             this.TenantsToDelete.Add(id);
+        }
+
+        public void AddWellKnownTenantToDelete(string id)
+        {
+            this.WellKnownTenantsToDelete.Add(id);
         }
 
         public void TenantNoLongerRequiresDeletion(string id)

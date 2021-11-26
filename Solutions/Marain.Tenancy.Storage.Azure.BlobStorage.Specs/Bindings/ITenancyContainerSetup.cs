@@ -25,5 +25,7 @@ namespace Marain.Tenancy.Storage.Azure.BlobStorage.Specs.Bindings
             bool useV2Style,
             IEnumerable<KeyValuePair<string, object>>? properties = null)
             => this.EnsureWellKnownChildTenantExistsAsync(parentId, Guid.NewGuid(), name, useV2Style, properties);
+
+        Task DeleteTenantAsync(string tenantId, bool leaveContainer);
     }
 }

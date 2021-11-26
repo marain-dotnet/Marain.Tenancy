@@ -29,7 +29,10 @@ namespace Marain.Tenancy.Storage.Azure.BlobStorage.Specs.Bindings
         {
             this.containerSetup = this.SetupMode switch
             {
-                SetupModes.ViaApiPropagateRootConfigAsV2 or SetupModes.ViaApiPropagateRootConfigAsV3 => new TenancyContainerSetupViaApi(() => this.TenantStore),
+                SetupModes.ViaApiPropagateRootConfigAsV2 or SetupModes.ViaApiPropagateRootConfigAsV3 => new TenancyContainerSetupViaApi(
+                    this.DiContainer.RootBlobStorageConfiguration,
+                    () => this.TenantStore,
+                    this.DiContainer.ServiceProvider.GetRequiredService<IBlobContainerSourceByConfiguration>()),
                 SetupModes.DirectToStoragePropagateRootConfigAsV2 or SetupModes.DirectToStoragePropagateRootConfigAsV3 => new TenancyContainerSetupDirectToStorage(
                     this.DiContainer.RootBlobStorageConfiguration,
                     this.DiContainer.ServiceProvider.GetRequiredService<IBlobContainerSourceByConfiguration>(),
@@ -76,7 +79,8 @@ namespace Marain.Tenancy.Storage.Azure.BlobStorage.Specs.Bindings
             ITenant newTenant = await this.containerSetup.EnsureWellKnownChildTenantExistsAsync(
                 RootTenant.RootTenantId, wellKnownId, tenantName, this.PropagateRootTenancyStorageConfigAsV2);
             this.Tenants.Add(tenantLabel, newTenant);
-            this.AddTenantToDelete(newTenant.Id);
+
+            this.AddWellKnownTenantToDelete(newTenant.Id);
         }
 
         [Given("the tenant labelled '([^']*)' has a child tenant called '([^']*)' labelled '([^']*)'")]
@@ -98,7 +102,7 @@ namespace Marain.Tenancy.Storage.Azure.BlobStorage.Specs.Bindings
             ITenant newTenant = await this.containerSetup.EnsureWellKnownChildTenantExistsAsync(
                 parent.Id, wellKnownId, tenantName, this.PropagateRootTenancyStorageConfigAsV2);
             this.Tenants.Add(newTenantLabel, newTenant);
-            this.AddTenantToDelete(newTenant.Id);
+            this.AddWellKnownTenantToDelete(newTenant.Id);
         }
 
         [AfterScenario("@withBlobStorageTenantProvider")]
@@ -108,7 +112,16 @@ namespace Marain.Tenancy.Storage.Azure.BlobStorage.Specs.Bindings
             // parents, as otherwise, things go wrong.
             foreach (string tenantId in this.TenantsToDelete.OrderByDescending(id => id.Length))
             {
-                await this.TenantStore.DeleteTenantAsync(tenantId).ConfigureAwait(false);
+                await this.containerSetup.DeleteTenantAsync(tenantId, leaveContainer: false).ConfigureAwait(false);
+            }
+
+            foreach (string tenantId in this.WellKnownTenantsToDelete.OrderByDescending(id => id.Length))
+            {
+                // We don't delete the container when it's a well-known tenant, because otherwise
+                // we get problems with being unable to recreate a new container with the same name
+                // as one we just deleted when running tests against real storage accounts.
+                // So we just delete the blob.
+                await this.containerSetup.DeleteTenantAsync(tenantId, leaveContainer: true).ConfigureAwait(false);
             }
         }
     }

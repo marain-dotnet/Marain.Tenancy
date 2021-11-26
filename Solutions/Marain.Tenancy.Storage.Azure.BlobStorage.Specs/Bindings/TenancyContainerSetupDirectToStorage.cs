@@ -14,7 +14,6 @@ namespace Marain.Tenancy.Storage.Azure.BlobStorage.Specs.Bindings
 
     using Corvus.Extensions.Json;
     using Corvus.Json;
-    using Corvus.Storage;
     using Corvus.Storage.Azure.BlobStorage;
     using Corvus.Storage.Azure.BlobStorage.Tenancy;
     using Corvus.Tenancy;
@@ -100,6 +99,22 @@ namespace Marain.Tenancy.Storage.Azure.BlobStorage.Specs.Bindings
             newTenant.ETag = blobUploadResponse.Value.ETag.ToString("H");
 
             return newTenant;
+        }
+
+        public async Task DeleteTenantAsync(string tenantId, bool leaveContainer)
+        {
+            BlobServiceClient serviceClient = await this.GetBlobServiceClientAsync().ConfigureAwait(false);
+
+            string parentId = TenantExtensions.GetRequiredParentId(tenantId);
+            BlobContainerClient parentContainer = GetBlobContainerForTenant(parentId, serviceClient);
+            BlobContainerClient tenantContainer = GetBlobContainerForTenant(tenantId, serviceClient);
+            BlockBlobClient tenantBlobInParentContainer = parentContainer.GetBlockBlobClient(@"live\" + tenantId);
+            await tenantBlobInParentContainer.DeleteAsync().ConfigureAwait(false);
+
+            if (!leaveContainer)
+            {
+                await tenantContainer.DeleteAsync().ConfigureAwait(false);
+            }
         }
 
         private static string HashAndEncodeBlobContainerName(string containerName)

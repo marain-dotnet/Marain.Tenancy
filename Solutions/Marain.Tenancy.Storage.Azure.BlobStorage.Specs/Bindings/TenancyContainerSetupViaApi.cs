@@ -6,21 +6,34 @@ namespace Marain.Tenancy.Storage.Azure.BlobStorage.Specs.Bindings
 {
     using System;
     using System.Collections.Generic;
+    using System.Security.Cryptography;
+    using System.Text;
     using System.Threading.Tasks;
 
     using Corvus.Storage.Azure.BlobStorage;
     using Corvus.Storage.Azure.BlobStorage.Tenancy;
     using Corvus.Tenancy;
 
+    using global::Azure.Storage.Blobs;
+    using global::Azure.Storage.Blobs.Specialized;
+
     internal class TenancyContainerSetupViaApi : ITenancyContainerSetup
     {
+        private readonly BlobContainerConfiguration configuration;
+
         // Deferred tenant store fetching - it's important we don't try to use this before
         // we need it because it's not available until after the DI container has been built.
         private readonly Func<ITenantStore> getTenantStore;
+        private readonly IBlobContainerSourceByConfiguration blobContainerSource;
 
-        public TenancyContainerSetupViaApi(Func<ITenantStore> getTenantStore)
+        public TenancyContainerSetupViaApi(
+            BlobContainerConfiguration configuration,
+            Func<ITenantStore> getTenantStore,
+            IBlobContainerSourceByConfiguration blobContainerSource)
         {
+            this.configuration = configuration;
             this.getTenantStore = getTenantStore;
+            this.blobContainerSource = blobContainerSource;
         }
 
         private ITenantStore Store => this.getTenantStore();
@@ -79,6 +92,54 @@ namespace Marain.Tenancy.Storage.Azure.BlobStorage.Specs.Bindings
         public async Task<ITenant> EnsureChildTenantExistsAsync(string parentId, string name)
         {
             return await this.Store.CreateChildTenantAsync(parentId, name);
+        }
+
+        public async Task DeleteTenantAsync(string tenantId, bool leaveContainer)
+        {
+            // We talk directly to the storage service here because for well-known tenants
+            // we need to leave container in place to avoid tests failure with
+            // Status: 409 (The specified container is being deleted. Try operation later.)
+            // when we try to create a container with the same name as one we just deleted.
+            BlobServiceClient serviceClient = await this.GetBlobServiceClientAsync().ConfigureAwait(false);
+
+            string parentId = TenantExtensions.GetRequiredParentId(tenantId);
+            BlobContainerClient parentContainer = GetBlobContainerForTenant(parentId, serviceClient);
+            BlobContainerClient tenantContainer = GetBlobContainerForTenant(tenantId, serviceClient);
+            BlockBlobClient tenantBlobInParentContainer = parentContainer.GetBlockBlobClient(@"live\" + tenantId);
+            await tenantBlobInParentContainer.DeleteAsync().ConfigureAwait(false);
+
+            if (!leaveContainer)
+            {
+                await tenantContainer.DeleteAsync().ConfigureAwait(false);
+            }
+        }
+
+        private static string HashAndEncodeBlobContainerName(string containerName)
+        {
+            byte[] byteContents = Encoding.UTF8.GetBytes(containerName);
+            using SHA1CryptoServiceProvider hash = new ();
+            byte[] hashedBytes = hash.ComputeHash(byteContents);
+            return TenantExtensions.ByteArrayToHexViaLookup32(hashedBytes);
+        }
+
+        private static BlobContainerClient GetBlobContainerForTenant(string tenantId, BlobServiceClient serviceClient)
+        {
+            string tenantedContainerName = $"{tenantId.ToLowerInvariant()}-corvustenancy";
+            string containerName = HashAndEncodeBlobContainerName(tenantedContainerName);
+
+            BlobContainerClient container = serviceClient.GetBlobContainerClient(containerName);
+            return container;
+        }
+
+        private async Task<BlobServiceClient> GetBlobServiceClientAsync()
+        {
+            // We're using Corvus.Storage to process the configuration, but all we actually need
+            // from it is a BlobServiceClient, because for this test mode, we want to work
+            // directly with the storage API to validate that it works when the storage account
+            // wasn't previously populated by the current Corvus and Marain APIs.
+            BlobContainerClient rootTenantContainerFromConfig = await this.blobContainerSource.GetStorageContextAsync(
+                this.configuration.ForContainer("dummy"));
+            return rootTenantContainerFromConfig.GetParentBlobServiceClient();
         }
     }
 }
