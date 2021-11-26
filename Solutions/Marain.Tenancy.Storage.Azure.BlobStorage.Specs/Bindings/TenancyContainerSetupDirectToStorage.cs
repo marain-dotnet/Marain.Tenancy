@@ -14,7 +14,9 @@ namespace Marain.Tenancy.Storage.Azure.BlobStorage.Specs.Bindings
 
     using Corvus.Extensions.Json;
     using Corvus.Json;
+    using Corvus.Storage;
     using Corvus.Storage.Azure.BlobStorage;
+    using Corvus.Storage.Azure.BlobStorage.Tenancy;
     using Corvus.Tenancy;
 
     using global::Azure;
@@ -23,6 +25,8 @@ namespace Marain.Tenancy.Storage.Azure.BlobStorage.Specs.Bindings
     using global::Azure.Storage.Blobs.Specialized;
 
     using Newtonsoft.Json;
+
+    using NUnit.Framework.Constraints;
 
     internal class TenancyContainerSetupDirectToStorage : ITenancyContainerSetup
     {
@@ -48,7 +52,8 @@ namespace Marain.Tenancy.Storage.Azure.BlobStorage.Specs.Bindings
             string parentId,
             Guid id,
             string name,
-            IEnumerable<KeyValuePair<string, object>>? properties)
+            bool useV2Style,
+            IEnumerable<KeyValuePair<string, object>>? properties = null)
         {
             BlobServiceClient serviceClient = await this.GetBlobServiceClientAsync().ConfigureAwait(false);
 
@@ -60,16 +65,28 @@ namespace Marain.Tenancy.Storage.Azure.BlobStorage.Specs.Bindings
             // complex than that).
             string newTenantId = parentId.CreateChildId(id);
             BlobContainerClient parentContainer = GetBlobContainerForTenant(parentId, serviceClient);
+            await parentContainer.CreateIfNotExistsAsync().ConfigureAwait(false);
             BlobContainerClient newTenantContainer = GetBlobContainerForTenant(newTenantId, serviceClient);
             await newTenantContainer.CreateIfNotExistsAsync().ConfigureAwait(false);
             BlockBlobClient tenantBlobInParentContainer = parentContainer.GetBlockBlobClient(@"live\" + newTenantId);
 
-            // TODO: we actually want to be able to use the V2 config here
+            KeyValuePair<string, object> storageConfig = useV2Style
+                ? new KeyValuePair<string, object>(
+                    "StorageConfiguration__corvustenancy",
+                    new LegacyV2BlobStorageConfiguration
+                    {
+                        AccountName = this.configuration.ConnectionStringPlainText != null
+                            ? this.configuration.ConnectionStringPlainText
+                            : this.configuration.AccountName,
+                        KeyVaultName = this.configuration.AccessKeyInKeyVault?.VaultName,
+                        AccountKeySecretName = this.configuration.AccessKeyInKeyVault?.SecretName,
+                    })
+                : new KeyValuePair<string, object>("StorageConfigurationV3__corvustenancy", this.configuration);
+
             IPropertyBag tenantProperties = this.propertyBagFactory.Create(PropertyBagValues.Build(values =>
                 values
                     .Concat(properties ?? Enumerable.Empty<KeyValuePair<string, object>>())
-                    .Append(new KeyValuePair<string, object>(
-                        "StorageConfigurationV3__corvustenancy", this.configuration))));
+                    .Append(storageConfig)));
             Tenant newTenant = new (newTenantId, name, tenantProperties);
             var content = new MemoryStream();
             using (var sw = new StreamWriter(content, new UTF8Encoding(false), leaveOpen: true))
@@ -83,12 +100,6 @@ namespace Marain.Tenancy.Storage.Azure.BlobStorage.Specs.Bindings
             newTenant.ETag = blobUploadResponse.Value.ETag.ToString("H");
 
             return newTenant;
-        }
-
-        public async Task EnsureRootTenantContainerExistsAsync()
-        {
-            BlobServiceClient serviceClient = await this.GetBlobServiceClientAsync();
-            await this.EnsureContainerForTenantExists(RootTenant.RootTenantId, serviceClient);
         }
 
         private static string HashAndEncodeBlobContainerName(string containerName)
@@ -117,14 +128,6 @@ namespace Marain.Tenancy.Storage.Azure.BlobStorage.Specs.Bindings
             BlobContainerClient rootTenantContainerFromConfig = await this.blobContainerSource.GetStorageContextAsync(
                 this.configuration.ForContainer("dummy"));
             return rootTenantContainerFromConfig.GetParentBlobServiceClient();
-        }
-
-        private async Task<BlobContainerClient> EnsureContainerForTenantExists(
-            string tenantId, BlobServiceClient serviceClient)
-        {
-            BlobContainerClient container = GetBlobContainerForTenant(tenantId, serviceClient);
-            await container.CreateIfNotExistsAsync();
-            return container;
         }
     }
 }

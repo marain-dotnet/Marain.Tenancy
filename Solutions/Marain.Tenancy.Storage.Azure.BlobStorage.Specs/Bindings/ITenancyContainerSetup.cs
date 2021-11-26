@@ -12,18 +12,18 @@ namespace Marain.Tenancy.Storage.Azure.BlobStorage.Specs.Bindings
 
     internal interface ITenancyContainerSetup
     {
-        Task EnsureRootTenantContainerExistsAsync();
-
         Task<ITenant> EnsureWellKnownChildTenantExistsAsync(
             string parentId,
             Guid id,
             string name,
+            bool useV2Style,
             IEnumerable<KeyValuePair<string, object>>? properties = null);
 
         Task<ITenant> EnsureChildTenantExistsAsync(
             string parentId,
             string name,
+            bool useV2Style,
             IEnumerable<KeyValuePair<string, object>>? properties = null)
-            => this.EnsureWellKnownChildTenantExistsAsync(parentId, Guid.NewGuid(), name, properties);
+            => this.EnsureWellKnownChildTenantExistsAsync(parentId, Guid.NewGuid(), name, useV2Style, properties);
     }
 }

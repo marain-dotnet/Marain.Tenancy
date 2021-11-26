@@ -11,6 +11,8 @@
     using Corvus.Testing.SpecFlow;
     using Marain.Tenancy.Client;
     using Marain.Tenancy.Client.Models;
+    using Marain.Tenancy.Specs.Integration.Bindings;
+
     using Microsoft.Extensions.DependencyInjection;
     using Microsoft.Rest;
     using Newtonsoft.Json.Linq;
@@ -21,14 +23,18 @@
     public class TenancyClientSteps
     {
         private readonly ScenarioContext scenarioContext;
+        private readonly TestTenantCleanup testTenantCleanup;
         private readonly ITenantStore store;
         private readonly ITenancyService client;
         private readonly IJsonNetPropertyBagFactory propertyBagFactory;
 
-        public TenancyClientSteps(FeatureContext featureContext, ScenarioContext scenarioContext)
+        public TenancyClientSteps(
+            FeatureContext featureContext,
+            ScenarioContext scenarioContext,
+            TestTenantCleanup testTenantCleanup)
         {
             this.scenarioContext = scenarioContext;
-
+            this.testTenantCleanup = testTenantCleanup;
             this.store = ContainerBindings.GetServiceProvider(featureContext).GetRequiredService<ITenantStore>();
             this.client = ContainerBindings.GetServiceProvider(featureContext).GetRequiredService<ITenancyService>();
             this.propertyBagFactory = ContainerBindings.GetServiceProvider(featureContext).GetRequiredService<IJsonNetPropertyBagFactory>();
@@ -125,6 +131,7 @@
         public async Task GivenICreateAChildTenantCalledForTheRootTenant(string tenantName)
         {
             ITenant tenant = await this.store.CreateChildTenantAsync(RootTenant.RootTenantId, tenantName).ConfigureAwait(false);
+            this.testTenantCleanup.AddTenantToDelete(RootTenant.RootTenantId, tenant.Id);
             this.scenarioContext.Set(tenant, tenantName);
         }
 
@@ -133,6 +140,7 @@
         {
             ITenant parentTenant = this.scenarioContext.Get<ITenant>(parentName);
             ITenant tenant = await this.store.CreateChildTenantAsync(parentTenant.Id, childName).ConfigureAwait(false);
+            this.testTenantCleanup.AddTenantToDelete(parentTenant.Id, tenant.Id);
             this.scenarioContext.Set(tenant, childName);
         }
 

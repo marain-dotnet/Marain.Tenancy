@@ -17,8 +17,6 @@ namespace Marain.Tenancy.Storage.Azure.BlobStorage.Specs.Bindings
 
     using Microsoft.Extensions.DependencyInjection;
 
-    using NUnit.Framework.Internal;
-
     using TechTalk.SpecFlow;
 
     [Binding]
@@ -29,16 +27,10 @@ namespace Marain.Tenancy.Storage.Azure.BlobStorage.Specs.Bindings
         public TenantSetupSteps(TenantProperties tenantProperties)
             : base(tenantProperties)
         {
-            this.SetupMode = TestExecutionContext.CurrentContext.TestObject switch
-            {
-                IMultiModeTest<SetupModes> multiModeTest => multiModeTest.TestType,
-                _ => SetupModes.ViaApi,
-            };
-
             this.containerSetup = this.SetupMode switch
             {
-                SetupModes.ViaApi => new TenancyContainerSetupViaApi(() => this.TenantStore),
-                SetupModes.DirectToStorage => new TenancyContainerSetupDirectToStorage(
+                SetupModes.ViaApiPropagateRootConfigAsV2 or SetupModes.ViaApiPropagateRootConfigAsV3 => new TenancyContainerSetupViaApi(() => this.TenantStore),
+                SetupModes.DirectToStoragePropagateRootConfigAsV2 or SetupModes.DirectToStoragePropagateRootConfigAsV3 => new TenancyContainerSetupDirectToStorage(
                     this.DiContainer.RootBlobStorageConfiguration,
                     this.DiContainer.ServiceProvider.GetRequiredService<IBlobContainerSourceByConfiguration>(),
                     this.DiContainer.ServiceProvider.GetRequiredService<IJsonSerializerSettingsProvider>(),
@@ -47,16 +39,22 @@ namespace Marain.Tenancy.Storage.Azure.BlobStorage.Specs.Bindings
             };
         }
 
-        /// <summary>
-        /// Gets the mode to use when setting up the containers in tests.
-        /// </summary>
-        public SetupModes SetupMode { get; }
-
         [Given("the root tenant has a child tenant called '([^']*)' labelled '([^']*)'")]
         public async Task GivenTheRootTenantHasAChildTenantCalled(
             string tenantName, string tenantLabel)
         {
-            ITenant newTenant = await this.containerSetup.EnsureChildTenantExistsAsync(RootTenant.RootTenantId, tenantName);
+            ITenant newTenant = await this.containerSetup.EnsureChildTenantExistsAsync(
+                RootTenant.RootTenantId, tenantName, this.PropagateRootTenancyStorageConfigAsV2);
+            this.Tenants.Add(tenantLabel, newTenant);
+            this.AddTenantToDelete(newTenant.Id);
+        }
+
+        [Given("the root tenant has v2 a child tenant called '([^']*)' labelled '([^']*)'")]
+        public async Task GivenTheRootTenantHasAv2stylChildTenantCalled(
+            string tenantName, string tenantLabel)
+        {
+            ITenant newTenant = await this.containerSetup.EnsureChildTenantExistsAsync(
+                RootTenant.RootTenantId, tenantName, true);
             this.Tenants.Add(tenantLabel, newTenant);
             this.AddTenantToDelete(newTenant.Id);
         }
@@ -66,7 +64,7 @@ namespace Marain.Tenancy.Storage.Azure.BlobStorage.Specs.Bindings
             string tenantName, string tenantLabel, Table propertyTable)
         {
             ITenant newTenant = await this.containerSetup.EnsureChildTenantExistsAsync(
-                RootTenant.RootTenantId, tenantName, ReadPropertiesTable(propertyTable));
+                RootTenant.RootTenantId, tenantName, this.PropagateRootTenancyStorageConfigAsV2, ReadPropertiesTable(propertyTable));
             this.Tenants.Add(tenantLabel, newTenant);
             this.AddTenantToDelete(newTenant.Id);
         }
@@ -76,7 +74,7 @@ namespace Marain.Tenancy.Storage.Azure.BlobStorage.Specs.Bindings
             string tenantName, Guid wellKnownId, string tenantLabel)
         {
             ITenant newTenant = await this.containerSetup.EnsureWellKnownChildTenantExistsAsync(
-                RootTenant.RootTenantId, wellKnownId, tenantName);
+                RootTenant.RootTenantId, wellKnownId, tenantName, this.PropagateRootTenancyStorageConfigAsV2);
             this.Tenants.Add(tenantLabel, newTenant);
             this.AddTenantToDelete(newTenant.Id);
         }
@@ -86,7 +84,8 @@ namespace Marain.Tenancy.Storage.Azure.BlobStorage.Specs.Bindings
             string parentTenantLabel, string tenantName, string newTenantLabel)
         {
             ITenant parent = this.Tenants[parentTenantLabel];
-            ITenant newTenant = await this.containerSetup.EnsureChildTenantExistsAsync(parent.Id, tenantName);
+            ITenant newTenant = await this.containerSetup.EnsureChildTenantExistsAsync(
+                parent.Id, tenantName, this.PropagateRootTenancyStorageConfigAsV2);
             this.Tenants.Add(newTenantLabel, newTenant);
             this.AddTenantToDelete(newTenant.Id);
         }
@@ -97,7 +96,7 @@ namespace Marain.Tenancy.Storage.Azure.BlobStorage.Specs.Bindings
         {
             ITenant parent = this.Tenants[parentTenantLabel];
             ITenant newTenant = await this.containerSetup.EnsureWellKnownChildTenantExistsAsync(
-                parent.Id, wellKnownId, tenantName);
+                parent.Id, wellKnownId, tenantName, this.PropagateRootTenancyStorageConfigAsV2);
             this.Tenants.Add(newTenantLabel, newTenant);
             this.AddTenantToDelete(newTenant.Id);
         }

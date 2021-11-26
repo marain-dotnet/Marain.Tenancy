@@ -41,8 +41,11 @@ namespace Marain.Tenancy.Storage.Azure.BlobStorage.Specs.Bindings
             this.SetupMode = TestExecutionContext.CurrentContext.TestObject switch
             {
                 IMultiModeTest<SetupModes> multiModeTest => multiModeTest.TestType,
-                _ => SetupModes.ViaApi,
+                _ => SetupModes.ViaApiPropagateRootConfigAsV3,
             };
+
+            this.PropagateRootTenancyStorageConfigAsV2 = this.SetupMode is
+                    SetupModes.ViaApiPropagateRootConfigAsV2 or SetupModes.DirectToStoragePropagateRootConfigAsV2;
 
             this.Configuration = new ConfigurationBuilder()
                 .AddEnvironmentVariables()
@@ -76,6 +79,12 @@ namespace Marain.Tenancy.Storage.Azure.BlobStorage.Specs.Bindings
             ?? throw new InvalidOperationException("Not available until DI initialization complete");
 
         /// <summary>
+        /// Gets a value indicating whether the root tenancy configuration is propagated in V2 or
+        /// V3 style.
+        /// </summary>
+        public bool PropagateRootTenancyStorageConfigAsV2 { get; }
+
+        /// <summary>
         /// Configure the DI container. Called by SpecFlow.
         /// </summary>
         [BeforeScenario("@withBlobStorageTenantProvider", Order = ContainerBeforeScenarioOrder.PopulateServiceCollection)]
@@ -86,7 +95,9 @@ namespace Marain.Tenancy.Storage.Azure.BlobStorage.Specs.Bindings
                 this.rootBlobStorageConfiguration = this.Configuration
                     .GetSection("RootBlobStorageConfiguration")
                     .Get<BlobContainerConfiguration>();
-                services.AddTenantStoreOnAzureBlobStorage(this.rootBlobStorageConfiguration);
+                services.AddTenantStoreOnAzureBlobStorage(
+                    this.rootBlobStorageConfiguration,
+                    this.PropagateRootTenancyStorageConfigAsV2);
             });
         }
 

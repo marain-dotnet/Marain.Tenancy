@@ -42,6 +42,7 @@ namespace Marain.Tenancy.Storage.Azure.BlobStorage
         private readonly IBlobContainerSourceWithTenantLegacyTransition containerSource;
         private readonly IPropertyBagFactory propertyBagFactory;
         private readonly JsonSerializer jsonSerializer;
+        private readonly bool propagateRootStorageConfigAsV2;
         private Task? rootContainerExistsCheck;
 
         /// <summary>
@@ -60,6 +61,7 @@ namespace Marain.Tenancy.Storage.Azure.BlobStorage
             this.containerSource = containerSource;
             this.propertyBagFactory = propertyBagFactory;
             this.jsonSerializer = JsonSerializer.Create(serializerSettingsProvider.Instance);
+            this.propagateRootStorageConfigAsV2 = configuration.PropagateRootTenancyStorageConfigAsV2;
 
             // The root tenant is necessarily synthetic because we can't get access to storage
             // without it. And regardless of what stage of v2 to v3 transition we're in with
@@ -90,15 +92,48 @@ namespace Marain.Tenancy.Storage.Azure.BlobStorage
             // We need to copy blob storage settings for the Tenancy container definition from the parent to the new child
             // to support the tenant blob store provider. We would expect this to be overridden by clients that wanted to
             // establish their own settings.
+            bool configIsInV3 = true;
+            LegacyV2BlobStorageConfiguration? v2TenancyStorageConfiguration = null;
             if (!parentTenant.Properties.TryGet(TenancyV3ConfigKey, out BlobContainerConfiguration tenancyStorageConfiguration))
             {
-                // TODO! We need to support v2, and write out v2 even when the source was in v3! (This is to enable
-                // transition.)
-                throw new NotSupportedException("Currently only working with v3 config");
+                configIsInV3 = false;
+                if (!parentTenant.Properties.TryGet(TenancyV2ConfigKey, out v2TenancyStorageConfiguration))
+                {
+                    throw new InvalidOperationException($"No configuration found for ${TenancyV3ConfigKey} or ${TenancyV2ConfigKey}");
+                }
             }
 
-            IPropertyBag childProperties = this.propertyBagFactory.Create(values =>
-                values.Append(new KeyValuePair<string, object>(TenancyV3ConfigKey, tenancyStorageConfiguration)));
+            IPropertyBag childProperties;
+            if (parentTenantId == this.Root.Id && this.propagateRootStorageConfigAsV2)
+            {
+                configIsInV3 = false;
+                v2TenancyStorageConfiguration = new LegacyV2BlobStorageConfiguration
+                {
+                    Container = tenancyStorageConfiguration.Container,
+                };
+                if (tenancyStorageConfiguration.ConnectionStringPlainText != null)
+                {
+                    v2TenancyStorageConfiguration.AccountName = tenancyStorageConfiguration.ConnectionStringPlainText;
+                }
+                else if (tenancyStorageConfiguration.AccountName != null)
+                {
+                    v2TenancyStorageConfiguration.AccountName = tenancyStorageConfiguration.AccountName;
+                    v2TenancyStorageConfiguration.KeyVaultName = tenancyStorageConfiguration.AccessKeyInKeyVault?.VaultName;
+                    v2TenancyStorageConfiguration.AccountKeySecretName = tenancyStorageConfiguration.AccessKeyInKeyVault?.SecretName;
+                }
+            }
+
+            if (configIsInV3)
+            {
+                childProperties = this.propertyBagFactory.Create(values =>
+                    values.Append(new KeyValuePair<string, object>(TenancyV3ConfigKey, tenancyStorageConfiguration)));
+            }
+            else
+            {
+                childProperties = this.propertyBagFactory.Create(values =>
+                    values.Append(new KeyValuePair<string, object>(TenancyV2ConfigKey, v2TenancyStorageConfiguration!)));
+            }
+
             var child = new Tenant(
                 parentTenantId.CreateChildId(wellKnownChildTenantGuid),
                 name,

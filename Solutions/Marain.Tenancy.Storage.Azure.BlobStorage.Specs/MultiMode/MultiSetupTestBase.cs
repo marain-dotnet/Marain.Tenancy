@@ -45,8 +45,10 @@ namespace Marain.Tenancy.Storage.Azure.BlobStorage.Specs.MultiMode
     {
         private static readonly object[] FixtureArgs =
         {
-            new object[] { SetupModes.ViaApi },
-            new object[] { SetupModes.DirectToStorage },
+            new object[] { SetupModes.ViaApiPropagateRootConfigAsV2 },
+            new object[] { SetupModes.ViaApiPropagateRootConfigAsV3 },
+            new object[] { SetupModes.DirectToStoragePropagateRootConfigAsV2 },
+            new object[] { SetupModes.DirectToStoragePropagateRootConfigAsV3 },
         };
 
         /// <summary>

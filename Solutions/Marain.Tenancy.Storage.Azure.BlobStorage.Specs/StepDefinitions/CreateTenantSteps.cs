@@ -7,11 +7,14 @@ namespace Marain.Tenancy.Storage.Azure.BlobStorage.Specs.StepDefinitions
     using System;
     using System.Threading.Tasks;
 
+    using Corvus.Storage.Azure.BlobStorage;
+    using Corvus.Storage.Azure.BlobStorage.Tenancy;
     using Corvus.Tenancy;
 
     using FluentAssertions;
 
     using Marain.Tenancy.Storage.Azure.BlobStorage.Specs.Bindings;
+    using Marain.Tenancy.Storage.Azure.BlobStorage.Specs.MultiMode;
 
     using TechTalk.SpecFlow;
 
@@ -92,6 +95,30 @@ namespace Marain.Tenancy.Storage.Azure.BlobStorage.Specs.StepDefinitions
             {
                 this.createWellKnownChildTenantException = x;
             }
+        }
+
+        [Then("the tenant labelled '([^']*)' should have storage configuration equivalent to the root")]
+        public void TenantShouldHaveStorageConfigEquivalentToRoot(string tenantLabel)
+        {
+            ITenant tenant = this.Tenants[tenantLabel];
+            bool propagateRootAsV2 = this.SetupMode is
+                SetupModes.ViaApiPropagateRootConfigAsV2 or MultiMode.SetupModes.DirectToStoragePropagateRootConfigAsV2;
+
+            BlobContainerConfiguration v3Config;
+            if (propagateRootAsV2)
+            {
+                tenant.Properties.TryGet("StorageConfiguration__corvustenancy", out LegacyV2BlobStorageConfiguration v2Config)
+                    .Should().BeTrue("Failed to read StorageConfiguration__corvustenancy from tenant properties");
+
+                v3Config = LegacyConfigurationConverter.FromV2ToV3(v2Config);
+            }
+            else
+            {
+                tenant.Properties.TryGet("StorageConfigurationV3__corvustenancy", out v3Config)
+                    .Should().BeTrue("Failed to read StorageConfiguration__corvustenancy from tenant properties");
+            }
+
+            v3Config.Should().BeEquivalentTo(this.DiContainer.RootBlobStorageConfiguration);
         }
 
         [Then("CreateWellKnownChildTenantAsync thould throw an ArgumentException")]

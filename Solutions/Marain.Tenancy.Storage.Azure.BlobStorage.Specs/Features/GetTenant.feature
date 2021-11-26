@@ -40,6 +40,11 @@ Scenario: Get a tenant that does exist without using an ETag
     When I get the tenant with the details called 'ChildTenantId' labelled 'Result'
     Then the tenant details labelled 'Result' should match the tenant details labelled 'ChildTenantId'
 
+Scenario: Get a v2-style tenant that does exist without using an ETag
+    Given the root tenant has v2 a child tenant called 'ChildTenant1' labelled 'ChildTenantId'
+    When I get the tenant with the details called 'ChildTenantId' labelled 'Result'
+    Then the tenant details labelled 'Result' should match the tenant details labelled 'ChildTenantId'
+
 Scenario: Get a tenant that does exist using an ETag
     Given the root tenant has a child tenant called 'ChildTenant1' labelled 'ChildTenantId'
     When I try to get the tenant using the details called 'ChildTenantId' passing the ETag

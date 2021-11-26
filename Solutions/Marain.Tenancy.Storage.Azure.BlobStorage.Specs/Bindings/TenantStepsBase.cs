@@ -10,6 +10,8 @@ namespace Marain.Tenancy.Storage.Azure.BlobStorage.Specs.Bindings
 
     using Corvus.Tenancy;
 
+    using Marain.Tenancy.Storage.Azure.BlobStorage.Specs.MultiMode;
+
     using TechTalk.SpecFlow;
 
     public abstract class TenantStepsBase
@@ -28,6 +30,17 @@ namespace Marain.Tenancy.Storage.Azure.BlobStorage.Specs.Bindings
         public HashSet<string> TenantsToDelete => this.tenantProperties.TenantsToDelete;
 
         public ITenantStore TenantStore => this.DiContainer.TenantStore;
+
+        /// <summary>
+        /// Gets the mode to use when setting up the containers in tests.
+        /// </summary>
+        public SetupModes SetupMode => this.DiContainer.SetupMode;
+
+        /// <summary>
+        /// Gets a value indicating whether the root tenancy configuration is propagated in V2 or
+        /// V3 style.
+        /// </summary>
+        public bool PropagateRootTenancyStorageConfigAsV2 => this.DiContainer.PropagateRootTenancyStorageConfigAsV2;
 
         public void AddTenantToDelete(string id)
         {

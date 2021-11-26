@@ -15,13 +15,27 @@ namespace Marain.Tenancy.Storage.Azure.BlobStorage.Specs.MultiMode
     public enum SetupModes
     {
         /// <summary>
-        /// All setup will be done through the code under test.
+        /// All setup will be done through the code under test. The store is configured to write
+        /// V2-style config when propagating settings from the root.
         /// </summary>
-        ViaApi,
+        ViaApiPropagateRootConfigAsV2,
 
         /// <summary>
-        /// Setup will be done by writing data directly into Azure Storage
+        /// All setup will be done through the code under test. The store is configured to write
+        /// V3-style config when propagating settings from the root.
         /// </summary>
-        DirectToStorage,
+        ViaApiPropagateRootConfigAsV3,
+
+        /// <summary>
+        /// Setup will be done by writing data directly into Azure Storage. The store is configured
+        /// to write V3-style config when propagating settings from the root.
+        /// </summary>
+        DirectToStoragePropagateRootConfigAsV2,
+
+        /// <summary>
+        /// Setup will be done by writing data directly into Azure Storage. The store is configured
+        /// to write V3-style config when propagating settings from the root.
+        /// </summary>
+        DirectToStoragePropagateRootConfigAsV3,
     }
 }
