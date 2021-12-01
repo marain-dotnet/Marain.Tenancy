@@ -226,11 +226,11 @@
       },
       "Corvus.Storage.Azure.BlobStorage.Tenancy": {
         "type": "Transitive",
-        "resolved": "3.0.0-make-v2config-legacy-public.3",
-        "contentHash": "6m+s8Ki5m7xl0tXtjUdE/1SsFlkip5/rNh3REy3tQKg8oHUO4VHbj3CjjMFBrAtQQ/wb95aHiL1az3R8pJBceA==",
+        "resolved": "3.0.0-alpha.3",
+        "contentHash": "aQ/WtonoXdEtJbnx5H9++LyOQscxdsOLR7B6u4SIWYsNqq3Lsxb9GNmVN2OVh3TaaMPoLCKVUEUUKd2Sp/t/Rg==",
         "dependencies": {
           "Corvus.Storage.Azure.BlobStorage": "3.0.0-1-refactor-from-tenancy.10",
-          "Corvus.Tenancy.Abstractions": "3.0.0-make-v2config-legacy-public.3"
+          "Corvus.Tenancy.Abstractions": "3.0.0-alpha.3"
         }
       },
       "Corvus.Storage.Common": {
@@ -245,8 +245,8 @@
       },
       "Corvus.Tenancy.Abstractions": {
         "type": "Transitive",
-        "resolved": "3.0.0-make-v2config-legacy-public.3",
-        "contentHash": "MD+0aq9+HSjfxZ1qNc0KOBN/kZ5paT5mrc12/bPYDokuF+Cvml+BkkbQo1ydsDwxgZNrKnOGIYc5AlEf/BYANg==",
+        "resolved": "3.0.0-alpha.3",
+        "contentHash": "YsPXYMqVXydyZp9I28bwFZV9cjA5XUJIHInw8iN/WVHUegPYr0rrP38PltqnPLn6cLnInEA9Ge4NMUM9EUFa3A==",
         "dependencies": {
           "Corvus.ContentHandling.Json": "2.0.11",
           "Corvus.Extensions": "1.1.4",
@@ -1767,7 +1767,7 @@
       "marain.tenancy.storage.azure.blobstorage": {
         "type": "Project",
         "dependencies": {
-          "Corvus.Storage.Azure.BlobStorage.Tenancy": "3.0.0-make-v2config-legacy-public.3",
+          "Corvus.Storage.Azure.BlobStorage.Tenancy": "3.0.0-alpha.3",
           "Microsoft.Extensions.DependencyInjection.Abstractions": "3.1.0"
         }
       }

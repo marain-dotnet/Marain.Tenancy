@@ -6,7 +6,9 @@ namespace Marain.Tenancy.Cli
 {
     using System;
     using System.Threading.Tasks;
-    using Corvus.Identity.ManagedServiceIdentity.ClientAuthentication;
+
+    using Corvus.Identity.ClientAuthentication.Azure;
+
     using Marain.Tenancy.Client;
     using Microsoft.Extensions.DependencyInjection;
     using Microsoft.Extensions.Hosting;
@@ -35,12 +37,12 @@ namespace Marain.Tenancy.Cli
                 services.AddJsonNetDateTimeOffsetToIso8601AndUnixTimeConverter();
                 services.AddSingleton<JsonConverter>(new StringEnumConverter(true));
 
-                var msiTokenSourceOptions = new AzureManagedIdentityTokenSourceOptions
+                var msiTokenSourceOptions = new LegacyAzureServiceTokenProviderOptions
                 {
                     AzureServicesAuthConnectionString = ctx.Configuration["AzureServicesAuthConnectionString"],
                 };
 
-                services.AddAzureManagedIdentityBasedTokenSource(msiTokenSourceOptions);
+                services.AddServiceIdentityAzureTokenCredentialSourceFromLegacyConnectionString(msiTokenSourceOptions);
 
                 var tenancyClientOptions = new TenancyClientOptions
                 {

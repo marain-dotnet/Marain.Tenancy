@@ -1,0 +1,8 @@
+{
+  "profiles": {
+    "Cli: list": {
+      "commandName": "Project",
+      "commandLineArgs": "list"
+    }
+  }
+}
