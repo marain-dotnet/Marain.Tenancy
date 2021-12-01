@@ -7,39 +7,35 @@
 namespace Marain.Tenancy.ControlHost
 {
     using System;
-    using System.Linq;
-    using Corvus.Azure.Storage.Tenancy;
+
+    using Corvus.Storage.Azure.BlobStorage;
+
     using Menes;
-    using Microsoft.ApplicationInsights;
-    using Microsoft.ApplicationInsights.Extensibility;
-    using Microsoft.Azure.WebJobs;
-    using Microsoft.Azure.WebJobs.Hosting;
+
+    using Microsoft.Azure.Functions.Extensions.DependencyInjection;
     using Microsoft.Extensions.Configuration;
     using Microsoft.Extensions.DependencyInjection;
 
     /// <summary>
     /// Startup code for the Function.
     /// </summary>
-    public class Startup : IWebJobsStartup
+    public class Startup : FunctionsStartup
     {
         /// <inheritdoc/>
-        public void Configure(IWebJobsBuilder builder)
+        public override void Configure(IFunctionsHostBuilder builder)
         {
             IServiceCollection services = builder.Services;
+            IConfiguration configuration = builder.GetContext().Configuration;
 
             services.AddApplicationInsightsInstrumentationTelemetry();
 
             services.AddLogging();
 
-            services.AddSingleton(sp => sp.GetRequiredService<IConfiguration>().GetSection("TenantCloudBlobContainerFactoryOptions").Get<TenantCloudBlobContainerFactoryOptions>());
-
-            services.AddTenancyApiOnBlobStorageWithOpenApiActionResultHosting(this.GetRootTenantStorageConfiguration, this.ConfigureOpenApiHost);
-        }
-
-        private BlobStorageConfiguration GetRootTenantStorageConfiguration(IServiceProvider serviceProvider)
-        {
-            IConfiguration config = serviceProvider.GetRequiredService<IConfiguration>();
-            return config.GetSection("RootTenantBlobStorageConfigurationOptions").Get<BlobStorageConfiguration>();
+            BlobContainerConfiguration rootStorageConfiguration = configuration
+                .GetSection("RootBlobStorageConfiguration")
+                .Get<BlobContainerConfiguration>();
+            services.AddTenantStoreOnAzureBlobStorage(rootStorageConfiguration);
+            services.AddTenancyApiWithOpenApiActionResultHosting(this.ConfigureOpenApiHost);
         }
 
         private void ConfigureOpenApiHost(IOpenApiHostConfiguration config)

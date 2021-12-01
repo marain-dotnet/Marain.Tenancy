@@ -8,22 +8,25 @@ namespace Marain.Tenancy.OpenApi
     using System.Collections.Generic;
     using System.Net;
     using System.Threading.Tasks;
-    using Corvus.Extensions.Json;
+
     using Corvus.Json;
     using Corvus.Tenancy;
     using Corvus.Tenancy.Exceptions;
+
     using Marain.Tenancy.OpenApi.Configuration;
     using Marain.Tenancy.OpenApi.Mappers;
+
     using Menes;
     using Menes.Exceptions;
     using Menes.Hal;
     using Menes.Links;
+
     using Microsoft.AspNetCore.JsonPatch;
     using Microsoft.AspNetCore.JsonPatch.Operations;
     using Microsoft.Extensions.Logging;
 
     /// <summary>
-    ///     Handles claim permissions requests.
+    ///     Implements the tenancy web API.
     /// </summary>
     [EmbeddedOpenApiDefinition("Marain.Tenancy.OpenApi.TenancyServices.yaml")]
     public class TenancyService : IOpenApiService

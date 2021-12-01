@@ -1,27 +1,27 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
+
   <Import Project="$(EndjinProjectPropsPath)" Condition="$(EndjinProjectPropsPath) != ''" />
 
   <PropertyGroup>
     <TargetFramework>netcoreapp3.1</TargetFramework>
+
+    <Nullable>enable</Nullable>
   </PropertyGroup>
 
   <PropertyGroup>
     <PackageLicenseExpression>AGPL-3.0-or-later</PackageLicenseExpression>
-    <PackageDescription></PackageDescription>
-    <PackageTags></PackageTags>
+    <PackageDescription>Azure Blob Store implementation of Corvus ITenantStore</PackageDescription>
+    <PackageTags>Marain</PackageTags>
     <PackageReleaseNotes></PackageReleaseNotes>
   </PropertyGroup>
 
   <ItemGroup>
+    <PackageReference Include="Corvus.Storage.Azure.BlobStorage.Tenancy" Version="3.0.0-make-v2config-legacy-public.3" />
     <PackageReference Include="Endjin.RecommendedPractices" Version="1.2.0">
       <PrivateAssets>all</PrivateAssets>
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
     </PackageReference>
-    <PackageReference Include="Menes.Hosting.AspNetCore" Version="3.0.0-preview.5" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <ProjectReference Include="..\Marain.Tenancy.OpenApi.Service\Marain.Tenancy.OpenApi.Service.csproj" />
+    <PackageReference Include="Microsoft.Extensions.DependencyInjection.Abstractions" Version="[3.1.*,)" />
   </ItemGroup>
 
 </Project>

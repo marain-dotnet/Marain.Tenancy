@@ -6,13 +6,14 @@ namespace Marain.Tenancy.Specs.Integration.Bindings
 {
     using System;
     using System.Threading.Tasks;
+
     using Corvus.Testing.AzureFunctions;
     using Corvus.Testing.AzureFunctions.SpecFlow;
     using Corvus.Testing.SpecFlow;
-    using Microsoft.CodeAnalysis.CSharp.Syntax;
+
     using Microsoft.Extensions.Configuration;
     using Microsoft.Extensions.DependencyInjection;
-    using NUnit.Framework;
+
     using TechTalk.SpecFlow;
 
     /// <summary>
