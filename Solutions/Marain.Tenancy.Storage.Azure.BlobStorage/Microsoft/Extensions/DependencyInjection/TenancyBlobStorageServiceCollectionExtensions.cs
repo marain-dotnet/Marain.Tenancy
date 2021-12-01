@@ -17,7 +17,7 @@ namespace Microsoft.Extensions.DependencyInjection
     public static class TenancyBlobStorageServiceCollectionExtensions
     {
         /// <summary>
-        /// Enable the tenancy st.
+        /// Enable tenancy storage over Azure Blob Storage.
         /// </summary>
         /// <param name="services">The service collection.</param>
         /// <param name="rootStorageConfiguration">
