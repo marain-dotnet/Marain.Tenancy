@@ -9,7 +9,8 @@ namespace Marain.Tenancy.Client
     using System.Net.Http;
     using CacheCow.Client;
     using Corvus.Extensions.Json;
-    using Corvus.Identity.ManagedServiceIdentity.ClientAuthentication;
+    using Corvus.Identity.ClientAuthentication;
+    using Corvus.Identity.ClientAuthentication.MicrosoftRest;
     using Microsoft.Extensions.DependencyInjection;
     using Microsoft.Rest;
     using Newtonsoft.Json;
@@ -44,10 +45,19 @@ namespace Marain.Tenancy.Client
         /// <param name="enableResponseCaching">Flag indicating whether or not response caching should be enabled for GET operations.</param>
         /// <returns>The modified service collection.</returns>
         /// <remarks>
+        /// <para>
         /// This requires the <see cref="TenancyClientOptions"/> to be available from DI in order
         /// to discover the base URI of the Operations control service, and, if required, to
         /// specify the resource id to use when obtaining an authentication token representing the
         /// hosting service's identity.
+        /// </para>
+        /// <para>
+        /// This also requires an implementation of <see cref="IServiceIdentityAccessTokenSource"/>
+        /// to be available via DI. This is normally achieved through one of the various
+        /// <c>AddServiceIdentityAzureTokenCredentialSource...</c> extension methods available when
+        /// you install the <c>Corvus.Identity.Azure</c> NuGet package, but applications are free
+        /// to supply alternate implementations.
+        /// </para>
         /// </remarks>
         public static IServiceCollection AddTenancyClient(
             this IServiceCollection services,
@@ -75,9 +85,9 @@ namespace Marain.Tenancy.Client
                 else
                 {
                     var tokenCredentials = new TokenCredentials(
-                        new ServiceIdentityTokenProvider(
-                            sp.GetRequiredService<IServiceIdentityTokenSource>(),
-                            options.ResourceIdForMsiAuthentication));
+                        new MicrosoftRestTokenProvider(
+                            sp.GetRequiredService<IServiceIdentityAccessTokenSource>(),
+                            $"{options.ResourceIdForMsiAuthentication}/.default"));
                     service = new TenancyService(options.TenancyServiceBaseUri, tokenCredentials, handlers);
                 }
 
