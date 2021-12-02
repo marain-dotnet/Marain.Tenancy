@@ -85,8 +85,7 @@ namespace Marain.Tenancy.Client
                 else
                 {
                     var tokenCredentials = new TokenCredentials(
-                        new MicrosoftRestTokenProvider(
-                            sp.GetRequiredService<IServiceIdentityAccessTokenSource>(),
+                        sp.GetRequiredService<IServiceIdentityMicrosoftRestTokenProviderSource>().GetTokenProvider(
                             $"{options.ResourceIdForMsiAuthentication}/.default"));
                     service = new TenancyService(options.TenancyServiceBaseUri, tokenCredentials, handlers);
                 }

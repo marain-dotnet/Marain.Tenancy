@@ -166,26 +166,26 @@
       },
       "Corvus.Identity.Abstractions": {
         "type": "Transitive",
-        "resolved": "3.0.0-alpha.2",
-        "contentHash": "q5SUNlPsyVoneFA5wHR8G6xP/RbE5i0OaA91c+WzdYCJYHSIYNXhdTQ9OAJdytw3URb4MQxSlgwsUMpZSrnnZg=="
+        "resolved": "3.0.0-alpha.3",
+        "contentHash": "9ejidQMzyEnEmjRn7fWIqbcYPnO79eeyGDf+2vCDRT4SxclwLQ97IIt0LMZSeqnqhdlm6lqZojJB0B84e+jR+Q=="
       },
       "Corvus.Identity.Azure": {
         "type": "Transitive",
-        "resolved": "3.0.0-alpha.2",
-        "contentHash": "D+h1A+9TLSaCsV5hHTn8OC6+DzOto0YiTlS4EDLvpZg0TY3i+Z7FHyMa/+crtBFxCinO8T/Yl3lZcZscTQ1D8Q==",
+        "resolved": "3.0.0-alpha.3",
+        "contentHash": "MYFzUYDF1kACA18Vb+5+sfQ5fv58pAAipfq7BHM/5tDs5xcfrGErcitFS3fbPTCVrSAW62E9hEpsiuXNPzc7TA==",
         "dependencies": {
           "Azure.Identity": "1.4.1",
           "Azure.Security.KeyVault.Secrets": "4.2.0",
-          "Corvus.Identity.Abstractions": "3.0.0-alpha.2",
+          "Corvus.Identity.Abstractions": "3.0.0-alpha.3",
           "Microsoft.Extensions.DependencyInjection.Abstractions": "3.1.21"
         }
       },
       "Corvus.Identity.MicrosoftRest": {
         "type": "Transitive",
-        "resolved": "3.0.0-alpha.2",
-        "contentHash": "97ZgmvdWe8Dy0oAkps9qMZ7r3JHdHLHtAa53cedZam2c2SPIb9ZAttNG6wvxmP3up1lVnbEdLv3JxopgWvcb7g==",
+        "resolved": "3.0.0-alpha.3",
+        "contentHash": "aOHqhlUH57XB+m1m103eyKs7m4XZ83LkkV2eHUu799XX8MdAwGRhuOme34u6PeZRj0hy35qcfJMx8H7MQ11/oA==",
         "dependencies": {
-          "Corvus.Identity.Azure": "3.0.0-alpha.2",
+          "Corvus.Identity.Azure": "3.0.0-alpha.3",
           "Microsoft.Extensions.DependencyInjection.Abstractions": "3.1.21",
           "Microsoft.Rest.ClientRuntime": "2.3.23"
         }
@@ -1533,7 +1533,7 @@
           "CacheCow.Client": "2.8.3",
           "Corvus.ContentHandling.Json": "2.0.11",
           "Corvus.Extensions": "1.1.4",
-          "Corvus.Identity.MicrosoftRest": "3.0.0-alpha.2",
+          "Corvus.Identity.MicrosoftRest": "3.0.0-alpha.3",
           "Microsoft.Extensions.DependencyInjection.Abstractions": "3.1.0",
           "Microsoft.Rest.ClientRuntime": "2.3.23"
         }
