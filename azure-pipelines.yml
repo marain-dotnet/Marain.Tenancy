@@ -33,7 +33,7 @@ jobs:
           ENDJIN_AZURESERVICESAUTHCONNECTIONSTRING: $(Endjin_AzureServicesAuthConnectionString)
           TENANTCACHECONFIGURATION__GETTENANTRESPONSECACHECONTROLHEADERVALUE: $(TenantCacheConfiguration__GetTenantResponseCacheControlHeaderValue)
       - task: Npm@1
-        displayName: 'Install Latest Azure Functions V3 Runtime'
+        displayName: 'Install Latest Azure Functions V4 Runtime'
         inputs:
           command: custom
           verbose: false
