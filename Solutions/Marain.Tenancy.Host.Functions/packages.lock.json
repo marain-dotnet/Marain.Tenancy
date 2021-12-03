@@ -826,7 +826,7 @@
       "Microsoft.NETCore.Platforms": {
         "type": "Transitive",
         "resolved": "2.1.2",
-        "contentHash": "7J7veIH7Mu6zc4llWnM7YRgTv9+Ew+JWkkDj0K7cEe8wuFA6HRt6STtwux2g+qjpDXeYeWsK0UQ3uIgRiTYHIg=="
+        "contentHash": "mOJy3M0UN+LUG21dLGMxaWZEP6xYpQEpLuvuEQBaownaX4YuhH6NmNUlN9si+vNkAS6dwJ//N1O4DmLf2CikVg=="
       },
       "Microsoft.NETCore.Targets": {
         "type": "Transitive",
@@ -1918,8 +1918,8 @@
           "Menes.Abstractions": "2.0.1",
           "Microsoft.ApplicationInsights": "2.18.0",
           "Microsoft.AspNetCore.JsonPatch": "2.2.0",
-          "Microsoft.Extensions.Configuration.Abstractions": "3.1.0",
-          "Microsoft.Extensions.Options.ConfigurationExtensions": "3.1.0",
+          "Microsoft.Extensions.Configuration.Abstractions": "6.0.0",
+          "Microsoft.Extensions.Options.ConfigurationExtensions": "6.0.0",
           "Newtonsoft.Json": "11.0.2"
         }
       },
@@ -1927,7 +1927,7 @@
         "type": "Project",
         "dependencies": {
           "Corvus.Storage.Azure.BlobStorage.Tenancy": "3.0.0-alpha.3",
-          "Microsoft.Extensions.DependencyInjection.Abstractions": "3.1.0"
+          "Microsoft.Extensions.DependencyInjection.Abstractions": "6.0.0"
         }
       }
     }
