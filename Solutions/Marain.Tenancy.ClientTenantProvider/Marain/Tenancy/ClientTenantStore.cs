@@ -107,7 +107,7 @@ namespace Marain.Tenancy
 
             if (getTenantLinks == null)
             {
-                tenantIds = new string[0];
+                tenantIds = Array.Empty<string>();
             }
             else if (getTenantLinks is JArray)
             {
@@ -198,12 +198,12 @@ namespace Marain.Tenancy
         {
             var patch = new List<UpdateTenantJsonPatchEntry>();
 
-            if (name is string)
+            if (name is not null)
             {
                 patch.Add(new UpdateTenantJsonPatchEntry("/name", "replace", name));
             }
 
-            if (!(propertiesToSetOrAdd is null))
+            if (propertiesToSetOrAdd is not null)
             {
                 // When adding new values, we convert them to JTokens here so that we can use our own serializer
                 // settings. Once we send things into the generated TenantService class, we lose control of
@@ -224,7 +224,7 @@ namespace Marain.Tenancy
                 }
             }
 
-            if (!(propertiesToRemove is null))
+            if (propertiesToRemove is not null)
             {
                 foreach (string propertyName in propertiesToRemove)
                 {
@@ -267,19 +267,15 @@ namespace Marain.Tenancy
             }
 
             // TODO: How do we determine a duplicate Id?
+            // See https://github.com/marain-dotnet/Marain.Tenancy/issues/237
             if (result.Response.StatusCode == HttpStatusCode.Conflict)
             {
                 throw new TenantConflictException();
             }
 
-            if (result.Response.StatusCode == HttpStatusCode.BadRequest)
-            {
-                throw new ArgumentException();
-            }
-
             if (!result.Response.IsSuccessStatusCode)
             {
-                throw new Exception(result.Response.ReasonPhrase);
+                throw new InvalidOperationException(result.Response.ReasonPhrase);
             }
 
             object tenant = await this.TenantService.GetTenantAsync(

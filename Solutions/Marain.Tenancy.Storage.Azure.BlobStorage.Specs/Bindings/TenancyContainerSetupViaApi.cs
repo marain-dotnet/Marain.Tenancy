@@ -19,6 +19,7 @@ namespace Marain.Tenancy.Storage.Azure.BlobStorage.Specs.Bindings
 
     internal class TenancyContainerSetupViaApi : ITenancyContainerSetup
     {
+        private static readonly Lazy<SHA1> Sha1 = new (() => SHA1.Create());
         private readonly BlobContainerConfiguration configuration;
 
         // Deferred tenant store fetching - it's important we don't try to use this before
@@ -59,9 +60,7 @@ namespace Marain.Tenancy.Storage.Azure.BlobStorage.Specs.Bindings
                 {
                     var v2Config = new LegacyV2BlobStorageConfiguration
                     {
-                        AccountName = v3Config.ConnectionStringPlainText != null
-                            ? v3Config.ConnectionStringPlainText
-                            : v3Config.AccountName,
+                        AccountName = v3Config.ConnectionStringPlainText ?? v3Config.AccountName,
                         KeyVaultName = v3Config.AccessKeyInKeyVault?.VaultName,
                         AccountKeySecretName = v3Config.AccessKeyInKeyVault?.SecretName,
                     };
@@ -117,8 +116,7 @@ namespace Marain.Tenancy.Storage.Azure.BlobStorage.Specs.Bindings
         private static string HashAndEncodeBlobContainerName(string containerName)
         {
             byte[] byteContents = Encoding.UTF8.GetBytes(containerName);
-            using SHA1CryptoServiceProvider hash = new ();
-            byte[] hashedBytes = hash.ComputeHash(byteContents);
+            byte[] hashedBytes = Sha1.Value.ComputeHash(byteContents);
             return TenantExtensions.ByteArrayToHexViaLookup32(hashedBytes);
         }
 

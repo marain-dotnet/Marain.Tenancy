@@ -2,15 +2,15 @@
   "AzureServicesAuthConnectionString": "RunAs=Developer; DeveloperTool=AzureCLI",
   "AzureWebJobsStorage": "UseDevelopmentStorage=true",
   "FUNCTIONS_WORKER_RUNTIME": "dotnet",
-  "FUNCTIONS_EXTENSION_VERSION": "~2",
+  "FUNCTIONS_EXTENSION_VERSION": "~4",
   "APPINSIGHTS_INSTRUMENTATIONKEY": "",
 
   "TenantCacheConfiguration:GetTenantResponseCacheControlHeaderValue": "max-age=300",
 
   // This...
-  //"RootBlobStorageConfiguration:ConnectionStringPlainText": "UseDevelopmentStorage=true",
+  "RootBlobStorageConfiguration:ConnectionStringPlainText": "UseDevelopmentStorage=true",
   // or this:
-  "RootBlobStorageConfiguration:AccountName": "",
-  "RootBlobStorageConfiguration:AccessKeyInKeyVault:VaultName": "",
-  "RootBlobStorageConfiguration:AccessKeyInKeyVault:SecretName": ""
+  //"RootBlobStorageConfiguration:AccountName": "",
+  //"RootBlobStorageConfiguration:AccessKeyInKeyVault:VaultName": "",
+  //"RootBlobStorageConfiguration:AccessKeyInKeyVault:SecretName": ""
 }

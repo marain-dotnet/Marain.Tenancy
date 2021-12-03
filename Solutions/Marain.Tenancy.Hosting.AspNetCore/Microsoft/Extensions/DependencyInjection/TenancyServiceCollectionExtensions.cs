@@ -14,6 +14,7 @@ namespace Microsoft.Extensions.DependencyInjection
     using Microsoft.Extensions.Configuration;
     using Newtonsoft.Json;
     using Newtonsoft.Json.Converters;
+    using Newtonsoft.Json.Serialization;
 
     /// <summary>
     /// Extension methods for configuring DI for the Operations Open API services.
@@ -29,7 +30,7 @@ namespace Microsoft.Extensions.DependencyInjection
         [Obsolete("Use AddTenancyApiWithOpenApiActionResultHosting, or consider changing to AddTenancyApiWithAspNetPipelineHosting")]
         public static IServiceCollection AddTenancyApi(
             this IServiceCollection services,
-            Action<IOpenApiHostConfiguration> configureHost = null)
+            Action<IOpenApiHostConfiguration>? configureHost = null)
         {
             return AddTenancyApiWithOpenApiActionResultHosting(services, configureHost);
         }
@@ -42,7 +43,7 @@ namespace Microsoft.Extensions.DependencyInjection
         /// <returns>The service collection, to enable chaining.</returns>
         public static IServiceCollection AddTenancyApiWithAspNetPipelineHosting(
             this IServiceCollection services,
-            Action<IOpenApiHostConfiguration> configureHost = null)
+            Action<IOpenApiHostConfiguration>? configureHost = null)
         {
             if (services.Any(s => typeof(TenancyService).IsAssignableFrom(s.ServiceType)))
             {
@@ -68,7 +69,7 @@ namespace Microsoft.Extensions.DependencyInjection
         /// <returns>The service collection, to enable chaining.</returns>
         public static IServiceCollection AddTenancyApiWithOpenApiActionResultHosting(
             this IServiceCollection services,
-            Action<IOpenApiHostConfiguration> configureHost = null)
+            Action<IOpenApiHostConfiguration>? configureHost = null)
         {
             if (services.Any(s => typeof(TenancyService).IsAssignableFrom(s.ServiceType)))
             {
@@ -103,7 +104,7 @@ namespace Microsoft.Extensions.DependencyInjection
             services.AddJsonNetPropertyBag();
             services.AddJsonNetCultureInfoConverter();
             services.AddJsonNetDateTimeOffsetToIso8601AndUnixTimeConverter();
-            services.AddSingleton<JsonConverter>(new StringEnumConverter(true));
+            services.AddSingleton<JsonConverter>(new StringEnumConverter(new CamelCaseNamingStrategy()));
 
             // Add caching config.
             services.AddSingleton(

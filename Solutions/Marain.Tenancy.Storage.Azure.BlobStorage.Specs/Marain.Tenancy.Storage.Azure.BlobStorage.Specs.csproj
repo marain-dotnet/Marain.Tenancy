@@ -3,7 +3,7 @@
   <Import Project="$(EndjinProjectPropsPath)" Condition="$(EndjinProjectPropsPath) != ''" />
 
   <PropertyGroup>
-    <TargetFramework>netcoreapp3.1</TargetFramework>
+    <TargetFramework>net6.0</TargetFramework>
     <Nullable>enable</Nullable>
 
     <RootNamespace>Marain.Tenancy.Storage.Azure.BlobStorage.Specs</RootNamespace>
@@ -44,11 +44,11 @@
       <PrivateAssets>all</PrivateAssets>
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
     </PackageReference>
-    <PackageReference Include="FluentAssertions" Version="6.1.0" />
-    <PackageReference Include="Microsoft.Extensions.Configuration" Version="[3.1.*,)" />
-    <PackageReference Include="Microsoft.Extensions.Configuration.Binder" Version="[3.1.*,)" />
-    <PackageReference Include="Microsoft.Extensions.Configuration.EnvironmentVariables" Version="[3.1.*,)" />
-    <PackageReference Include="Microsoft.Extensions.Configuration.Json" Version="[3.1.*,)" />
+    <PackageReference Include="FluentAssertions" Version="6.2.0" />
+    <PackageReference Include="Microsoft.Extensions.Configuration" Version="[6.0.*,)" />
+    <PackageReference Include="Microsoft.Extensions.Configuration.Binder" Version="[6.0.*,)" />
+    <PackageReference Include="Microsoft.Extensions.Configuration.EnvironmentVariables" Version="[6.0.*,)" />
+    <PackageReference Include="Microsoft.Extensions.Configuration.Json" Version="[6.0.*,)" />
   </ItemGroup>
 
   <ItemGroup>

@@ -73,7 +73,7 @@ namespace Marain.Tenancy.Cli.Commands
 
             if (string.IsNullOrEmpty(this.Name))
             {
-                throw new ArgumentException("Name must be supplied", nameof(this.Name));
+                throw new InvalidOperationException("Name must be supplied");
             }
 
             Guid wellKnownGuid = string.IsNullOrEmpty(this.WellKnownTenantGuid)

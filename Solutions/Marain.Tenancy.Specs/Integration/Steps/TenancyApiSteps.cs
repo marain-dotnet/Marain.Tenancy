@@ -28,7 +28,7 @@ namespace Marain.Tenancy.Specs.Integration.Steps
     [Binding]
     public class TenancyApiSteps : Steps
     {        
-        private static readonly HttpClient HttpClient = new HttpClient();
+        private static readonly HttpClient HttpClient = new ();
         private readonly TestTenantCleanup testTenantCleanup;
         private HttpResponseMessage? response;
         private string? responseContent;
@@ -55,13 +55,15 @@ namespace Marain.Tenancy.Specs.Integration.Steps
         [When("I request the tenant using the Location from the previous response")]
         public Task WhenIRequestTheTenantUsingTheLocationFromThePreviousResponse()
         {
-            return this.SendGetRequest(FunctionBindings.TenancyApiBaseUri, this.Response.Headers.Location.ToString());
+            return this.SendGetRequest(
+                FunctionBindings.TenancyApiBaseUri,
+                (this.Response.Headers.Location ?? throw new InvalidOperationException("Location header unavailable")).ToString());
         }
 
         [Given("I store the value of the response Location header as '(.*)'")]
         public void GivenIStoreTheValueOfTheResponseLocationHeaderAs(string name)
         {
-            this.ScenarioContext.Set(this.Response.Headers.Location.ToString(), name);
+            this.ScenarioContext.Set(this.Response.Headers.Location?.ToString(), name);
         }
 
         [Given("I have requested the tenant using the path called '(.*)'")]
@@ -76,7 +78,10 @@ namespace Marain.Tenancy.Specs.Integration.Steps
         {
             string path = this.ScenarioContext.Get<string>(name);
 
-            return this.SendGetRequest(FunctionBindings.TenancyApiBaseUri, path, this.Response.Headers.ETag.Tag);
+            return this.SendGetRequest(
+                FunctionBindings.TenancyApiBaseUri,
+                path,
+                (this.Response.Headers.ETag ?? throw new InvalidOperationException("ETag not available from previous response")).Tag);
         }
 
         [Given("I have used the API to create a new tenant")]
@@ -86,7 +91,7 @@ namespace Marain.Tenancy.Specs.Integration.Steps
             string parentId = table.Rows[0]["ParentTenantId"];
             string name = table.Rows[0]["Name"];
 
-            await this.SendPostRequest(FunctionBindings.TenancyApiBaseUri, $"/{parentId}/marain/tenant/children?tenantName={Uri.EscapeUriString(name)}", null);
+            await this.SendPostRequest(FunctionBindings.TenancyApiBaseUri, $"/{parentId}/marain/tenant/children?tenantName={Uri.EscapeDataString(name)}", null);
             if (this.Response.IsSuccessStatusCode && this.Response.Headers.Location is not null)
             {
                 string location = this.Response.Headers.Location.ToString();
@@ -137,9 +142,9 @@ namespace Marain.Tenancy.Specs.Integration.Steps
             }
 
             this.response = await HttpClient.SendAsync(request).ConfigureAwait(false);
-            this.responseContent = await response.Content.ReadAsStringAsync().ConfigureAwait(false);
+            this.responseContent = await this.response.Content.ReadAsStringAsync().ConfigureAwait(false);
 
-            if (response.IsSuccessStatusCode && !string.IsNullOrEmpty(this.responseContent))
+            if (this.response.IsSuccessStatusCode && !string.IsNullOrEmpty(this.responseContent))
             {
                 var parsedResponse = JObject.Parse(this.responseContent);
                 this.ScenarioContext.Set(parsedResponse);
@@ -150,7 +155,7 @@ namespace Marain.Tenancy.Specs.Integration.Steps
         {
             HttpContent? content = null;
 
-            if (!(data is null))
+            if (data is not null)
             {
                 IServiceProvider serviceProvider = ContainerBindings.GetServiceProvider(this.FeatureContext);
                 IJsonSerializerSettingsProvider serializerSettingsProvider = serviceProvider.GetRequiredService<IJsonSerializerSettingsProvider>();
@@ -159,7 +164,7 @@ namespace Marain.Tenancy.Specs.Integration.Steps
             }
 
             this.response = await HttpClient.PostAsync(new Uri(baseUri, path), content).ConfigureAwait(false);
-            this.responseContent = await response.Content.ReadAsStringAsync().ConfigureAwait(false);
+            this.responseContent = await this.response.Content.ReadAsStringAsync().ConfigureAwait(false);
         }
     }
 }
