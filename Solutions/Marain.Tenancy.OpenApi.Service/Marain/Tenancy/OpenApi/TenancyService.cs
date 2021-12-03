@@ -335,7 +335,7 @@ namespace Marain.Tenancy.OpenApi
                     {
                         if (operation.path.StartsWith("/properties/"))
                         {
-                            string propertyName = operation.path.Substring(12);
+                            string propertyName = operation.path[12..];
                             switch (operation.OperationType)
                             {
                                 case OperationType.Add:
@@ -404,13 +404,17 @@ namespace Marain.Tenancy.OpenApi
 
             if (childTenantId.GetParentId() != tenantId)
             {
-                this.logger.LogError($"The discovered parent tenant ID {childTenantId.GetParentId()} of the child {childTenantId} does not match the specified parent {tenantId}");
+                this.logger.LogError(
+                    "The discovered parent tenant ID {discoveredParentTenantId} of the child {childTenantId} does not match the specified parent {specifiedParentTenantId}",
+                    childTenantId.GetParentId(),
+                    childTenantId,
+                    tenantId);
                 throw new OpenApiNotFoundException();
             }
 
             try
             {
-                this.logger.LogInformation($"Attempting to delete {childTenantId}");
+                this.logger.LogInformation("Attempting to delete {childTenantId}", childTenantId);
                 await this.tenantStore.DeleteTenantAsync(childTenantId).ConfigureAwait(false);
                 return this.OkResult();
             }

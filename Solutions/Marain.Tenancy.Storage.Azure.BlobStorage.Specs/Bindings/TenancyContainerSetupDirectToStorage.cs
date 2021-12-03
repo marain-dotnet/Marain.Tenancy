@@ -29,7 +29,7 @@ namespace Marain.Tenancy.Storage.Azure.BlobStorage.Specs.Bindings
 
     internal class TenancyContainerSetupDirectToStorage : ITenancyContainerSetup
     {
-        private static readonly Lazy<SHA1> Sha1 = new Lazy<SHA1>(() => SHA1.Create());
+        private static readonly Lazy<SHA1> Sha1 = new (() => SHA1.Create());
         private readonly BlobContainerConfiguration configuration;
         private readonly IBlobContainerSourceByConfiguration blobContainerSource;
         private readonly IPropertyBagFactory propertyBagFactory;
@@ -75,9 +75,7 @@ namespace Marain.Tenancy.Storage.Azure.BlobStorage.Specs.Bindings
                     "StorageConfiguration__corvustenancy",
                     new LegacyV2BlobStorageConfiguration
                     {
-                        AccountName = this.configuration.ConnectionStringPlainText != null
-                            ? this.configuration.ConnectionStringPlainText
-                            : this.configuration.AccountName,
+                        AccountName = this.configuration.ConnectionStringPlainText ?? this.configuration.AccountName,
                         KeyVaultName = this.configuration.AccessKeyInKeyVault?.VaultName,
                         AccountKeySecretName = this.configuration.AccessKeyInKeyVault?.SecretName,
                     })

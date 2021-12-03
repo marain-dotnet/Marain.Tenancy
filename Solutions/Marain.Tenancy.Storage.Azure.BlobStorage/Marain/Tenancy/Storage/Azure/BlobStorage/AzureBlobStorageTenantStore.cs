@@ -217,7 +217,7 @@ namespace Marain.Tenancy.Storage.Azure.BlobStorage
             IEnumerable<BlobItem> items = p?.Values ?? Enumerable.Empty<BlobItem>();
 
             return new TenantCollectionResult(
-                items.Select(s => s.Name.Substring(LiveTenantsPrefix.Length)).ToList(),
+                items.Select(s => s.Name[LiveTenantsPrefix.Length..]).ToList(),
                 GenerateContinuationToken(p?.ContinuationToken));
         }
 

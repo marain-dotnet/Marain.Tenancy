@@ -28,7 +28,7 @@ namespace Marain.Tenancy.Specs.Integration.Steps
     [Binding]
     public class TenancyApiSteps : Steps
     {        
-        private static readonly HttpClient HttpClient = new HttpClient();
+        private static readonly HttpClient HttpClient = new ();
         private readonly TestTenantCleanup testTenantCleanup;
         private HttpResponseMessage? response;
         private string? responseContent;
@@ -142,9 +142,9 @@ namespace Marain.Tenancy.Specs.Integration.Steps
             }
 
             this.response = await HttpClient.SendAsync(request).ConfigureAwait(false);
-            this.responseContent = await response.Content.ReadAsStringAsync().ConfigureAwait(false);
+            this.responseContent = await this.response.Content.ReadAsStringAsync().ConfigureAwait(false);
 
-            if (response.IsSuccessStatusCode && !string.IsNullOrEmpty(this.responseContent))
+            if (this.response.IsSuccessStatusCode && !string.IsNullOrEmpty(this.responseContent))
             {
                 var parsedResponse = JObject.Parse(this.responseContent);
                 this.ScenarioContext.Set(parsedResponse);
@@ -155,7 +155,7 @@ namespace Marain.Tenancy.Specs.Integration.Steps
         {
             HttpContent? content = null;
 
-            if (!(data is null))
+            if (data is not null)
             {
                 IServiceProvider serviceProvider = ContainerBindings.GetServiceProvider(this.FeatureContext);
                 IJsonSerializerSettingsProvider serializerSettingsProvider = serviceProvider.GetRequiredService<IJsonSerializerSettingsProvider>();
@@ -164,7 +164,7 @@ namespace Marain.Tenancy.Specs.Integration.Steps
             }
 
             this.response = await HttpClient.PostAsync(new Uri(baseUri, path), content).ConfigureAwait(false);
-            this.responseContent = await response.Content.ReadAsStringAsync().ConfigureAwait(false);
+            this.responseContent = await this.response.Content.ReadAsStringAsync().ConfigureAwait(false);
         }
     }
 }

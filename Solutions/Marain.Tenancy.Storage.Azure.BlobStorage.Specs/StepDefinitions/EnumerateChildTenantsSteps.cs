@@ -20,7 +20,7 @@ namespace Marain.Tenancy.Storage.Azure.BlobStorage.Specs.StepDefinitions
     [Binding]
     public class EnumerateChildTenantsSteps : TenantStepsBase
     {
-        private List<TenantCollectionResult> getChildrenResults = new ();
+        private readonly List<TenantCollectionResult> getChildrenResults = new ();
 
         public EnumerateChildTenantsSteps(TenantProperties tenantProperties)
             : base(tenantProperties)

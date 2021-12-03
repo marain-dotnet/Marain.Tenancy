@@ -4,6 +4,7 @@
 
 namespace Marain.Tenancy.Cli
 {
+    using System.Diagnostics.CodeAnalysis;
     using System.Threading.Tasks;
     using Marain.Tenancy.Cli.Commands;
     using McMaster.Extensions.CommandLineUtils;
@@ -23,6 +24,7 @@ namespace Marain.Tenancy.Cli
         /// </summary>
         /// <param name="app">The current <c>CommandLineApplication</c>.</param>
         /// <returns>A <see cref="Task"/> representing the asynchronous operation.</returns>
+        [SuppressMessage("Performance", "CA1822:Mark members as static", Justification = "The command line framework requires this to be an instance method")]
         protected Task<int> OnExecute(CommandLineApplication app)
         {
             app.ShowHelp();

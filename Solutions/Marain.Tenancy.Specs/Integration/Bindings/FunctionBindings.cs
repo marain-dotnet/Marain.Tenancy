@@ -24,7 +24,7 @@ namespace Marain.Tenancy.Specs.Integration.Bindings
     {
         public const int TenancyApiPort = 7071;
 
-        public static readonly Uri TenancyApiBaseUri = new Uri($"http://localhost:{TenancyApiPort}");
+        public static readonly Uri TenancyApiBaseUri = new ($"http://localhost:{TenancyApiPort}");
 
         /// <summary>
         /// Runs the public API function.

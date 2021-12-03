@@ -15,9 +15,8 @@ namespace Marain.Tenancy.Specs.Integration.Bindings
     [Binding]
     public class TestTenantCleanup
     {
-        private static readonly HttpClient HttpClient = new HttpClient();
+        private static readonly HttpClient HttpClient = new ();
         private readonly HashSet<(string ParentId, string TenantId)> tenantsToDelete = new();
-        private readonly HashSet<(string ParentId, string TenantId)> wellKnownTenantsToDelete = new();
 
         public  void AddTenantToDelete(string parentId, string id)
         {
