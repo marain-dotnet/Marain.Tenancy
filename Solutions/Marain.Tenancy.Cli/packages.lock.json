@@ -865,7 +865,7 @@
       "System.Interactive": {
         "type": "Transitive",
         "resolved": "3.2.0",
-        "contentHash": "hoXiC7r+WvT/oQ/QcsCgIJMEcXKXyM26BvIcFVRgEMzXk9URu8oR2ADqrnHwIRiJmxQC/q8b3KTQSkdoFRO4TA=="
+        "contentHash": "8j5PArcXRlri+zUhcSUpyFMHUWQ35ns7BNrzT3vnmTYKE90EckgFdg9N5QoR8d6eFVICludo87ue8SL+peMT2g=="
       },
       "System.IO": {
         "type": "Transitive",
