@@ -31,13 +31,13 @@ namespace Marain.Tenancy.Storage.Azure.BlobStorage.Specs.Bindings
     {
         private static readonly Lazy<SHA1> Sha1 = new (() => SHA1.Create());
         private readonly BlobContainerConfiguration configuration;
-        private readonly IBlobContainerSourceByConfiguration blobContainerSource;
+        private readonly IBlobContainerSourceFromDynamicConfiguration blobContainerSource;
         private readonly IPropertyBagFactory propertyBagFactory;
         private readonly JsonSerializer jsonSerializer;
 
         public TenancyContainerSetupDirectToStorage(
             BlobContainerConfiguration configuration,
-            IBlobContainerSourceByConfiguration blobContainerSource,
+            IBlobContainerSourceFromDynamicConfiguration blobContainerSource,
             IJsonSerializerSettingsProvider serializerSettingsProvider,
             IPropertyBagFactory propertyBagFactory)
         {
@@ -139,7 +139,9 @@ namespace Marain.Tenancy.Storage.Azure.BlobStorage.Specs.Bindings
             // directly with the storage API to validate that it works when the storage account
             // wasn't previously populated by the current Corvus and Marain APIs.
             BlobContainerClient rootTenantContainerFromConfig = await this.blobContainerSource.GetStorageContextAsync(
-                this.configuration.ForContainer("dummy"));
+#pragma warning disable SA1101 // Prefix local calls with this - StyleCop doesn't recognize records, or the with syntax yet
+                this.configuration with { Container = "dummy" });
+#pragma warning restore SA1101 // Prefix local calls with this
             return rootTenantContainerFromConfig.GetParentBlobServiceClient();
         }
     }

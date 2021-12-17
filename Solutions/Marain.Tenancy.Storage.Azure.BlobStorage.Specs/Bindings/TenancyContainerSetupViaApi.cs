@@ -25,12 +25,12 @@ namespace Marain.Tenancy.Storage.Azure.BlobStorage.Specs.Bindings
         // Deferred tenant store fetching - it's important we don't try to use this before
         // we need it because it's not available until after the DI container has been built.
         private readonly Func<ITenantStore> getTenantStore;
-        private readonly IBlobContainerSourceByConfiguration blobContainerSource;
+        private readonly IBlobContainerSourceFromDynamicConfiguration blobContainerSource;
 
         public TenancyContainerSetupViaApi(
             BlobContainerConfiguration configuration,
             Func<ITenantStore> getTenantStore,
-            IBlobContainerSourceByConfiguration blobContainerSource)
+            IBlobContainerSourceFromDynamicConfiguration blobContainerSource)
         {
             this.configuration = configuration;
             this.getTenantStore = getTenantStore;
@@ -136,7 +136,9 @@ namespace Marain.Tenancy.Storage.Azure.BlobStorage.Specs.Bindings
             // directly with the storage API to validate that it works when the storage account
             // wasn't previously populated by the current Corvus and Marain APIs.
             BlobContainerClient rootTenantContainerFromConfig = await this.blobContainerSource.GetStorageContextAsync(
-                this.configuration.ForContainer("dummy"));
+#pragma warning disable SA1101 // Prefix local calls with this - StyleCop doesn't recognize records, or the with syntax yet
+                this.configuration with { Container = "dummy" });
+#pragma warning restore SA1101 // Prefix local calls with this
             return rootTenantContainerFromConfig.GetParentBlobServiceClient();
         }
     }

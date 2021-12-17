@@ -65,19 +65,8 @@ namespace Microsoft.Extensions.DependencyInjection
             BlobContainerConfiguration rootStorageConfiguration,
             bool propagateRootTenancyStorageConfigAsV2 = false)
         {
-            services.AddAzureBlobStorageClient();
-
-            // TODO: this next one is temporary.
-            // Corvus.Storage.Azure.BlobStorage.Tenancy should offer some successor to
-            // AddTenantCloudBlobContainerFactory, but since it currently only offers the
-            // transitional API (there is not yet an implementation of a native-v3 API)
-            // that hasn't been written yet, and so we need to call this bootstrapper
-            // in the Corvus.Tenancy.Internal namespace.
-            services.AddRequiredTenancyServices();
-
-            // TODO: This probably should also be called by Corvus.Storage.Azure.BlobStorage.Tenancy
-            services.AddAzureBlobStorageClient();
-
+            services.AddAzureBlobStorageClientSourceFromDynamicConfiguration();
+            services.AddTenantBlobContainerFactory();
             services.AddBlobContainerV2ToV3Transition();
             services.AddSingleton(new AzureBlobStorageTenantStoreConfiguration(
                 rootStorageConfiguration,
