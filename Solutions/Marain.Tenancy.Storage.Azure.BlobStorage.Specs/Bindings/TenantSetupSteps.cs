@@ -32,10 +32,10 @@ namespace Marain.Tenancy.Storage.Azure.BlobStorage.Specs.Bindings
                 SetupModes.ViaApiPropagateRootConfigAsV2 or SetupModes.ViaApiPropagateRootConfigAsV3 => new TenancyContainerSetupViaApi(
                     this.DiContainer.RootBlobStorageConfiguration,
                     () => this.TenantStore,
-                    this.DiContainer.ServiceProvider.GetRequiredService<IBlobContainerSourceByConfiguration>()),
+                    this.DiContainer.ServiceProvider.GetRequiredService<IBlobContainerSourceFromDynamicConfiguration>()),
                 SetupModes.DirectToStoragePropagateRootConfigAsV2 or SetupModes.DirectToStoragePropagateRootConfigAsV3 => new TenancyContainerSetupDirectToStorage(
                     this.DiContainer.RootBlobStorageConfiguration,
-                    this.DiContainer.ServiceProvider.GetRequiredService<IBlobContainerSourceByConfiguration>(),
+                    this.DiContainer.ServiceProvider.GetRequiredService<IBlobContainerSourceFromDynamicConfiguration>(),
                     this.DiContainer.ServiceProvider.GetRequiredService<IJsonSerializerSettingsProvider>(),
                     this.DiContainer.ServiceProvider.GetRequiredService<IPropertyBagFactory>()),
                 _ => throw new InvalidOperationException($"Unknown setup mode: {this.SetupMode}"),
