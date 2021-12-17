@@ -108,9 +108,22 @@ namespace Marain.Tenancy.Storage.Azure.BlobStorage.Specs.StepDefinitions
             tenantToInspect.ETag.Should().Be(tenantToCompareWith.ETag);
         }
 
-        [Then(@"the tenant details labelled '([^']*)' should have tenant Id '([^']*)'")]
-        public void ThenGetTenantShouldHaveTheTenantId(string detailsToInspect, string expectedId)
+        [Then(@"the tenant details labelled '([^']*)' should have tenant Id that is the hash of the Guid labelled '([^']*)'")]
+        public void ThenGetTenantShouldHaveTheTenantId(string detailsToInspect, string wellKnownGuidLabel)
         {
+            Guid wellKnownGuid = this.WellKnownGuids[wellKnownGuidLabel];
+            string expectedId = TenantExtensions.EncodeGuid(wellKnownGuid);
+            ITenant tenantToInspect = this.Tenants[detailsToInspect];
+            tenantToInspect.Id.Should().Be(expectedId);
+        }
+
+        [Then(@"the tenant details labelled '([^']*)' should have tenant Id that is the concatenated hashes of the Guids labelled '([^']*)' and '([^']*)'")]
+        public void ThenTheTenantDetailsLabelledShouldHaveTenantIdThatIsTheConcatenatedHashesOfTheGuidsLabelledAnd(
+            string detailsToInspect, string wellKnownGuidLabel1, string wellKnownGuidLabel2)
+        {
+            Guid wellKnownGuid1 = this.WellKnownGuids[wellKnownGuidLabel1];
+            Guid wellKnownGuid2 = this.WellKnownGuids[wellKnownGuidLabel2];
+            string expectedId = TenantExtensions.EncodeGuid(wellKnownGuid1) + TenantExtensions.EncodeGuid(wellKnownGuid2);
             ITenant tenantToInspect = this.Tenants[detailsToInspect];
             tenantToInspect.Id.Should().Be(expectedId);
         }
