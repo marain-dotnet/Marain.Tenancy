@@ -18,7 +18,7 @@
       <PrivateAssets>all</PrivateAssets>
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
     </PackageReference>
-    <PackageReference Include="Menes.Hosting.AspNetCore" Version="3.0.0-vnext.4" />
+    <PackageReference Include="Menes.Hosting.AspNetCore" Version="3.0.0" />
   </ItemGroup>
 
   <ItemGroup>
