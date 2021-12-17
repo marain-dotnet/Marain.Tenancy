@@ -43,10 +43,12 @@ namespace Marain.Tenancy.Storage.Azure.BlobStorage.Specs.StepDefinitions
             this.AddTenantToDelete(newTenant.Id);
         }
 
-        [When(@"I create a well known child tenant of the root tenant called '([^']*)' with a Guid of '([^']*)' labelled '([^']*)'")]
+        [When(@"I create a well known \(from the Guid labelled '([^']*)'\) child tenant of the root tenant called '([^']*)' labelled '([^']*)'")]
         public async Task GivenICreateAWellKnownChildOfTheRootTenantCalledWithTheDetailsAvailableAsAsync(
-            string tenantName, Guid wellKnownGuid, string newTenantLabel)
+            string wellKnownGuidLabel, string tenantName, string newTenantLabel)
         {
+            Guid wellKnownGuid = this.WellKnownGuids[wellKnownGuidLabel];
+
             // This is called in scenarios where we want the tenant creation to go through the
             // tenant store under test even when the setup mode is direct-to-store, because we're
             // validating that the information returned from the store works when we use it again
@@ -70,26 +72,28 @@ namespace Marain.Tenancy.Storage.Azure.BlobStorage.Specs.StepDefinitions
             this.AddTenantToDelete(newTenant.Id);
         }
 
-        [When(@"I create a well known child of the tenant labelled '([^']*)' named '([^']*)' with a Guid of '([^']*)' labelled '([^']*)'")]
+        [When(@"I create a well known \(from the Guid labelled '([^']*)'\) child of the tenant labelled '([^']*)' named '([^']*)' labelled '([^']*)'")]
         public async Task GivenICreateAWellKnownChildOfAChildOfATenantAsync(
-            string parentTenantLabel, string newTenantName, Guid wellKnownId, string newTenantLabel)
+            string wellKnownGuidLabel, string parentTenantLabel, string newTenantName, string newTenantLabel)
         {
+            Guid wellKnownGuid = this.WellKnownGuids[wellKnownGuidLabel];
             ITenant parent = this.Tenants[parentTenantLabel];
             ITenant newTenant = await this.TenantStore.CreateWellKnownChildTenantAsync(
-                parent.Id, wellKnownId, newTenantName);
+                parent.Id, wellKnownGuid, newTenantName);
             this.Tenants.Add(newTenantLabel, newTenant);
             this.AddWellKnownTenantToDelete(newTenant.Id);
         }
 
-        [When(@"I try to create a well known child of the tenant labelled '([^']*)' named '([^']*)' with a Guid of '([^']*)'")]
+        [When(@"I try to create a well known child \(from the Guid labelled '([^']*)'\) of the tenant labelled '([^']*)' named '([^']*)'")]
         public async Task GivenITryToCreateAWellKnownChildOfAChildOfATenantAsync(
-            string parentTenantLabel, string newTenantName, Guid wellKnownId)
+            string wellKnownGuidLabel, string parentTenantLabel, string newTenantName)
         {
+            Guid wellKnownGuid = this.WellKnownGuids[wellKnownGuidLabel];
             ITenant parent = this.Tenants[parentTenantLabel];
             try
             {
                 ITenant newTenant = await this.TenantStore.CreateWellKnownChildTenantAsync(
-                    parent.Id, wellKnownId, newTenantName);
+                    parent.Id, wellKnownGuid, newTenantName);
             }
             catch (Exception x)
             {

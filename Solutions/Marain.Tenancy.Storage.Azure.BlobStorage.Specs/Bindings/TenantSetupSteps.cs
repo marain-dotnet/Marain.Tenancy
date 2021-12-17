@@ -5,7 +5,9 @@
 namespace Marain.Tenancy.Storage.Azure.BlobStorage.Specs.Bindings
 {
     using System;
+    using System.Collections.Generic;
     using System.Linq;
+    using System.Security;
     using System.Threading.Tasks;
 
     using Corvus.Extensions.Json;
@@ -72,10 +74,20 @@ namespace Marain.Tenancy.Storage.Azure.BlobStorage.Specs.Bindings
             this.AddTenantToDelete(newTenant.Id);
         }
 
-        [Given("the root tenant has a well-known child tenant called '([^']*)' with a Guid of '([^']*)' labelled '([^']*)'")]
-        public async Task GivenTheRootTenantHasAWellKnownChildTenantCalled(
-            string tenantName, Guid wellKnownId, string tenantLabel)
+        [Given("a well-known tenant Guid labelled '([^']*)'")]
+        public void GivenAWell_KnownTenantGuidLabelled(string label)
         {
+            // We need "well-known" ids to be different each time we run the test, because
+            // otherwise, we fall foul of Azure Storage's inability to create a container
+            // with the same name as a container you recently deleted.
+            this.WellKnownGuids.Add(label, Guid.NewGuid());
+        }
+
+        [Given(@"the root tenant has a well-known \(from the Guid labelled '([^']*)'\) child tenant called '([^']*)' labelled '([^']*)'")]
+        public async Task GivenTheRootTenantHasAWellKnownChildTenantCalled(
+            string wellKnownGuidLabel, string tenantName, string tenantLabel)
+        {
+            Guid wellKnownId = this.WellKnownGuids[wellKnownGuidLabel];
             ITenant newTenant = await this.containerSetup.EnsureWellKnownChildTenantExistsAsync(
                 RootTenant.RootTenantId, wellKnownId, tenantName, this.PropagateRootTenancyStorageConfigAsV2);
             this.Tenants.Add(tenantLabel, newTenant);
@@ -94,10 +106,11 @@ namespace Marain.Tenancy.Storage.Azure.BlobStorage.Specs.Bindings
             this.AddTenantToDelete(newTenant.Id);
         }
 
-        [Given("the tenant labelled '([^']*)' has a well-known child tenant called '([^']*)' with a Guid of '([^']*)' labelled '([^']*)'")]
+        [Given(@"the tenant labelled '([^']*)' has a well-known \(from the Guid labelled '([^']*)'\) child tenant called '([^']*)' labelled '([^']*)'")]
         public async Task GivenTheRootTenantHasAChildTenantCalled(
-            string parentTenantLabel, string tenantName, Guid wellKnownId, string newTenantLabel)
+            string parentTenantLabel, string wellKnownGuidLabel, string tenantName, string newTenantLabel)
         {
+            Guid wellKnownId = this.WellKnownGuids[wellKnownGuidLabel];
             ITenant parent = this.Tenants[parentTenantLabel];
             ITenant newTenant = await this.containerSetup.EnsureWellKnownChildTenantExistsAsync(
                 parent.Id, wellKnownId, tenantName, this.PropagateRootTenancyStorageConfigAsV2);

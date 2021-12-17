@@ -4,6 +4,7 @@
 
 namespace Marain.Tenancy.Storage.Azure.BlobStorage.Specs.Bindings
 {
+    using System;
     using System.Collections.Generic;
 
     using Corvus.Tenancy;
@@ -16,6 +17,8 @@ namespace Marain.Tenancy.Storage.Azure.BlobStorage.Specs.Bindings
         }
 
         public Dictionary<string, ITenant> Tenants { get; } = new Dictionary<string, ITenant>();
+
+        public Dictionary<string, Guid> WellKnownGuids { get; } = new ();
 
         public HashSet<string> TenantsToDelete { get; } = new HashSet<string>();
 

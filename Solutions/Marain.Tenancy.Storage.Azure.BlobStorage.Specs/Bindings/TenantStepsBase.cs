@@ -29,6 +29,8 @@ namespace Marain.Tenancy.Storage.Azure.BlobStorage.Specs.Bindings
 
         public HashSet<string> TenantsToDelete => this.tenantProperties.TenantsToDelete;
 
+        public Dictionary<string, Guid> WellKnownGuids => this.tenantProperties.WellKnownGuids;
+
         public HashSet<string> WellKnownTenantsToDelete => this.tenantProperties.WellKnownTenantsToDelete;
 
         public ITenantStore TenantStore => this.DiContainer.TenantStore;
