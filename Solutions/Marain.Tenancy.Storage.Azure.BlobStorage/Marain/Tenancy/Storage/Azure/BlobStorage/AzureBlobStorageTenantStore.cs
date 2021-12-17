@@ -190,6 +190,16 @@ namespace Marain.Tenancy.Storage.Azure.BlobStorage
             (_, BlobContainerClient tenantContainer) =
                 await this.GetContainerAndTenantForChildTenantsOfAsync(tenantId).ConfigureAwait(false);
 
+            // Check it's not empty first.
+            AsyncPageable<BlobItem> pageable = tenantContainer.GetBlobsAsync(
+                prefix: LiveTenantsPrefix);
+            IAsyncEnumerable<Page<BlobItem>> pages = pageable.AsPages(pageSizeHint: 1);
+            await using IAsyncEnumerator<Page<BlobItem>> page = pages.GetAsyncEnumerator();
+            if (await page.MoveNextAsync() && page.Current.Values.Count > 0)
+            {
+                throw new ArgumentException($"Cannot delete tenant {tenantId} because it has children");
+            }
+
             BlockBlobClient blob = GetLiveTenantBlockBlobReference(tenantId, parentContainer);
             Response<BlobDownloadResult> response = await blob.DownloadContentAsync().ConfigureAwait(false);
             using var blobContent = response.Value.Content.ToStream();
