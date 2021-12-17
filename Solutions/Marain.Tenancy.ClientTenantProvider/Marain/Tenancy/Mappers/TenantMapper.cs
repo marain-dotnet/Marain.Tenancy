@@ -72,7 +72,7 @@ namespace Marain.Tenancy.Mappers
                 offset += 1;
             }
 
-            return location.Substring(offset, location.IndexOf('/', offset) - offset);
+            return location[offset..location.IndexOf('/', offset)];
         }
 
         /// <inheritdoc/>

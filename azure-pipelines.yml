@@ -3,6 +3,7 @@ trigger:
     include:
     - master
     - main
+    - feature/*
   tags:
     include:
     - '*'
@@ -15,15 +16,14 @@ resources:
       endpoint: marain-github
 
 jobs:
-- template: templates/build.and.release.yml@recommended_practices
+- template: templates/build.and.release.scripted.yml@recommended_practices
   parameters:
     vmImage: 'windows-latest'
     service_connection_nuget_org: $(Endjin_Service_Connection_NuGet_Org)
     service_connection_github: $(Endjin_Service_Connection_GitHub)
-    solution_to_build: $(Endjin_Solution_To_Build)
     postCustomEnvironmentVariables:
       - powershell: |
-          Write-Host "##vso[task.setvariable variable=RootTenantBlobStorageConfigurationOptions__AccountName]$Env:ENDJIN_AZURESTORAGECONNECTIONSTRING"
+          Write-Host "##vso[task.setvariable variable=RootBlobStorageConfiguration__ConnectionStringPlainText]$Env:ENDJIN_AZURESTORAGECONNECTIONSTRING"
           Write-Host "##vso[task.setvariable variable=TenantCloudBlobContainerFactoryOptions__AzureServicesAuthConnectionString]$Env:ENDJIN_AZURESERVICESAUTHCONNECTIONSTRING"
           Write-Host "##vso[task.setvariable variable=TenantCacheConfiguration__GetTenantResponseCacheControlHeaderValue]$Env:TENANTCACHECONFIGURATION__GETTENANTRESPONSECACHECONTROLHEADERVALUE"
         displayName: 'Set Azure Connection String Environment Variable'
@@ -32,11 +32,11 @@ jobs:
           ENDJIN_AZURESERVICESAUTHCONNECTIONSTRING: $(Endjin_AzureServicesAuthConnectionString)
           TENANTCACHECONFIGURATION__GETTENANTRESPONSECACHECONTROLHEADERVALUE: $(TenantCacheConfiguration__GetTenantResponseCacheControlHeaderValue)
       - task: Npm@1
-        displayName: 'Install Latest Azure Functions V3 Runtime'
+        displayName: 'Install Latest Azure Functions V4 Runtime'
         inputs:
           command: custom
           verbose: false
-          customCommand: 'install -g azure-functions-core-tools@3 --unsafe-perm true'
+          customCommand: 'install -g azure-functions-core-tools@4 --unsafe-perm true'
 
     # We want to include the deployment project in the assets. Currently this is experimental,
     # and once we're done, probably some of this is going to move into the common templates.
@@ -47,7 +47,10 @@ jobs:
     # up with an asset in the GitHub for every file in that project. So I think we need to
     # ZIP it up.
     # Something we can't currently do is set labels on GitHub release assets.
-    postPack:
+    # TODO: find the right way to do this:
+    #   * integrate with scripted build
+    #   * use the correct folders once we're on .NET 6.0 for most things
+    preCopyNugetPackages:
       - task: ArchiveFiles@2
         displayName: 'ZIP Azure Deployment Project'
         inputs:
@@ -86,4 +89,4 @@ jobs:
           SourceFolder: '$(Build.SourcesDirectory)/Solutions/Marain.Tenancy.Host.Functions/bin/$(BuildConfiguration)/publish/'
           Contents: '*.zip'
           TargetFolder: '$(Build.ArtifactStagingDirectory)/Release/Marain.Deployment.Functions'
-    netSdkVersion: '3.x'
+    netSdkVersion: '6.x'

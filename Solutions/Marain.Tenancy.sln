@@ -1,12 +1,14 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
-# Visual Studio Version 16
-VisualStudioVersion = 16.0.29102.190
+# Visual Studio Version 17
+VisualStudioVersion = 17.0.31912.275
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "DevOps", "DevOps", "{D29CABE7-467E-4CF6-B44B-3C58AB76145A}"
 	ProjectSection(SolutionItems) = preProject
+		..\.gitignore = ..\.gitignore
 		..\azure-pipelines.release.yml = ..\azure-pipelines.release.yml
 		..\azure-pipelines.yml = ..\azure-pipelines.yml
+		..\GitVersion.yml = ..\GitVersion.yml
 	EndProjectSection
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Marain.Tenancy.OpenApi.Service", "Marain.Tenancy.OpenApi.Service\Marain.Tenancy.OpenApi.Service.csproj", "{CFD86B72-E715-4C79-A5B5-A86648617581}"
@@ -24,6 +26,10 @@ EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Marain.Tenancy.Cli", "Marain.Tenancy.Cli\Marain.Tenancy.Cli.csproj", "{0FFC24C6-C870-4069-82B5-59E2657293F5}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Marain.Tenancy.Deployment", "Marain.Tenancy.Deployment\Marain.Tenancy.Deployment.csproj", "{0F4BEEC3-4434-4511-AB18-2C39D311F3A4}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Marain.Tenancy.Storage.Azure.BlobStorage", "Marain.Tenancy.Storage.Azure.BlobStorage\Marain.Tenancy.Storage.Azure.BlobStorage.csproj", "{17F5E595-91A1-4EF4-9205-E772C4BF4ECE}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Marain.Tenancy.Storage.Azure.BlobStorage.Specs", "Marain.Tenancy.Storage.Azure.BlobStorage.Specs\Marain.Tenancy.Storage.Azure.BlobStorage.Specs.csproj", "{B9D61A6F-9330-4590-98F2-3A033C96CD2E}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -63,6 +69,14 @@ Global
 		{0F4BEEC3-4434-4511-AB18-2C39D311F3A4}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{0F4BEEC3-4434-4511-AB18-2C39D311F3A4}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{0F4BEEC3-4434-4511-AB18-2C39D311F3A4}.Release|Any CPU.Build.0 = Release|Any CPU
+		{17F5E595-91A1-4EF4-9205-E772C4BF4ECE}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{17F5E595-91A1-4EF4-9205-E772C4BF4ECE}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{17F5E595-91A1-4EF4-9205-E772C4BF4ECE}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{17F5E595-91A1-4EF4-9205-E772C4BF4ECE}.Release|Any CPU.Build.0 = Release|Any CPU
+		{B9D61A6F-9330-4590-98F2-3A033C96CD2E}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{B9D61A6F-9330-4590-98F2-3A033C96CD2E}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{B9D61A6F-9330-4590-98F2-3A033C96CD2E}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{B9D61A6F-9330-4590-98F2-3A033C96CD2E}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

@@ -2,7 +2,8 @@
   <Import Project="$(EndjinProjectPropsPath)" Condition="$(EndjinProjectPropsPath) != ''" />
 
   <PropertyGroup>
-    <TargetFrameworks>netstandard2.0;netstandard2.1</TargetFrameworks>
+    <TargetFramework>net6.0</TargetFramework>
+    <Nullable>enable</Nullable>
   </PropertyGroup>
 
   <PropertyGroup>
@@ -13,12 +14,11 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="Corvus.Tenancy.Storage.Azure.Blob" Version="2.0.13" />
     <PackageReference Include="Endjin.RecommendedPractices" Version="1.2.0">
       <PrivateAssets>all</PrivateAssets>
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
     </PackageReference>
-    <PackageReference Include="Menes.Hosting.AspNetCore" Version="2.0.1" />
+    <PackageReference Include="Menes.Hosting.AspNetCore" Version="3.0.0" />
   </ItemGroup>
 
   <ItemGroup>

@@ -8,22 +8,25 @@ namespace Marain.Tenancy.OpenApi
     using System.Collections.Generic;
     using System.Net;
     using System.Threading.Tasks;
-    using Corvus.Extensions.Json;
+
     using Corvus.Json;
     using Corvus.Tenancy;
     using Corvus.Tenancy.Exceptions;
+
     using Marain.Tenancy.OpenApi.Configuration;
     using Marain.Tenancy.OpenApi.Mappers;
+
     using Menes;
     using Menes.Exceptions;
     using Menes.Hal;
     using Menes.Links;
+
     using Microsoft.AspNetCore.JsonPatch;
     using Microsoft.AspNetCore.JsonPatch.Operations;
     using Microsoft.Extensions.Logging;
 
     /// <summary>
-    ///     Handles claim permissions requests.
+    ///     Implements the tenancy web API.
     /// </summary>
     [EmbeddedOpenApiDefinition("Marain.Tenancy.OpenApi.TenancyServices.yaml")]
     public class TenancyService : IOpenApiService
@@ -332,7 +335,7 @@ namespace Marain.Tenancy.OpenApi
                     {
                         if (operation.path.StartsWith("/properties/"))
                         {
-                            string propertyName = operation.path.Substring(12);
+                            string propertyName = operation.path[12..];
                             switch (operation.OperationType)
                             {
                                 case OperationType.Add:
@@ -401,13 +404,17 @@ namespace Marain.Tenancy.OpenApi
 
             if (childTenantId.GetParentId() != tenantId)
             {
-                this.logger.LogError($"The discovered parent tenant ID {childTenantId.GetParentId()} of the child {childTenantId} does not match the specified parent {tenantId}");
+                this.logger.LogError(
+                    "The discovered parent tenant ID {discoveredParentTenantId} of the child {childTenantId} does not match the specified parent {specifiedParentTenantId}",
+                    childTenantId.GetParentId(),
+                    childTenantId,
+                    tenantId);
                 throw new OpenApiNotFoundException();
             }
 
             try
             {
-                this.logger.LogInformation($"Attempting to delete {childTenantId}");
+                this.logger.LogInformation("Attempting to delete {childTenantId}", childTenantId);
                 await this.tenantStore.DeleteTenantAsync(childTenantId).ConfigureAwait(false);
                 return this.OkResult();
             }
