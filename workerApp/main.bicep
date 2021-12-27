@@ -85,7 +85,7 @@ resource key_vault 'Microsoft.KeyVault/vaults@2021-06-01-preview' = {
 //     environmentVariables: [
 //       {
 //         name: 'TenantCloudBlobContainerFactoryOptions__AzureServicesAuthConnectionString'
-//         value: 'RunAs%3DApp;AppId%3D938c6041-37a7-4b39-9271-c027d9592c43;TenantId%3D0f621c67-98a0-4ed5-b5bd-31a35be41e29;AppKey%3D9j57Q~VBZMazZC-HXyMDgLRlRX9TnMCaNkPye'
+//         value: ''
 //       }
 //       {
 //         name: 'RootTenantBlobStorageConfigurationOptions__RootTenantBlobStorageConfiguration__KeyVaultName'
