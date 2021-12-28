@@ -1,47 +1,66 @@
+param tenancyResourceGroupName string
 param storageAccountName string = '${appEnvironmentName}sa'
 param keyVaultName string = '${appEnvironmentName}kv'
-param acrName string = '${appEnvironmentName}acr'
 param location string
 // param tenancyAppName string
+
+param useExistingAppEnvironment bool = false
+param appEnvironmentResourceGroupName string
 param appEnvironmentName string
-// param containerAppLocation string
+param appEnvironmentLocation string = location
+// param acrName string = '${appEnvironmentName}acr'
 // param acrKey string
 
-resource tenancy_Storage 'Microsoft.Storage/storageAccounts@2021-01-01' = {
+targetScope = 'subscription'
+
+// Use existing App Environment
+resource existing_app_env_rg 'Microsoft.Resources/resourceGroups@2021-04-01' existing = if (useExistingAppEnvironment) {
+  name: appEnvironmentResourceGroupName
+}
+resource existing_app_environment 'Microsoft.Web/kubeEnvironments@2021-02-01' existing = if (useExistingAppEnvironment) {
+  name: appEnvironmentName
+  scope: app_env_rg
+}
+
+// Provision new App environment
+resource app_env_rg 'Microsoft.Resources/resourceGroups@2021-04-01' = if (!useExistingAppEnvironment) {
+  name: appEnvironmentResourceGroupName
+  location: location
+}
+module app_environment '../erp/bicep/container_app_environment.bicep' = if (!useExistingAppEnvironment) {
+  scope: app_env_rg
+  name: 'appEnvDeploy'
+  params: {
+    environment_name: appEnvironmentName
+    appinsights_name: '${appEnvironmentName}ai'
+    workspace_name: '${appEnvironmentName}la'
+    location: location
+    include_container_registry: true
+    enable_container_registry_adminuser: true
+  }
+}
+
+// Provision Tenancy service
+resource tenancy_rg 'Microsoft.Resources/resourceGroups@2021-04-01' = {
+  name: tenancyResourceGroupName
+  location: location
+}
+
+module tenancy_Storage '../erp/bicep/storage_account.bicep' = {
+  scope: tenancy_rg
   name: storageAccountName
-  location: location
-  sku: {
-    name: 'Standard_LRS'
-  }
-  kind: 'StorageV2'
-  properties: {
-    minimumTlsVersion: 'TLS1_2'
-    supportsHttpsTrafficOnly: true
-    accessTier: 'Hot'
+  params: {
+    name: storageAccountName
+    sku: 'Standard_LRS'
   }
 }
 
-resource acr 'Microsoft.ContainerRegistry/registries@2021-06-01-preview' = {
-  name: acrName
-  location: location
-  sku: {
-    name: 'Standard'
-  }
-  properties: {
-    adminUserEnabled: true
-  }
-}
-
-resource key_vault 'Microsoft.KeyVault/vaults@2021-06-01-preview' = {
-  name: keyVaultName
-  location: location
-  properties: {
-    sku: {
-      family: 'A'
-      name: 'standard'
-    }
-    tenantId: '0f621c67-98a0-4ed5-b5bd-31a35be41e29'
-    accessPolicies: [
+module key_vault '../erp/bicep/key_vault.bicep' = {
+  scope: tenancy_rg
+  name: 'keyVaultDeploy'
+  params: {
+    name: keyVaultName
+    access_policies: [
       {
         // JamesD
         objectId: 'f3498fd9-cff0-44a9-991c-c017f481adf0'

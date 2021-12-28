@@ -2,8 +2,9 @@ param location string
 param kubeEnvironmentId string
 param containerImage string
 param name string
-param acrName string
-param acrKey string
+param crServer string
+param crUser string
+param crKey string
 param ingressIsExternal bool
 param ingressTargetPort int
 param includeDapr bool
@@ -11,7 +12,7 @@ param daprSecrets object
 param daprComponents object
 param environmentVariables array = []
 
-resource worker_app 'Microsoft.Web/containerApps@2021-03-01' = {
+resource worker_app 'Microsoft.Web/containerapps@2021-03-01' = {
   name: name
   kind: 'workerapp'
   location: location
@@ -22,7 +23,7 @@ resource worker_app 'Microsoft.Web/containerApps@2021-03-01' = {
         external: ingressIsExternal 
         targetPort: ingressTargetPort
       }
-      // secrets: daprSecrets
+      secrets: daprSecrets
     }
     template: {
       containers: [
@@ -38,16 +39,19 @@ resource worker_app 'Microsoft.Web/containerApps@2021-03-01' = {
       }
       registries: [
         {
-          server: '${acrName}.azurecr.io'
-          username: acrName
-          password: acrKey
+          server: crServer
+          username: crUser
+          password: crKey
         }
       ]
-      dapr: {
-        enabled: includeDapr
-        // appId: name
-        // appPort: ingressTargetPort
-        // components: daprComponents
+      // Selectively include dapr-related properties
+      dapr: includeDapr ? {
+        enabled: true
+        appId: name
+        appPort: ingressTargetPort
+        components: daprComponents
+      } : {
+        enabled: false
       }
     }
   }
