@@ -341,3 +341,6 @@ appsettings.json
 **/MsDeploy
 /__azurite_db_blob_extent__.json
 /__azurite_db_blob__.json
+
+
+_packages/

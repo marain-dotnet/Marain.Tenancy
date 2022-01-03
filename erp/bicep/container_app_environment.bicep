@@ -1,28 +1,30 @@
 param location string
-param workspace_name string
-param appinsights_name string
-param environment_name string
+param workspaceName string
+param appinsightsName string
+param environmentName string
 
-param include_container_registry bool = false
-param container_registry_name string = '${environment_name}acr'
-param enable_container_registry_adminuser bool = false
+param createContainerRegistry bool = false
+param containerRegistryName string = '${environmentName}acr'
+param containerRegistrySku string = 'Standard'
+param enableContainerRegistryAdminUser bool = true
 
-param resource_tags object = {}
+param resourceTags object = {}
 
-resource acr 'Microsoft.ContainerRegistry/registries@2021-06-01-preview' = if (include_container_registry) {
-  name: container_registry_name
-  location: location
-  sku: {
-    name: 'Standard'
+targetScope = 'resourceGroup'
+
+module acr 'acr.bicep' = if (createContainerRegistry) {
+  name: 'appEnvAcrDeploy'
+  params: {
+    name: containerRegistryName
+    location: location
+    sku: containerRegistrySku
+    adminUserEnabled: enableContainerRegistryAdminUser
+    resourceTags: resourceTags
   }
-  properties: {
-    adminUserEnabled: enable_container_registry_adminuser
-  }
-  tags: resource_tags
 }
 
 resource log_analytics 'Microsoft.OperationalInsights/workspaces@2021-06-01' = {
-  name: workspace_name
+  name: workspaceName
   location: location
   properties: {
     sku: {
@@ -35,11 +37,11 @@ resource log_analytics 'Microsoft.OperationalInsights/workspaces@2021-06-01' = {
       enableLogAccessUsingOnlyResourcePermissions: true
     }
   }
-  tags: resource_tags
+  tags: resourceTags
 }
 
 resource app_insights 'Microsoft.Insights/components@2020-02-02' = {
-  name: appinsights_name
+  name: appinsightsName
   location: location
   kind: 'web'
   properties: {
@@ -47,11 +49,11 @@ resource app_insights 'Microsoft.Insights/components@2020-02-02' = {
     Flow_Type: 'Redfield'
     Request_Source: 'CustomDeployment'
   }
-  tags: resource_tags
+  tags: resourceTags
 }
 
 resource container_app_environment 'Microsoft.Web/kubeEnvironments@2021-02-01' = {
-  name: environment_name
+  name: environmentName
   location: location
   properties: {
     type: 'managed'
@@ -67,5 +69,9 @@ resource container_app_environment 'Microsoft.Web/kubeEnvironments@2021-02-01' =
       daprAIInstrumentationKey: app_insights.properties.InstrumentationKey
     }
   }
-  tags: resource_tags
+  tags: resourceTags
 }
+
+output id string = container_app_environment.id
+output name string = container_app_environment.name
+output appinsights_instrumentation_key string = app_insights.properties.InstrumentationKey

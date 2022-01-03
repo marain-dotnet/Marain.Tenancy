@@ -2,28 +2,50 @@ param location string
 param kubeEnvironmentId string
 param containerImage string
 param name string
-param crServer string
-param crUser string
-param crKey string
 param ingressIsExternal bool
 param ingressTargetPort int
 param includeDapr bool
-param daprSecrets object
-param daprComponents object
+param secrets array = []
+param daprComponents array = []
 param environmentVariables array = []
+param minReplicas int = 1
+param maxReplicas int = 1
 
-resource worker_app 'Microsoft.Web/containerapps@2021-03-01' = {
+param containerRegistryServer string = 'docker.io'
+param containerRegistryUser string
+@secure()
+param containerRegistryKey string
+param resourceTags object = {}
+
+targetScope = 'resourceGroup'
+
+var imagePullSecretRef = 'container-registry-pull-secret'
+var imagePullSecret = {
+  name: imagePullSecretRef
+  value: containerRegistryKey
+}
+var containerAppSecrets = concat(array(imagePullSecret), secrets)
+
+resource container_app 'Microsoft.Web/containerapps@2021-03-01' = {
   name: name
-  kind: 'workerapp'
+  kind: 'containerapps'
   location: location
   properties: {
     kubeEnvironmentId: kubeEnvironmentId
     configuration: {
+      activeRevisionsMode: 'Single'
       ingress: {
         external: ingressIsExternal 
         targetPort: ingressTargetPort
       }
-      secrets: daprSecrets
+      secrets: containerAppSecrets
+      registries: [
+        {
+          passwordSecretRef: imagePullSecretRef
+          server: containerRegistryServer
+          username: containerRegistryUser
+        }
+      ]
     }
     template: {
       containers: [
@@ -34,16 +56,9 @@ resource worker_app 'Microsoft.Web/containerapps@2021-03-01' = {
         }
       ]
       scale: {
-        minReplicas: 1
-        maxReplicas: 1
+        minReplicas: minReplicas
+        maxReplicas: maxReplicas
       }
-      registries: [
-        {
-          server: crServer
-          username: crUser
-          password: crKey
-        }
-      ]
       // Selectively include dapr-related properties
       dapr: includeDapr ? {
         enabled: true
@@ -55,4 +70,9 @@ resource worker_app 'Microsoft.Web/containerapps@2021-03-01' = {
       }
     }
   }
+  tags: resourceTags
 }
+
+output id string = container_app.id
+output name string = container_app.name
+output fqdn string = container_app.properties.configuration.ingress.fqdn
