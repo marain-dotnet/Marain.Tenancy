@@ -48,7 +48,7 @@ function setAppRoles {
         [Parameter(Mandatory=$true)]
         [array] $AppRoles
     )
-    Write-InformationLog "Configuring AAD application roles: {$($AppRoles.value -join ',')}"
+    Write-Information "Configuring AAD application roles: {$($AppRoles.value -join ',')}"
     $manifest = New-TemporaryFile
     try {
         $AppRoles | ConvertTo-Json -Depth 100 | Set-Content -Path $manifest

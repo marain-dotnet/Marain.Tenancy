@@ -65,8 +65,9 @@ else {
 Import-Module $DeployModulePath -Force
 #endregion
 
-# TODO: Import Corvus.Deployment
-Import-Module $here/../../Corvus.Deployment/module/Corvus.Deployment.psd1
+# Install/Import Corvus.Deployment
+Install-Module Corvus.Deployment -RequiredVersion 0.3.15 -Scope CurrentUser -Force -Repository PSGallery
+Import-Module Corvus.Deployment -Force
 Connect-CorvusAzure -SubscriptionId $SubscriptionId -AadTenantId $AadTenantId
 
 # Load the deploy process & tasks

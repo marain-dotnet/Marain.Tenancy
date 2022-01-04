@@ -1,3 +1,8 @@
+#
+# This sample represents the simplest Marain environment
+#   - Dedicated Container App Environment, ACR & AppConfiguration
+#   - Single key vault shared by all Marain services
+#
 @{
     AzureLocation = "northeurope"
     
@@ -24,11 +29,11 @@
     # AcrSubscriptionId = ""    # Only required if in a different subscription
  
     # Config for using a non-Azure container registry
-    UseNonAzureContainerRegistry = $false   # When true, uncomment the settings below to configure the details
+    UseNonAzureContainerRegistry = $false   # When true, configure the settings below with the required details
                                             # When true, also implies 'UseExistingAcr=$true'
-    # ContainerRegistryServer = ""
-    # ContainerRegistryUser = ""
-    # ContainerRegistryKeySecretName = ""
+    ContainerRegistryServer = ""
+    ContainerRegistryUser = ""
+    ContainerRegistryKeySecretName = ""
 
     TenancyStorageSku = "Standard_LRS"
     TenancySpCredentialSecretName = "TenancySpCredential"
