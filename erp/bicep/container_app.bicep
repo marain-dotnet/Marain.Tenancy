@@ -2,6 +2,11 @@ param location string
 param kubeEnvironmentId string
 param containerImage string
 param name string
+@allowed([
+  'single'
+  'multiple'
+])
+param activeRevisionsMode string = 'multiple'
 param ingressIsExternal bool
 param ingressTargetPort int
 param includeDapr bool
@@ -33,7 +38,7 @@ resource container_app 'Microsoft.Web/containerapps@2021-03-01' = {
   properties: {
     kubeEnvironmentId: kubeEnvironmentId
     configuration: {
-      activeRevisionsMode: 'Single'
+      activeRevisionsMode: activeRevisionsMode
       ingress: {
         external: ingressIsExternal 
         targetPort: ingressTargetPort

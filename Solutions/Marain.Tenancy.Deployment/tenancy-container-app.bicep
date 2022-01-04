@@ -45,6 +45,7 @@ module tenancy_service '../../erp/bicep/container_app.bicep' = {
   params: {
     location: location
     containerImage: useAzureContainerRegistry ? '${acr.properties.loginServer}/${containerImage}' : '${containerRegistryServer}/${containerImage}'
+    activeRevisionsMode: 'single'
     daprComponents: []
     secrets: [
       {
