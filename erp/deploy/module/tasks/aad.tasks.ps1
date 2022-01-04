@@ -12,6 +12,8 @@ function createAzureAdAppForAppService {
     )
 
     $app = Invoke-CorvusAzCli "ad app list --all --query `"[?displayName == '$appName']`"" -AsJson
+
+    # TODO: Add support for resetting SP secret if one isn't available via key vault
     if (!$app) {
         Write-Information "Creating AAD application {$appName}"
         $createArgs = @(

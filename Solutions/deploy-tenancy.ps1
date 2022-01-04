@@ -142,6 +142,7 @@ else {
 $appEnvironmentResourceGroupName = toResourceName $deploymentConfig.AppEnvironmentResourceGroupName "marain" "rg" $uniqueSuffix
 $appEnvironmentName = toResourceName $deploymentConfig.AppEnvironmentName "marain" "kubeenv" $uniqueSuffix
 
+# If not specified, derive same default values used by the 'instance' deployment
 $acrName = [string]::IsNullOrEmpty($deploymentConfig.AcrName) ? "$($appEnvironmentName)acr" : $deploymentConfig.AcrName
 $acrResourceGroupName = [string]::IsNullOrEmpty($deploymentConfig.AcrResourceGroupName) ? $appEnvironmentResourceGroupName : $deploymentConfig.AcrResourceGroupName
 $acrSubscriptionId = [string]::IsNullOrEmpty($deploymentConfig.AcrSubscriptionId) ? (Get-AzContext).Subscription.Id : $deploymentConfig.AcrSubscriptionId
@@ -180,12 +181,12 @@ $armDeployment = @{
         appEnvironmentResourceGroupName = $appEnvironmentResourceGroupName
         # appEnvironmentSubscription = ""
         
-        useAzureContainerRegistry = $deploymentConfig.UseExistingAcr
+        useAzureContainerRegistry = !$deploymentConfig.UseNonAzureContainerRegistry
         acrName = $acrName
         acrResourceGroupName = $acrResourceGroupName
         acrSubscriptionId = $acrSubscriptionId
-        # containerRegistryServer = $deploymentConfig.ContainerRegistryServer
-        # containerRegistryUser = $deploymentConfig.ContainerRegistryUser
+        containerRegistryServer = $deploymentConfig.ContainerRegistryServer
+        containerRegistryUser = $deploymentConfig.ContainerRegistryUser
 
         appConfigurationStoreName = $appConfigurationStoreName
         appConfigurationStoreResourceGroupName = $appConfigurationStoreResourceGroupName
