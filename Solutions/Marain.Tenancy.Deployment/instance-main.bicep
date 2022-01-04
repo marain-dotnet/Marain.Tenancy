@@ -87,14 +87,15 @@ resource existing_app_config 'Microsoft.AppConfiguration/configurationStores@202
   scope: resourceGroup(appConfigurationStoreSubscription, appConfigurationStoreResourceGroupName)
 }
 
-resource app_config_rg 'Microsoft.Resources/resourceGroups@2021-04-01' = if (!useExistingAppConfigurationStore) {
-  name: appConfigurationStoreResourceGroupName
-  location: location
-}
+// TODO: When referencing the main RG, this causes a conflicts (despite the conditions)
+// resource app_config_rg 'Microsoft.Resources/resourceGroups@2021-04-01' = if (!useExistingAppConfigurationStore && appConfigurationStoreResourceGroupName != resourceGroupName) {
+//   name: appConfigurationStoreResourceGroupName
+//   location: location
+// }
 
 module app_config '../../erp/bicep/app_configuration.bicep' = if (!useExistingAppConfigurationStore) {
   name: 'appConfigDeploy'
-  scope: app_config_rg
+  scope: resourceGroup(appConfigurationStoreResourceGroupName)
   params: {
     name: appConfigurationStoreName
     location: location

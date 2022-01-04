@@ -111,14 +111,6 @@ $azureAdApplicationsToDeploy = @(
     }
 )
 
-if ($deploymentConfig.UseSharedKeyVault) {
-    $sharedKeyVaultResourceGroupName = $deploymentConfig.SharedKeyVaultResourceGroupName
-    $keyVaultName = $deploymentConfig.SharedKeyVaultName
-}
-else {
-    $keyVaultName = toResourceName $deploymentConfig.KeyVaultName $serviceName "kv" $uniqueSuffix
-}
-
 $serviceName = "tenancy"
 $uniqueSuffix = Get-UniqueSuffix -SubscriptionId $SubscriptionId `
                                  -StackName $StackName `
@@ -130,12 +122,29 @@ $tenancyStorageName = toResourceName $deploymentConfig.TenancyStorageName $servi
 $tenancyStorageSku = [string]::IsNullOrEmpty($deploymentConfig.TenancyStorageSku) ? $deploymentConfig.TenancyStorageSku : "Standard_LRS"
 $appName = toResourceName $deploymentConfig.TenancyAppName $serviceName "api" $uniqueSuffix
 
+# AppConfig settings
+# If not specified, derive same generated values as the 'instance' deployment
+$appConfigurationStoreName = toResourceName $deploymentConfig.AppConfigurationStoreName "marain" "cfg" $uniqueSuffix
+$appConfigurationStoreResourceGroupName = toResourceName $deploymentConfig.AppConfigurationStoreResourceGroupName "marain" "rg" $uniqueSuffix
+
+if ($deploymentConfig.UseSharedKeyVault) {
+    # If not specified, derive same generated values as the 'instance' deployment
+    # TODO: Lookup these details in AppConfig?
+    $sharedKeyVaultResourceGroupName = toResourceName $deploymentConfig.SharedKeyVaultResourceGroupName "marain" "rg" $uniqueSuffix
+    $keyVaultName = toResourceName $deploymentConfig.SharedKeyVaultName "marain" "kv" $uniqueSuffix
+}
+else {
+    $keyVaultName = toResourceName $deploymentConfig.KeyVaultName $serviceName "kv" $uniqueSuffix
+}
+
+# If not specified, derive same generated values as the 'instance' deployment
+# TODO: Lookup details from AppConfig?
 $appEnvironmentResourceGroupName = toResourceName $deploymentConfig.AppEnvironmentResourceGroupName "marain" "rg" $uniqueSuffix
 $appEnvironmentName = toResourceName $deploymentConfig.AppEnvironmentName "marain" "kubeenv" $uniqueSuffix
 
-$appConfigStoreName = $deploymentConfig.AppConfigurationStoreName
-$appConfigStoreResourceGroupName = $deploymentConfig.AppConfigurationStoreResourceGroupName
-$appConfigurationLabel = "$Environment-$StackName"
+$acrName = [string]::IsNullOrEmpty($deploymentConfig.AcrName) ? "$($appEnvironmentName)acr" : $deploymentConfig.AcrName
+$acrResourceGroupName = [string]::IsNullOrEmpty($deploymentConfig.AcrResourceGroupName) ? $appEnvironmentResourceGroupName : $deploymentConfig.AcrResourceGroupName
+$acrSubscriptionId = [string]::IsNullOrEmpty($deploymentConfig.AcrSubscriptionId) ? (Get-AzContext).Subscription.Id : $deploymentConfig.AcrSubscriptionId
 
 # TODO: Add support for the tenant admin SPN and using the marain-cli
 # $tenantAdminAppId = try { $deploymentConfig.TenantAdminAppId } catch { $null }
@@ -167,21 +176,21 @@ $armDeployment = @{
         existingKeyVaultResourceGroupName = $deploymentConfig.UseSharedKeyVault ? $sharedKeyVaultResourceGroupName : ''
         keyVaultName = $keyVaultName
         
-        # appEnvironmentSubscription = ""
-        appEnvironmentResourceGroupName = $appEnvironmentResourceGroupName
         appEnvironmentName = $appEnvironmentName
+        appEnvironmentResourceGroupName = $appEnvironmentResourceGroupName
+        # appEnvironmentSubscription = ""
         
         useAzureContainerRegistry = $deploymentConfig.UseExistingAcr
-        acrName = $deploymentConfig.AcrName
-        acrResourceGroupName = $deploymentConfig.AcrResourceGroupName
-        acrSubscriptionId = $deploymentConfig.AcrSubscriptionId
+        acrName = $acrName
+        acrResourceGroupName = $acrResourceGroupName
+        acrSubscriptionId = $acrSubscriptionId
         # containerRegistryServer = $deploymentConfig.ContainerRegistryServer
         # containerRegistryUser = $deploymentConfig.ContainerRegistryUser
 
+        appConfigurationStoreName = $appConfigurationStoreName
+        appConfigurationStoreResourceGroupName = $appConfigurationStoreResourceGroupName
         # appConfigurationStoreSubscription = ""
-        appConfigurationStoreResourceGroupName = $appConfigStoreResourceGroupName
-        appConfigurationStoreName = $appConfigStoreName
-        appConfigurationLabel = $appConfigurationLabel
+        appConfigurationLabel = "$Environment-$StackName"
 
         tenantId = $AadTenantId
         resourceTags = $defaultTags
@@ -261,6 +270,6 @@ task PostProvision {
     # Set the reply-url for the AAD app now we have the FQDN for the service
     $appName = $azureAdApplicationsToDeploy[0].Name
     $appId = Invoke-CorvusAzCli "ad app list --all --query `"[?displayName == '$appName'].appId`" -o tsv" -AsJson
-    $replyUrl = "https://{0}/.auth/login/aad/callback" -f $ArmDeploymentOutputs.Outputs.service_url
-    Invoke-CorvusAzCli "ad app update --id `"$appId`" --reply-urls $replyUrl" -AsJson | Write-Verbose
+    $replyUrl = "https://{0}/.auth/login/aad/callback" -f $ArmDeploymentOutputs.Outputs.service_url.Value
+    Invoke-CorvusAzCli "ad app update --id `"$appId`" --reply-urls $replyUrl"
 }

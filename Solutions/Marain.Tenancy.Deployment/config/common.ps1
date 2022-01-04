@@ -4,7 +4,6 @@
         'ServiceName'
         'ApiAppName'
         'TenancyStorageSku'
-        'SharedKeyVaultName'
     )
 
     TenancyStorageSecretName = 'TenancyStorageAccountKey'

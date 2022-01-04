@@ -91,10 +91,14 @@ $uniqueSuffix = Get-UniqueSuffix -SubscriptionId $SubscriptionId `
 
 $instanceResourceGroupName = toResourceName $deploymentConfig.instanceResourceGroupName $serviceName "rg" $uniqueSuffix
 $keyVaultName = toResourceName $deploymentConfig.KeyVaultName $serviceName "kv" $uniqueSuffix
-$appEnvironmentName = toResourceName $deploymentConfig.AppEnvironmentName "marain" "kubeenv" $uniqueSuffix
-$appConfigStoreName = toResourceName $deploymentConfig.AppConfigurationStoreName "cfg" $uniqueSuffix
+$appEnvironmentName = toResourceName $deploymentConfig.AppEnvironmentName $serviceName "kubeenv" $uniqueSuffix
+$appConfigStoreName = toResourceName $deploymentConfig.AppConfigurationStoreName $serviceName "cfg" $uniqueSuffix
 $appConfigStoreResourceGroupName = [string]::IsNullOrEmpty($deploymentConfig.AppConfigurationStoreResourceGroupName) ? $instanceResourceGroupName : $deploymentConfig.AppConfigurationStoreResourceGroupName
 $appConfigurationLabel = "$Environment-$StackName"
+# $acrName = toResourceName [string]::IsNullOrEmpty($deploymentConfig.AcrName) ? "$($appEnvironmentName)acr" : $deploymentConfig.AcrName
+# $acrResourceGroupName = [string]::IsNullOrEmpty($deploymentConfig.AcrResourceGroupName) ? $appEnvironmentResourceGroupName : $deploymentConfig.AcrResourceGroupName
+# $acrSubscriptionId = [string]::IsNullOrEmpty($deploymentConfig.AcrSubscriptionId) ? (Get-AzContext).Subscription.Id : $deploymentConfig.AcrSubscriptionId
+
 
 # Tags
 $defaultTags = @{
@@ -119,7 +123,7 @@ $armDeployment = @{
         useExistingAppEnvironment = $false
         appEnvironmentName = $appEnvironmentName
         appEnvironmentResourceGroupName = $instanceResourceGroupName
-        includeAcr = !$deploymentConfig.UseExistingAcr
+        includeAcr = !$deploymentConfig.UseNonAzureContainerRegistry -and !$deploymentConfig.UseExistingAcr
         tenantId = $AadTenantId
         resourceTags = $defaultTags
     }
