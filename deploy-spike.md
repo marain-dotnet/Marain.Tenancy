@@ -40,3 +40,17 @@ The [`erp`](erp/) folder is a placeholder for elements that, if retained, could 
 * `[erp/bicep]`(erp/bicep) - reusable Bicep modules
 * `[erp/deploy]`(erp/deploy) - reusable deployment processes, equivalent to [Endjin.RecommendedPractises.Build](https://github.com/endjin/Endjin.RecommendedPractises.Build) but for deployment
 
+
+## Testing the spike
+
+The deployment of the Marain Instance and Marain Tenancy infrastructure & services can be run as follows:
+
+```
+az login
+az account set -s <subscription-id>
+Connect-AzAccount
+Set-AzContext -SubscriptionId <subscription-id>
+./Solutions/deploy-runner.ps1 -Environment sample -StackName <your-initials> -ServiceInstance i1
+```
+
+You can also experiment with different configurations by modifying a copy of the [`sample.ps1`](Solutions\Marain.Tenancy.Deployment\config\sample.ps1) configuration script.
