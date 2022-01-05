@@ -30,15 +30,15 @@ This branch contains PoC deployment work that builds on some earlier work, inclu
 
 ## Build
 
-An initial [build](build.ps1) (using Endjin.RecommendedPractises.Build) has been setup and extended to produce a suitable container image.
+An initial [build](build.ps1) (using Endjin.RecommendedPractices.Build) has been setup and extended to produce a suitable container image.
 
 
-## Endjin.RecommendedPractises
+## Endjin.RecommendedPractices
 
-The [`erp`](erp/) folder is a placeholder for elements that, if retained, could be extracted into separate `Endjin.RecommendedPractises.*` repositories:
+The [`erp`](erp/) folder is a placeholder for elements that, if retained, could be extracted into separate `Endjin.RecommendedPractices.*` repositories:
 
 * `erp/bicep` - reusable Bicep modules
-* `erp/deploy` - reusable deployment processes, equivalent to [Endjin.RecommendedPractises.Build](https://github.com/endjin/Endjin.RecommendedPractises.Build) but for deployment
+* `erp/deploy` - reusable deployment processes, equivalent to [Endjin.RecommendedPractices.Build](https://github.com/endjin/Endjin.RecommendedPractices.Build) but for deployment
 
 
 ## Testing the spike
