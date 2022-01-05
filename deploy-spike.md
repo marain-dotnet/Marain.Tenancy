@@ -10,9 +10,9 @@ This branch contains PoC deployment work that builds on some earlier work, inclu
 
 * Targets hosting in Azure Container Apps rather than Azure Functions
 * ARM deployment migrated to Bicep:
-    * [`Marain.Instance`](Solutions/instance-main.bicep) implemented in [deploy-instance.ps1](Solutions/deploy-instance.ps1)
+    * [`Marain.Instance`](Solutions/Marain.Tenancy.Deployment/instance-main.bicep) orchestrated in [deploy-instance.ps1](Solutions/deploy-instance.ps1)
         * Includes: Container App Environment, optional ACR, shared key vault & app config store, published config/secrets
-    * [`Marain.Tenancy`](Solutions/tenancy-main.bicep) implemented in [deploy-tenancy.ps1](Solutions/deploy-tenancy.ps1)
+    * [`Marain.Tenancy`](Solutions/Marain.Tenancy.Deployment/tenancy-main.bicep) orchestrated in [deploy-tenancy.ps1](Solutions/deploy-tenancy.ps1)
         * Includes: Storage, container app, published config/secrets
     * Initial set of reusable Bicep modules
     * Intended to easily support use of existing Azure services (cross-subscription) or provisioning dedicated instances:
@@ -23,8 +23,8 @@ This branch contains PoC deployment work that builds on some earlier work, inclu
     * Aims to minimise the need to pass secrets in or out of the ARM deployment 
 * Uses `Corvus.Deployment` and `InvokeBuild` as basis for the deployment process
 * Opinonated config management approach as per Corvus.Deployment:
-    * [common.ps1](Solutions/Marain.Tenancy.Deployment/config/dev.ps1) - shared settings across all environments
-    * [dev.ps1](Solutions/Marain.Tenancy.Deployment/config/dev.ps1) - a sample dev environment using a MPN subscription
+    * [common.ps1](Solutions/Marain.Tenancy.Deployment/config/common.ps1) - shared settings across all environments
+    * [sample.ps1](Solutions/Marain.Tenancy.Deployment/config/sample.ps1) - a sample dev environment using a MPN subscription
     * ARM deployment publishes required config to Key Vault and App Configuration
 
 
@@ -37,8 +37,8 @@ An initial [build](build.ps1) (using Endjin.RecommendedPractises.Build) has been
 
 The [`erp`](erp/) folder is a placeholder for elements that, if retained, could be extracted into separate `Endjin.RecommendedPractises.*` repositories:
 
-* `[erp/bicep]`(erp/bicep) - reusable Bicep modules
-* `[erp/deploy]`(erp/deploy) - reusable deployment processes, equivalent to [Endjin.RecommendedPractises.Build](https://github.com/endjin/Endjin.RecommendedPractises.Build) but for deployment
+* `erp/bicep` - reusable Bicep modules
+* `erp/deploy` - reusable deployment processes, equivalent to [Endjin.RecommendedPractises.Build](https://github.com/endjin/Endjin.RecommendedPractises.Build) but for deployment
 
 
 ## Testing the spike
@@ -53,4 +53,4 @@ Set-AzContext -SubscriptionId <subscription-id>
 ./Solutions/deploy-runner.ps1 -Environment sample -StackName <your-initials> -ServiceInstance i1
 ```
 
-You can also experiment with different configurations by modifying a copy of the [`sample.ps1`](Solutions\Marain.Tenancy.Deployment\config\sample.ps1) configuration script.
+You can also experiment with different configurations by modifying a copy of the [`sample.ps1`](Solutions/Marain.Tenancy.Deployment/config/sample.ps1) configuration script.
