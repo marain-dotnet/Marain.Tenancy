@@ -1,0 +1,15 @@
+version: '3.4'
+
+services:
+  marain.tenancy.host.aspnetcore:
+    image: ${DOCKER_REGISTRY-}maraintenancyhostaspnetcore
+    build:
+      context: ./../
+      dockerfile: Marain.Tenancy.Host.AspNetCore/Dockerfile
+   
+  marain.tenancy.host.aspnetcore-dapr:
+    image: "daprio/daprd:latest"
+    command: [ "./daprd", "-app-id", "marain.tenancy.host.aspnetcore", "-app-port", "80" ]
+    depends_on:
+      - marain.tenancy.host.aspnetcore
+    network_mode: "service:marain.tenancy.host.aspnetcore"
