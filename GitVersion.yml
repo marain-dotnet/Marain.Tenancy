@@ -7,6 +7,7 @@
 mode: ContinuousDeployment
 branches:
   master:
+    regex: ^master|main$
     tag: preview
     increment: patch
   dependabot-pr:
@@ -19,5 +20,8 @@ branches:
     - feature
     - support
     - hotfix
-next-version: "1.1"
-
+  develop:
+    mode: ContinuousDeployment
+    tag: alpha
+    regex: ^develop/\d\.\d$
+next-version: "2.0"

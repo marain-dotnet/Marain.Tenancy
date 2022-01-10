@@ -1,6 +1,6 @@
 # Marain.Tenancy
-[![Build Status](https://dev.azure.com/endjin-labs/Marain.Tenancy/_apis/build/status/marain-dotnet.Marain.Tenancy?branchName=master)](https://dev.azure.com/endjin-labs/Marain.Tenancy/_build/latest?definitionId=4&branchName=master)
-[![GitHub license](https://img.shields.io/badge/License-AGPL%20v3-blue.svg)](https://raw.githubusercontent.com/marain-dotnet/Marain.Tenancy/master/LICENSE)
+[![Build Status](https://dev.azure.com/endjin-labs/Marain.Tenancy/_apis/build/status/marain-dotnet.Marain.Tenancy?branchName=main)](https://dev.azure.com/endjin-labs/Marain.Tenancy/_build/latest?definitionId=4&branchName=main)
+[![GitHub license](https://img.shields.io/badge/License-AGPL%20v3-blue.svg)](https://raw.githubusercontent.com/marain-dotnet/Marain.Tenancy/main/LICENSE)
 [![IMM](https://endimmfuncdev.azurewebsites.net/api/imm/github/marain-dotnet/Marain.Tenancy/total?cache=false)](https://endimmfuncdev.azurewebsites.net/api/imm/github/marain-dotnet/Marain.Tenancy/total?cache=false)
 
 This provides a Tenancy API.

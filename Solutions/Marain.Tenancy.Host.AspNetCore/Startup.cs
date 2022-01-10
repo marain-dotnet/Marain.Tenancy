@@ -1,7 +1,9 @@
 namespace Marain.Tenancy.Host.AspNetCore
 {
-    using Corvus.Azure.Storage.Tenancy;
-    using Marain.Tenancy.OpenApi.Configuration;
+    using System;
+
+    using Corvus.Storage.Azure.BlobStorage;
+
     using Menes;
     using Menes.Auditing.AuditLogSinks.Development;
     using Menes.Hosting.AspNetCore;
@@ -11,22 +13,28 @@ namespace Marain.Tenancy.Host.AspNetCore
     using Microsoft.Extensions.DependencyInjection;
     using Microsoft.Extensions.Hosting;
 
-    using System;
-
     public class Startup
     {
+        public IConfiguration Configuration { get; }
+
+        public Startup(IConfiguration configuration)
+        {
+            this.Configuration = configuration;
+        }
+
         // This method gets called by the runtime. Use this method to add services to the container.
         // For more information on how to configure your application, visit https://go.microsoft.com/fwlink/?LinkID=398940
         public void ConfigureServices(IServiceCollection services)
         {
-            services.AddTenancyApiOnBlobStorage(this.GetRootTenantStorageConfiguration);
+            services.AddTenancyApiWithAspNetPipelineHosting(ConfigureOpenApiHost);
             services.AddOpenApiAuditing();
 
-            services.AddSingleton(sp => sp.GetRequiredService<IConfiguration>().GetSection("TenantCloudBlobContainerFactoryOptions").Get<TenantCloudBlobContainerFactoryOptions>());
-            services.AddSingleton(
-                sp => sp.GetRequiredService<IConfiguration>()
-                        .GetSection("TenantCacheConfiguration")
-                        .Get<TenantCacheConfiguration>() ?? new TenantCacheConfiguration());
+            BlobContainerConfiguration rootStorageConfiguration = this.Configuration
+                .GetSection("RootBlobStorageConfiguration")
+                .Get<BlobContainerConfiguration>();
+
+            services.AddTenantStoreOnAzureBlobStorage(rootStorageConfiguration);
+
 #if DEBUG
             services.AddAuditLogSink<ConsoleAuditLogSink>();
 #endif
@@ -43,18 +51,23 @@ namespace Marain.Tenancy.Host.AspNetCore
             app.UseMenesCatchAll();
         }
 
-        private BlobStorageConfiguration GetRootTenantStorageConfiguration(IServiceProvider serviceProvider)
+        // TODO: consolidate with functions startup code.
+        // This fixes a bug from that - the 2nd exception handler was wrong on two counts:
+        //  1. wrong exception type: if config is non-null and config.Documents is null, that's
+        //      not ArgumentNullException
+        //  2. wrong argument order: we had the nameof and message flipped
+        // In any case, this startup is likely to be needed by any host, so we should put it
+        // somewhere common.
+        private static void ConfigureOpenApiHost(IOpenApiHostConfiguration config)
         {
-            IConfiguration config = serviceProvider.GetRequiredService<IConfiguration>();
+            ArgumentNullException.ThrowIfNull(config);
 
-            BlobStorageConfiguration rootTenantBlobStorageConfig = config.GetSection("RootTenantBlobStorageConfigurationOptions").Get<BlobStorageConfiguration>();
-
-            if (string.IsNullOrEmpty(rootTenantBlobStorageConfig?.AccountName))
+            if (config.Documents == null)
             {
-                throw new Exception("Missing RootTenantBlobStorageConfigurationOptions");
+                throw new ArgumentException("AddTenancyApi callback: config.Documents", nameof(config));
             }
 
-            return rootTenantBlobStorageConfig;
+            config.Documents.AddSwaggerEndpoint();
         }
     }
 }

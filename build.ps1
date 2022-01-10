@@ -93,7 +93,7 @@ if ($MyInvocation.ScriptName -notlike '*Invoke-Build.ps1') {
 if (!($BuildModulePath)) {
     if (!(Get-Module -ListAvailable Endjin.RecommendedPractices.Build)) {
         Write-Information "Installing 'Endjin.RecommendedPractices.Build' module..."
-        Install-Module Endjin.RecommendedPractices.Build -RequiredVersion 0.1.0 -Scope CurrentUser -Force -Repository PSGallery
+        Install-Module Endjin.RecommendedPractices.Build -RequiredVersion 0.1.0 -AllowPrerelease -Scope CurrentUser -Force -Repository PSGallery
     }
     $BuildModulePath = "Endjin.RecommendedPractices.Build"
 }
@@ -111,7 +111,7 @@ Import-Module $BuildModulePath -Force
 $SkipVersion = $false
 $SkipBuild = $false
 $CleanBuild = $false
-$SkipTest = $true
+$SkipTest = $false
 $SkipTestReport = $false
 $SkipPackage = $false
 

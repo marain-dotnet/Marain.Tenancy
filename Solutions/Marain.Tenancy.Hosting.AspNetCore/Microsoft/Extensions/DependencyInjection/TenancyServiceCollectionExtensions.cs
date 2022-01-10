@@ -4,6 +4,7 @@
 
 namespace Microsoft.Extensions.DependencyInjection
 {
+    using System;
     using System.Linq;
     using Corvus.Tenancy;
     using Marain.Tenancy.OpenApi;
@@ -13,6 +14,7 @@ namespace Microsoft.Extensions.DependencyInjection
     using Microsoft.Extensions.Configuration;
     using Newtonsoft.Json;
     using Newtonsoft.Json.Converters;
+    using Newtonsoft.Json.Serialization;
 
     /// <summary>
     /// Extension methods for configuring DI for the Operations Open API services.
@@ -23,14 +25,70 @@ namespace Microsoft.Extensions.DependencyInjection
         /// Add services required by the Operations Status API.
         /// </summary>
         /// <param name="services">The service collection.</param>
+        /// <param name="configureHost">Optional callback for additional host configuration.</param>
         /// <returns>The service collection, to enable chaining.</returns>
-        public static IServiceCollection AddTenancyApi(this IServiceCollection services)
+        [Obsolete("Use AddTenancyApiWithOpenApiActionResultHosting, or consider changing to AddTenancyApiWithAspNetPipelineHosting")]
+        public static IServiceCollection AddTenancyApi(
+            this IServiceCollection services,
+            Action<IOpenApiHostConfiguration>? configureHost = null)
+        {
+            return AddTenancyApiWithOpenApiActionResultHosting(services, configureHost);
+        }
+
+        /// <summary>
+        /// Add services required by the Operations Status API.
+        /// </summary>
+        /// <param name="services">The service collection.</param>
+        /// <param name="configureHost">Optional callback for additional host configuration.</param>
+        /// <returns>The service collection, to enable chaining.</returns>
+        public static IServiceCollection AddTenancyApiWithAspNetPipelineHosting(
+            this IServiceCollection services,
+            Action<IOpenApiHostConfiguration>? configureHost = null)
         {
             if (services.Any(s => typeof(TenancyService).IsAssignableFrom(s.ServiceType)))
             {
                 return services;
             }
 
+            services.AddEverythingExceptHosting();
+
+            services.AddOpenApiAspNetPipelineHosting<SimpleOpenApiContext>((config) =>
+            {
+                config.Documents.RegisterOpenApiServiceWithEmbeddedDefinition<TenancyService>();
+                configureHost?.Invoke(config);
+            });
+
+            return services;
+        }
+
+        /// <summary>
+        /// Add services required by the Operations Status API.
+        /// </summary>
+        /// <param name="services">The service collection.</param>
+        /// <param name="configureHost">Optional callback for additional host configuration.</param>
+        /// <returns>The service collection, to enable chaining.</returns>
+        public static IServiceCollection AddTenancyApiWithOpenApiActionResultHosting(
+            this IServiceCollection services,
+            Action<IOpenApiHostConfiguration>? configureHost = null)
+        {
+            if (services.Any(s => typeof(TenancyService).IsAssignableFrom(s.ServiceType)))
+            {
+                return services;
+            }
+
+            services.AddEverythingExceptHosting();
+
+            services.AddOpenApiActionResultHosting<SimpleOpenApiContext>((config) =>
+            {
+                config.Documents.RegisterOpenApiServiceWithEmbeddedDefinition<TenancyService>();
+                configureHost?.Invoke(config);
+            });
+
+            return services;
+        }
+
+        private static void AddEverythingExceptHosting(this IServiceCollection services)
+        {
             // This has to be done first to ensure that the HalDocumentConverter beats the ContentConverter
             services.AddHalDocumentMapper<ITenant, TenantMapper>();
             services.AddHalDocumentMapper<TenantCollectionResult, TenantCollectionResultMapper>();
@@ -46,22 +104,13 @@ namespace Microsoft.Extensions.DependencyInjection
             services.AddJsonNetPropertyBag();
             services.AddJsonNetCultureInfoConverter();
             services.AddJsonNetDateTimeOffsetToIso8601AndUnixTimeConverter();
-            services.AddSingleton<JsonConverter>(new StringEnumConverter(true));
+            services.AddSingleton<JsonConverter>(new StringEnumConverter(new CamelCaseNamingStrategy()));
 
             // Add caching config.
             services.AddSingleton(
                 sp => sp.GetRequiredService<IConfiguration>()
                         .GetSection("TenantCacheConfiguration")
                         .Get<TenantCacheConfiguration>() ?? new TenantCacheConfiguration());
-
-            services.AddOpenApiAspNetPipelineHosting<SimpleOpenApiContext>(
-                config =>
-                {
-                    config.Documents.RegisterOpenApiServiceWithEmbeddedDefinition<TenancyService>();
-                    config.Documents.AddSwaggerEndpoint();
-                });
-
-            return services;
         }
     }
 }
