@@ -341,3 +341,6 @@ appsettings.json
 **/MsDeploy
 
 *.feature.cs
+
+# ignore local settings file that may contain secrets.
+/Solutions/Marain.Tenancy.Host.AspNetCore/appsettings.Development.json
