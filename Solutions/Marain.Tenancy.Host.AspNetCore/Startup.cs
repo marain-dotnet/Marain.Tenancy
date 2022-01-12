@@ -62,7 +62,7 @@ namespace Marain.Tenancy.Host.AspNetCore
         {
             ArgumentNullException.ThrowIfNull(config);
 
-            if (config.Documents == null)
+            if (config.Documents is null)
             {
                 throw new ArgumentException("AddTenancyApi callback: config.Documents", nameof(config));
             }
