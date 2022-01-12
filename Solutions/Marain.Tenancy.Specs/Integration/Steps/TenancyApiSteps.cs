@@ -15,7 +15,7 @@ namespace Marain.Tenancy.Specs.Integration.Steps
     using Corvus.Testing.SpecFlow;
 
     using Marain.Tenancy.Specs.Integration.Bindings;
-
+    using Marain.Tenancy.Specs.MultiHost;
     using Microsoft.Extensions.DependencyInjection;
 
     using Newtonsoft.Json;
@@ -30,12 +30,17 @@ namespace Marain.Tenancy.Specs.Integration.Steps
     {        
         private static readonly HttpClient HttpClient = new ();
         private readonly TestTenantCleanup testTenantCleanup;
+        private readonly ITestableTenancyService serviceWrapper;
         private HttpResponseMessage? response;
         private string? responseContent;
+        private TenancyResponse? tenancyResponse;
 
-        public TenancyApiSteps(TestTenantCleanup testTenantCleanup)
+        public TenancyApiSteps(
+            TestTenantCleanup testTenantCleanup, 
+            ITestableTenancyService serviceWrapper)
         {
             this.testTenantCleanup = testTenantCleanup;
+            this.serviceWrapper = serviceWrapper;
         }
 
         private HttpResponseMessage Response => this.response ?? throw new InvalidOperationException("No response available");
@@ -47,9 +52,10 @@ namespace Marain.Tenancy.Specs.Integration.Steps
         }
 
         [When("I request the tenant with Id '(.*)' from the API")]
-        public Task WhenIRequestTheTenantWithIdFromTheAPI(string tenantId)
+        public async Task WhenIRequestTheTenantWithIdFromTheAPI(string tenantId)
         {
-            return this.SendGetRequest(FunctionBindings.TenancyApiBaseUri, $"/{tenantId}/marain/tenant");
+            this.tenancyResponse = await this.serviceWrapper.GetTenantAsync(tenantId);
+            // return this.SendGetRequest(FunctionBindings.TenancyApiBaseUri, $"/{tenantId}/marain/tenant");
         }
 
         [When("I request the tenant using the Location from the previous response")]

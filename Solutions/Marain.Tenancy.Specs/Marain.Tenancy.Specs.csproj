@@ -42,6 +42,7 @@
 
   <ItemGroup>
     <PackageReference Include="Corvus.Testing.AzureFunctions.SpecFlow.NUnit" Version="1.4.7" />
+    <PackageReference Include="Menes.Testing.AspNetCoreSelfHosting" Version="3.0.0" />
     <PackageReference Include="Microsoft.Extensions.Configuration" Version="[6.0.*,)" />
     <PackageReference Include="Microsoft.Extensions.Configuration.EnvironmentVariables" Version="[6.0.*,)" />
     <PackageReference Include="Microsoft.Extensions.Configuration.Json" Version="[6.0.*,)" />
@@ -49,6 +50,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\Marain.Tenancy.ClientTenantProvider\Marain.Tenancy.ClientTenantProvider.csproj" />
+    <ProjectReference Include="..\Marain.Tenancy.Host.Functions\Marain.Tenancy.Host.Functions.csproj" />
     <ProjectReference Include="..\Marain.Tenancy.Hosting.AspNetCore\Marain.Tenancy.Hosting.AspNetCore.csproj" />
     <ProjectReference Include="..\Marain.Tenancy.OpenApi.Service\Marain.Tenancy.OpenApi.Service.csproj" />
   </ItemGroup>
