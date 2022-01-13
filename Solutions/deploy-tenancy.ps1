@@ -134,6 +134,7 @@ $aadAppName = "{0}.{1}.{2}-{3}.{4}" -f `
                     $deploymentConfig.ServiceName,
                     $ServiceInstance,
                     $deploymentConfig.ApiAppName
+$tenancyAdminSpName = "$serviceName-admin-$uniqueSuffix"
 
 # AppConfig settings
 # If not specified, derive same generated values as the 'instance' deployment
@@ -186,6 +187,8 @@ $armDeployment = @{
         tenancyAppName = $appName
         tenancyAadAppName = $aadAppName
         tenancySpCredentialSecretName = $deploymentConfig.TenancySpCredentialSecretName
+        tenancyAdminSpName = $tenancyAdminSpName
+        tenancyAdminSpCredentialSecretName = $deploymentConfig.TenancyAdminSpCredentialSecretName
         tenancyContainerName = $TenancyContainerName
         tenancyContainerTag = $TenancyContainerTag
 
@@ -223,39 +226,6 @@ $armDeployment = @{
 #region Custom tasks
 # task installMarainCli -After EnsurePreReqs {
 #     exec { Install-DotNetTool -Name marain -Version 2.0.0 -Global $true }
-# }
-# task createTenantAdminServicePrincipal -After PostAzureAd {
-#     # Ensure a default tenancy administrator principal is setup/available
-#     if (!$tenantAdminAppId -and !$DoNotUseGraph) {
-#         # look-up from AAD directly, if we have access
-#         $existingSp = Get-AzADServicePrincipal -DisplayName $defaultTenantAdminSpName        
-#         if ($existingSp) {
-#             $tenantAdminAppId = $existingSp.ApplicationId
-#         }
-#         else {
-#             Write-Host "Creating default tenancy administrator service principal"
-#             $newSp = New-AzADServicePrincipal -DisplayName $defaultTenantAdminSpName -SkipAssignment
-
-#             Set-AzKeyVaultSecret -VaultName $sharedKeyVaultName -Name $tenantAdminSecretName -SecretValue $newSp.Secret | Out-Null
-#         }
-#     }
-#     else {
-#         Write-Error "Unable to determine the AAD ApplicationId for default tenancy admnistrator - No graph token available and TenantAdminId not supplied"
-#     }
-
-#     # Read the tenant admin credentials
-#     $tenantAdminSecret = Get-AzKeyVaultSecret -VaultName $sharedKeyVaultName -Name $tenantAdminSecretName
-
-#     # Add guard rails for if we've lost the keyvault secret, re-generate a new one (if we have AAD access)
-#     if (!$tenantAdminSecret -and !$DoNotUseGraph) {
-#         Write-Host "Resetting credential for default tenancy admnistrator service principal"
-#         $newSpCred = $existingSp | New-AzADServicePrincipalCredential
-#         Set-AzKeyVaultSecret -VaultName $sharedKeyVaultName -Name $tenantAdminSecretName -SecretValue $newSpCred.Secret | Out-Null
-#         $tenantAdminSecret = Get-AzKeyVaultSecret -VaultName $sharedKeyVaultName -Name $tenantAdminSecretName
-#     }
-#     elseif (!$tenantAdminSecret) {
-#         Write-Error "The default tenancy administrator credential was not available in the keyvault - access to AAD is required to resolve this issue"
-#     }
 # }
 # task initialiseTenancyService {
 #     # Setup environment variables for marain cli

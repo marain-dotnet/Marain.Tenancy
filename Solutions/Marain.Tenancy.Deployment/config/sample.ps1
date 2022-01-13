@@ -40,7 +40,6 @@
     ContainerRegistryKeySecretName = ""
 
     TenancyStorageSku = "Standard_LRS"
-    TenancySpCredentialSecretName = "TenancySpCredential"
     
     # Name overrides (otherwise names will be generated based on stack, instance & environment details)
     TenancyResourceGroupName = ""

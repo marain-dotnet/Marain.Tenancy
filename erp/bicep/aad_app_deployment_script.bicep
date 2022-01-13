@@ -1,6 +1,5 @@
 param displayName string
-param keyVaultName string
-param keyVaultSecretName string
+param replyUrl string
 param managedIdentityResourceId string
 param location string = resourceGroup().location
 param resourceTags object = {}
@@ -8,11 +7,11 @@ param timestamp string = utcNow()
 
 targetScope = 'resourceGroup'
 
-var deployScriptResourceName = 'aad-sp-deployscript-${displayName}'
-var scriptFilePath = 'deploymentScripts/deploy-aad-service-principal.ps1'
+var deployScriptResourceName = 'aad-app-deployscript-${displayName}'
+var scriptFilePath = 'deploymentScripts/deploy-aad-app.ps1'
 var scriptContent = loadTextContent(scriptFilePath)
 
-resource aad_service_principal_deploy_script 'Microsoft.Resources/deploymentScripts@2020-10-01' = {
+resource aad_deploy_script 'Microsoft.Resources/deploymentScripts@2020-10-01' = {
   name: deployScriptResourceName
   location: location
   kind: 'AzurePowerShell'
@@ -23,7 +22,7 @@ resource aad_service_principal_deploy_script 'Microsoft.Resources/deploymentScri
     }
   }
   properties: {
-    arguments: '-DisplayName "${displayName}" -KeyVaultName "${keyVaultName}" -KeyVaultSecretName "${keyVaultSecretName}"'
+    arguments: '-DisplayName \\"${displayName}\\" -ReplyUrls @(\\"${replyUrl}\\") -Verbose'
     azPowerShellVersion: '6.6'
     cleanupPreference: 'OnSuccess'
     forceUpdateTag: timestamp   // the script is idempotent, so it can always run
@@ -34,5 +33,5 @@ resource aad_service_principal_deploy_script 'Microsoft.Resources/deploymentScri
   tags: resourceTags
 }
 
-output app_id string = aad_service_principal_deploy_script.properties.outputs.appId
-output object_id string = aad_service_principal_deploy_script.properties.outputs.objectId
+output application_id string = aad_deploy_script.properties.outputs.applicationId
+output object_id string = aad_deploy_script.properties.outputs.objectId

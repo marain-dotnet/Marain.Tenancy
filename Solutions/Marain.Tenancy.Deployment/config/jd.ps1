@@ -27,7 +27,6 @@
     ContainerRegistryKeySecretName = ""
 
     TenancyStorageSku = "Standard_LRS"
-    TenancySpCredentialSecretName = "TenancySpCredential"
     
     # Name overrides (if set)
     TenancyResourceGroupName = ""

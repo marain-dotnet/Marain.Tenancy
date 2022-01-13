@@ -33,8 +33,13 @@ param containerRegistryKey string = ''
 
 param tenancyContainerName string
 param tenancyContainerTag string
+
 param tenancyAadAppName string
+
+param tenancySpName string = tenancyAppName
 param tenancySpCredentialSecretName string
+param tenancyAdminSpName string
+param tenancyAdminSpCredentialSecretName string
 param tenantId string
 param resourceTags object = {}
 
@@ -117,11 +122,23 @@ module tenancy_storage '../../erp/bicep/storage_account.bicep' = {
   }
 }
 
+module tenant_admin_service_principal '../../erp/bicep/aad_service_principal_script.bicep' = {
+  scope: tenancy_rg
+  name: 'adminSpDeploy'
+  params: {
+    displayName: tenancyAdminSpName
+    keyVaultName: keyVaultName
+    keyVaultSecretName: tenancyAdminSpCredentialSecretName
+    managedIdentityResourceId: aad_managed_id.id
+    resourceTags: resourceTags
+  }
+}
+
 module tenancy_app_service_principal '../../erp/bicep/aad_service_principal_script.bicep' = {
   scope: tenancy_rg
   name: 'spDeploy'
   params: {
-    displayName: tenancyAppName
+    displayName: tenancySpName
     keyVaultName: keyVaultName
     keyVaultSecretName: tenancySpCredentialSecretName
     managedIdentityResourceId: aad_managed_id.id
@@ -181,17 +198,33 @@ resource aad_managed_id 'Microsoft.ManagedIdentity/userAssignedIdentities@2018-1
   scope: resourceGroup(aadDeploymentManagedIdentitySubscriptionId, aadDeploymentManagedIdentityResourceGroupName)
 }
 
-// module aad_app '../../erp/bicep/aad_app_deployment_script.bicep' = {
-//   scope: tenancy_rg
-//   name: 'aadAppScriptDeploy'
-//   params: {
-//     displayName: tenancyAadAppName
-//     managedIdentityResourceId: aad_managed_id.id
-//   }
-// }
+module tenency_aad_app '../../erp/bicep/aad_app_deployment_script.bicep' = {
+  scope: tenancy_rg
+  name: 'aadAppScriptDeploy'
+  params: {
+    displayName: tenancyAadAppName
+    replyUrl: 'https://${tenancy_service.outputs.fqdn}/.auth/login/aad/callback'
+    managedIdentityResourceId: aad_managed_id.id
+  }
+}
+
+module tenency_aad_app_id_config_key '../../erp/bicep/app_configuration_keys.bicep' = {
+  scope: resourceGroup(appConfigurationSubscription, appConfigurationStoreResourceGroupName)
+  name: 'tenncyAadAppIdConfigKeyDeploy'
+  params: {
+    appConfigStoreName: appConfigurationStoreName
+    label: appConfigurationLabel
+    entries: [
+      {
+        name: 'TenancyAadAppId'
+        value: tenency_aad_app.outputs.application_id
+      }
+    ]
+  }
+}
 
 output service_url string = tenancy_service.outputs.fqdn
 output sp_application_id string = tenancy_app_service_principal.outputs.app_id
 output sp_object_id string = tenancy_app_service_principal.outputs.object_id
-// output aad_application_id string = aad_app.outputs.application_id
-// output aad_object_id string = aad_app.outputs.object_id
+output aad_application_id string = tenency_aad_app.outputs.application_id
+output aad_object_id string = tenency_aad_app.outputs.object_id

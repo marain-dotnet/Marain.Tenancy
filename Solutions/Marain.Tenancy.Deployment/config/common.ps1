@@ -9,4 +9,7 @@
     TenancyStorageSecretName = 'TenancyStorageAccountKey'
     ServiceName = 'tenancy'
     ApiAppName = 'api'
+
+    TenancySpCredentialSecretName = "TenancySpCredential"
+    TenancyAdminSpCredentialSecretName = "TenancyAdminSpCredential"
 }
