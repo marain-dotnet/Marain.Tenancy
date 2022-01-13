@@ -18,6 +18,12 @@ param (
     [Parameter(Mandatory = $true)]
     [string] $Environment,
 
+    [Parameter(Mandatory = $true)]
+    [string] $TenancyContainerName,
+
+    [Parameter(Mandatory = $true)]
+    [string] $TenancyContainerTag,
+
     [Parameter()]
     [string] $ConfigPath,
 
@@ -84,33 +90,33 @@ $deploymentConfig = Read-CorvusDeploymentConfig -ConfigPath $ConfigPath  `
                                                 -EnvironmentConfigName $Environment `
                                                 -Verbose
 
-$azureAdApplicationsToDeploy = @(
-    @{
-        Name = "{0}.{1}.{2}-{3}.{4}" -f `
-                        $StackName,
-                        $Environment,
-                        $deploymentConfig.ServiceName,
-                        $ServiceInstance,
-                        $deploymentConfig.ApiAppName
-        KeyVaultSecretName = $deploymentConfig.TenancySpCredentialSecretName
-        Roles = @(
-            @{
-                id = "7619c293-764c-437b-9a8e-698a26250efd"
-                displayName = "Tenancy administrator"
-                description = "Ability to create, modify, read, and remove tenants"
-                value = "TenancyAdministrator"
-                allowedMemberTypes = @("User","Application")
-            }
-            @{
-                id = "60743a6a-63b6-42e5-a464-a08698a0e9ed"
-                displayName = "Tenancy reader"
-                description = "Ability to read information about tenants"
-                value = "TenancyReader"
-                allowedMemberTypes = @("User","Application")
-            }
-        )        
-    }
-)
+# $azureAdApplicationsToDeploy = @(
+#     @{
+#         Name = "{0}.{1}.{2}-{3}.{4}" -f `
+#                         $StackName,
+#                         $Environment,
+#                         $deploymentConfig.ServiceName,
+#                         $ServiceInstance,
+#                         $deploymentConfig.ApiAppName
+#         KeyVaultSecretName = $deploymentConfig.TenancySpCredentialSecretName
+#         Roles = @(
+#             @{
+#                 id = "7619c293-764c-437b-9a8e-698a26250efd"
+#                 displayName = "Tenancy administrator"
+#                 description = "Ability to create, modify, read, and remove tenants"
+#                 value = "TenancyAdministrator"
+#                 allowedMemberTypes = @("User","Application")
+#             }
+#             @{
+#                 id = "60743a6a-63b6-42e5-a464-a08698a0e9ed"
+#                 displayName = "Tenancy reader"
+#                 description = "Ability to read information about tenants"
+#                 value = "TenancyReader"
+#                 allowedMemberTypes = @("User","Application")
+#             }
+#         )        
+#     }
+# )
 
 $serviceName = "tenancy"
 $uniqueSuffix = Get-UniqueSuffix -SubscriptionId $SubscriptionId `
@@ -122,6 +128,12 @@ $tenancyResourceGroupName = toResourceName $deploymentConfig.TenancyResourceGrou
 $tenancyStorageName = toResourceName $deploymentConfig.TenancyStorageName $serviceName "st" $uniqueSuffix
 $tenancyStorageSku = [string]::IsNullOrEmpty($deploymentConfig.TenancyStorageSku) ? $deploymentConfig.TenancyStorageSku : "Standard_LRS"
 $appName = toResourceName $deploymentConfig.TenancyAppName $serviceName "api" $uniqueSuffix
+$aadAppName = "{0}.{1}.{2}-{3}.{4}" -f `
+                    $StackName,
+                    $Environment,
+                    $deploymentConfig.ServiceName,
+                    $ServiceInstance,
+                    $deploymentConfig.ApiAppName
 
 # AppConfig settings
 # If not specified, derive same generated values as the 'instance' deployment
@@ -172,7 +184,14 @@ $armDeployment = @{
         storageSku = $tenancyStorageSku
         tenancyStorageSecretName = $deploymentConfig.TenancyStorageSecretName
         tenancyAppName = $appName
+        tenancyAadAppName = $aadAppName
         tenancySpCredentialSecretName = $deploymentConfig.TenancySpCredentialSecretName
+        tenancyContainerName = $TenancyContainerName
+        tenancyContainerTag = $TenancyContainerTag
+
+        aadDeploymentManagedIdentityName = $deploymentConfig.AadDeploymentManagedIdentityName
+        aadDeploymentManagedIdentityResourceGroupName = $deploymentConfig.AadDeploymentManagedIdentityResourceGroupName
+        aadDeploymentManagedIdentitySubscriptionId = $deploymentConfig.AadDeploymentManagedIdentitySubscriptionId
         
         useExistingKeyVault = $deploymentConfig.UseSharedKeyVault
         existingKeyVaultResourceGroupName = $deploymentConfig.UseSharedKeyVault ? $sharedKeyVaultResourceGroupName : ''
@@ -270,8 +289,8 @@ task PostProvision {
     $ArmDeploymentOutputs | fl | Out-String | Write-Host
 
     # Set the reply-url for the AAD app now we have the FQDN for the service
-    $appName = $azureAdApplicationsToDeploy[0].Name
-    $appId = Invoke-CorvusAzCli "ad app list --all --query `"[?displayName == '$appName'].appId`" -o tsv" -AsJson
-    $replyUrl = "https://{0}/.auth/login/aad/callback" -f $ArmDeploymentOutputs.Outputs.service_url.Value
-    Invoke-CorvusAzCli "ad app update --id `"$appId`" --reply-urls $replyUrl"
+    # $appName = $azureAdApplicationsToDeploy[0].Name
+    # $appId = Invoke-CorvusAzCli "ad app list --all --query `"[?displayName == '$appName'].appId`" -o tsv" -AsJson
+    # $replyUrl = "https://{0}/.auth/login/aad/callback" -f $ArmDeploymentOutputs.Outputs.service_url.Value
+    # Invoke-CorvusAzCli "ad app update --id `"$appId`" --reply-urls $replyUrl"
 }

@@ -8,6 +8,10 @@ param location string = deployment().location
 param tenancyAppName string
 param tenancyStorageSecretName string
 
+param aadDeploymentManagedIdentityName string
+param aadDeploymentManagedIdentityResourceGroupName string
+param aadDeploymentManagedIdentitySubscriptionId string = subscription().subscriptionId
+
 param appConfigurationStoreName string
 param appConfigurationStoreResourceGroupName string
 param appConfigurationSubscription string = subscription().subscriptionId
@@ -27,6 +31,9 @@ param containerRegistryUser string = ''
 @secure()
 param containerRegistryKey string = ''
 
+param tenancyContainerName string
+param tenancyContainerTag string
+param tenancyAadAppName string
 param tenancySpCredentialSecretName string
 param tenantId string
 param resourceTags object = {}
@@ -72,7 +79,7 @@ module key_vault '../../erp/bicep/key_vault.bicep' = if (!useExistingKeyVault) {
       {
         // JamesD
         objectId: 'f3498fd9-cff0-44a9-991c-c017f481adf0'
-        tenantId: '0f621c67-98a0-4ed5-b5bd-31a35be41e29'
+        tenantId: tenantId
         permissions: {
           secrets: [
             'all'
@@ -80,12 +87,13 @@ module key_vault '../../erp/bicep/key_vault.bicep' = if (!useExistingKeyVault) {
         }
       }
       {
-        // SP
-        objectId: '8ec5ab5b-89e6-4afb-90de-7a502574e9fa'
-        tenantId: '0f621c67-98a0-4ed5-b5bd-31a35be41e29'
+        // Managed identity
+        objectId: aad_managed_id.id
+        tenantId: tenantId
         permissions: {
           secrets: [
             'get'
+            'set'
           ]
         }
       }
@@ -109,13 +117,28 @@ module tenancy_storage '../../erp/bicep/storage_account.bicep' = {
   }
 }
 
+module tenancy_app_service_principal '../../erp/bicep/aad_service_principal_script.bicep' = {
+  scope: tenancy_rg
+  name: 'spDeploy'
+  params: {
+    displayName: tenancyAppName
+    keyVaultName: keyVaultName
+    keyVaultSecretName: tenancySpCredentialSecretName
+    managedIdentityResourceId: aad_managed_id.id
+    resourceTags: resourceTags
+  }
+}
+
 module tenancy_service 'tenancy-container-app.bicep' = {
   name: 'tenancyAppDeploy'
   scope: tenancy_rg
+  dependsOn: [
+    tenancy_app_service_principal
+  ]
   params: {
     appName: tenancyAppName
-    imageName: 'marain/tenancy-service'
-    imageTag: 'latest'
+    imageName: tenancyContainerName
+    imageTag: tenancyContainerTag
     kubeEnvironmentId: kube_environment.id
     location: location
     resourceTags: resourceTags
@@ -153,4 +176,22 @@ module tenency_uri_app_config_key '../../erp/bicep/app_configuration_keys.bicep'
   }
 }
 
+resource aad_managed_id 'Microsoft.ManagedIdentity/userAssignedIdentities@2018-11-30' existing = {
+  name: aadDeploymentManagedIdentityName
+  scope: resourceGroup(aadDeploymentManagedIdentitySubscriptionId, aadDeploymentManagedIdentityResourceGroupName)
+}
+
+// module aad_app '../../erp/bicep/aad_app_deployment_script.bicep' = {
+//   scope: tenancy_rg
+//   name: 'aadAppScriptDeploy'
+//   params: {
+//     displayName: tenancyAadAppName
+//     managedIdentityResourceId: aad_managed_id.id
+//   }
+// }
+
 output service_url string = tenancy_service.outputs.fqdn
+output sp_application_id string = tenancy_app_service_principal.outputs.app_id
+output sp_object_id string = tenancy_app_service_principal.outputs.object_id
+// output aad_application_id string = aad_app.outputs.application_id
+// output aad_object_id string = aad_app.outputs.object_id

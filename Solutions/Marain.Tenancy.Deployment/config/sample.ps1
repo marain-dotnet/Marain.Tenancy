@@ -6,6 +6,10 @@
 @{
     AzureLocation = "northeurope"
     
+    AadDeploymentManagedIdentityName = ""
+    AadDeploymentManagedIdentityResourceGroupName = ""
+    AadDeploymentManagedIdentitySubscriptionId = ""
+
     # All marain services will use the same key vault provisioned by the instace deployment
     UseSharedKeyVault = $true   # When true, all marain services will use a single key vault provisioned in the 'marain' resource group
                                 # When false, each service will provision it's own key vault alongside its other resources
