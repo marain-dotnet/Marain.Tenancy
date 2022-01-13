@@ -5,11 +5,12 @@
   "FUNCTIONS_EXTENSION_VERSION": "~2",
   "APPINSIGHTS_INSTRUMENTATIONKEY": "",
 
-  "TenantCloudBlobContainerFactoryOptions:AzureServicesAuthConnectionString": "",
-
   "TenantCacheConfiguration:GetTenantResponseCacheControlHeaderValue": "max-age=300",
 
-  "RootTenantBlobStorageConfigurationOptions:AccountName": "",
-  "RootTenantBlobStorageConfigurationOptions:RootTenantBlobStorageConfiguration:KeyVaultName": "",
-  "RootTenantBlobStorageConfigurationOptions:RootTenantBlobStorageConfiguration:AccountKeySecretName": ""
+  "RootBlobStorageConfiguration:ConnectionStringPlainText": "UseDevelopmentStorage=true"
+
+  // Or, e.g.:
+  //"RootBlobStorageConfiguration:AccountName": "",
+  //"RootBlobStorageConfiguration:AccessKeyInKeyVault:VaultName": "",
+  //"RootBlobStorageConfiguration:AccessKeyInKeyVault:SecretName": ""
 }

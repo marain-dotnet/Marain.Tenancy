@@ -6,18 +6,24 @@ namespace Marain.Tenancy.Specs.Integration.Bindings
 {
     using System;
     using System.Threading.Tasks;
+
     using BoDi;
+
     using Corvus.Extensions.Json;
     using Corvus.Testing.AzureFunctions;
     using Corvus.Testing.AzureFunctions.SpecFlow;
     using Corvus.Testing.SpecFlow;
-    using Marain.Tenancy.ControlHost;
+
     using Marain.Tenancy.OpenApi;
     using Marain.Tenancy.Specs.MultiHost;
+
     using Menes.Testing.AspNetCoreSelfHosting;
+
     using Microsoft.Extensions.Configuration;
     using Microsoft.Extensions.DependencyInjection;
+
     using NUnit.Framework.Internal;
+
     using TechTalk.SpecFlow;
 
     /// <summary>
@@ -48,20 +54,21 @@ namespace Marain.Tenancy.Specs.Integration.Bindings
             FeatureContext featureContext,
             IObjectContainer specFlowDiContainer)
         {
+            IConfigurationRoot config = ContainerBindings.GetServiceProvider(featureContext).GetRequiredService<IConfigurationRoot>();
+
             switch (TestHostMode)
             {
                 case TestHostModes.InProcessEmulateFunctionWithActionResult:
                     var hostManager = new OpenApiWebHostManager();
                     featureContext.Set(hostManager);
-                    await hostManager.StartInProcessFunctionsHostAsync<Startup>(
-                        TenancyApiBaseUriText);
+                    await hostManager.StartInProcessFunctionsHostAsync<FunctionsStartupWrapper>(
+                        TenancyApiBaseUriText,
+                        config);
                     break;
 
                 case TestHostModes.UseFunctionHost:
                     FunctionsController functionsController = FunctionsBindings.GetFunctionsController(featureContext);
                     FunctionConfiguration functionsConfig = FunctionsBindings.GetFunctionConfiguration(featureContext);
-
-                    IConfigurationRoot config = ContainerBindings.GetServiceProvider(featureContext).GetRequiredService<IConfigurationRoot>();
 
                     functionsConfig.CopyToEnvironmentVariables(config.AsEnumerable());
                     functionsConfig.EnvironmentVariables.Add("TenantCacheConfiguration__GetTenantResponseCacheControlHeaderValue", "max-age=300");

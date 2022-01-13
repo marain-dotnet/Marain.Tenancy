@@ -17,11 +17,11 @@
       },
       "Menes.Testing.AspNetCoreSelfHosting": {
         "type": "Direct",
-        "requested": "[3.0.0, )",
-        "resolved": "3.0.0",
-        "contentHash": "jQuTw09NCaWMt0tPR8X4f7nKasjteMqN3CjIKgsXU1JE1FWZ61eQLHA6cfQs2LobnMX88kbLgMR9uugPPO6ZIA==",
+        "requested": "[3.1.0, )",
+        "resolved": "3.1.0",
+        "contentHash": "55RfNmNxKlJrtYwsr3oKVHtZ7pNL4UOMC/aELMENyjSqyzjqeyP/pcNOro2WGUgmXy6owOcorKQl34qN9Bc+gw==",
         "dependencies": {
-          "Menes.Hosting.AspNetCore": "3.0.0",
+          "Menes.Hosting.AspNetCore": "3.1.0",
           "Microsoft.AspNetCore": "2.2.0",
           "Microsoft.AspNetCore.Mvc.Abstractions": "2.2.0",
           "Microsoft.Azure.WebJobs": "3.0.30"
@@ -329,8 +329,8 @@
       },
       "Menes.Abstractions": {
         "type": "Transitive",
-        "resolved": "3.0.0",
-        "contentHash": "puLN8wrfuMCFmwOMvaJNsegbTcr0UlocejkZbNXuULfaDcNBLB7rQvLVqt6TVWjIWrw94RaJoD6+wg8aY0EITg==",
+        "resolved": "3.1.0",
+        "contentHash": "kCjCibDumBF75p6Ntgca005G7+SDXBAxnyE6V16yeMJDhFdh2rofpOqXaCoBhoRFupduJA90qqJGjqXpfCtHRg==",
         "dependencies": {
           "Corvus.ContentHandling": "2.0.11",
           "Corvus.Extensions": "1.1.4",
@@ -346,18 +346,18 @@
       },
       "Menes.Hosting": {
         "type": "Transitive",
-        "resolved": "3.0.0",
-        "contentHash": "VQYzTjmxAnMRMw3hsiS+tWYPJg3GYavRxu9Fqi//p9m0oBIBIgohmFRqfanPSBZiYfzOtrI/gOVNuhigWovplg==",
+        "resolved": "3.1.0",
+        "contentHash": "JMXA+M6tR9RM96OMik7K3npIlXvGKCG+6pk0wnBqwqnzUS8ITymljRAQ0c03HcZCpztnpro3yjO9VLDARmsOBQ==",
         "dependencies": {
-          "Menes.Abstractions": "3.0.0"
+          "Menes.Abstractions": "3.1.0"
         }
       },
       "Menes.Hosting.AspNetCore": {
         "type": "Transitive",
-        "resolved": "3.0.0",
-        "contentHash": "8GlsYJeDqhlWrxYcXyvBehe8OFEkK4bwUAt4Ll+UbHpuVioYUvvtt2unhoo07oTqbjbMzNQUotMpreZSGMqQ6w==",
+        "resolved": "3.1.0",
+        "contentHash": "gQjj4UcxFtgtiSdpPzJ8l+XJ679qpblcXZQzbr6TNCUrFRiG5uyVM5C920Uxf3sEidw1FUDBtYA6wLW/NrGtuQ==",
         "dependencies": {
-          "Menes.Hosting": "3.0.0"
+          "Menes.Hosting": "3.1.0"
         }
       },
       "Microsoft.ApplicationInsights": {
