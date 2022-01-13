@@ -16,7 +16,22 @@ namespace Marain.Tenancy.Specs.MultiHost
             this.tenancyService = tenancyService;
         }
 
-        public Task<TenancyResponse> GetTenantAsync(string tenantId)
+        public Task<TenancyResponse> CreateTenantAsync(string parentId, string name)
+        {
+            throw new NotImplementedException();
+        }
+
+        public Task<TenancyResponse> GetSwaggerAsync()
+        {
+            throw new NotImplementedException();
+        }
+
+        public Task<TenancyResponse> GetTenantAsync(string tenantId, string? etag)
+        {
+            throw new NotImplementedException();
+        }
+
+        public Task<TenancyResponse> GetTenantByLocationAsync(string location)
         {
             throw new NotImplementedException();
         }

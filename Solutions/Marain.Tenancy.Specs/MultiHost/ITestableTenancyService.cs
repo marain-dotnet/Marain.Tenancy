@@ -8,6 +8,9 @@ namespace Marain.Tenancy.Specs.MultiHost
 {
     public interface ITestableTenancyService
     {
-        Task<TenancyResponse> GetTenantAsync(string tenantId);
+        Task<TenancyResponse> GetTenantAsync(string tenantId, string? etag = null);
+        Task<TenancyResponse> CreateTenantAsync(string parentId, string name);
+        Task<TenancyResponse> GetSwaggerAsync();
+        Task<TenancyResponse> GetTenantByLocationAsync(string location);
     }
 }

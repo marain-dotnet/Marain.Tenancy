@@ -28,6 +28,8 @@ namespace Marain.Tenancy.Specs.Integration.Steps
             Assert.AreEqual(expectedValue, actualValue, $"Expected value of property '{propertyPath}' was '{expectedValue}', but actual value was '{actualValue}'");
         }
 
+        public JObject? Json { get; internal set; }
+
         [Then("the response content should have a boolean property called '(.*)' with value '(.*)'")]
         public void ThenTheResponseContentShouldHaveABooleanPropertyCalledWithValue(string propertyPath, bool expectedValue)
         {
@@ -103,7 +105,7 @@ namespace Marain.Tenancy.Specs.Integration.Steps
 
         public JToken GetRequiredTokenFromResponseObject(string propertyPath)
         {
-            JObject data = this.ScenarioContext.Get<JObject>();
+            JObject data = this.Json ?? throw new InvalidOperationException("Json not present");
             return GetRequiredToken(data, propertyPath);
         }
 

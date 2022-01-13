@@ -15,19 +15,51 @@ namespace Marain.Tenancy.Specs.MultiHost
         private HttpResponseMessage? response;
         private string? responseContent;
         private string tenancyApiBaseUriText;
-        private JsonSerializerSettings instance;
+        private JsonSerializerSettings serializerSettings;
         private JObject? parsedResponse;
 
-        public ClientTestableTenancyService(string tenancyApiBaseUriText, JsonSerializerSettings instance)
+        public ClientTestableTenancyService(string tenancyApiBaseUriText, JsonSerializerSettings serializerSettings)
         {
             this.tenancyApiBaseUriText = tenancyApiBaseUriText;
-            this.instance = instance;
+            this.serializerSettings = serializerSettings;
         }
 
-        public async Task<TenancyResponse> GetTenantAsync(string tenantId)
+        public async Task<TenancyResponse> CreateTenantAsync(string parentId, string name)
         {
-            await this.SendGetRequest(new (this.tenancyApiBaseUriText), $"/{tenantId}/marain/tenant");
-            return new TenancyResponse();
+            await this.SendPostRequest(new (this.tenancyApiBaseUriText), $"/{parentId}/marain/tenant/children?tenantName={Uri.EscapeDataString(name)}", null);
+
+            return MakeResponse();
+        }
+
+        public async Task<TenancyResponse> GetSwaggerAsync()
+        {
+            await this.SendGetRequest(new(this.tenancyApiBaseUriText), "/swagger");
+            return MakeResponse();
+        }
+
+        public async Task<TenancyResponse> GetTenantAsync(string tenantId, string? etag)
+        {
+            await this.SendGetRequest(new(this.tenancyApiBaseUriText), $"/{tenantId}/marain/tenant", etag);
+            return MakeResponse();
+        }
+
+        public async Task<TenancyResponse> GetTenantByLocationAsync(string location)
+        {
+            await this.SendGetRequest(new(this.tenancyApiBaseUriText), location);
+            return MakeResponse();
+        }
+
+        private TenancyResponse MakeResponse()
+        {
+            return new TenancyResponse
+            {
+                LocationHeader = this.response!.Headers.Location?.ToString(),
+                EtagHeader = this.response.Headers.ETag?.Tag,
+                IsSuccessStatusCode = this.response.IsSuccessStatusCode,
+                StatusCode = this.response.StatusCode,
+                CacheControlHeader = this.response.Headers.CacheControl?.ToString(),
+                BodyJson = this.parsedResponse
+            };
         }
 
         private async Task SendGetRequest(Uri baseUri, string path, string? etag = null)
@@ -46,6 +78,20 @@ namespace Marain.Tenancy.Specs.MultiHost
             {
                 this.parsedResponse = JObject.Parse(this.responseContent);
             }
+        }
+
+        private async Task SendPostRequest(Uri baseUri, string path, object? data)
+        {
+            HttpContent? content = null;
+
+            if (data is not null)
+            {
+                string requestJson = JsonConvert.SerializeObject(data, this.serializerSettings);
+                content = new StringContent(requestJson, Encoding.UTF8, "application/json");
+            }
+
+            this.response = await HttpClient.PostAsync(new Uri(baseUri, path), content).ConfigureAwait(false);
+            this.responseContent = await this.response.Content.ReadAsStringAsync().ConfigureAwait(false);
         }
     }
 }
