@@ -21,6 +21,11 @@ param storageName string
 param storageSecretName string
 @secure()
 param servicePrincipalCredential string
+@secure()
+param appInsightsInstrumentationKey string
+param activeRevisionsMode string = 'single'
+param minReplicas int = 0
+param maxReplicas int = 1
 
 
 targetScope = 'resourceGroup'
@@ -31,9 +36,7 @@ var containerImage = '${imageName}:${imageTag}'
 var spClientId = json(servicePrincipalCredential).appId
 var spClientSecret = json(servicePrincipalCredential).password
 var spTenantId = json(servicePrincipalCredential).tenant
-// construct the connection string that will set as a secret
-var azureServicesAuthConnectionString = 'RunAs%3DApp;AppId%3D${spClientId};TenantId%3D${spTenantId};AppKey%3D${spClientSecret}'
-var azureServicesAuthConnectionStringSecretRef = 'azure-services-auth-connection-string'
+var servicePrincipalPasswordSecretRef = 'service-principal-secret'
 
 resource acr 'Microsoft.ContainerRegistry/registries@2021-09-01' existing = if (useAzureContainerRegistry) {
   name: acrName
@@ -45,12 +48,12 @@ module tenancy_service '../../erp/bicep/container_app.bicep' = {
   params: {
     location: location
     containerImage: useAzureContainerRegistry ? '${acr.properties.loginServer}/${containerImage}' : '${containerRegistryServer}/${containerImage}'
-    activeRevisionsMode: 'single'
+    activeRevisionsMode: activeRevisionsMode
     daprComponents: []
     secrets: [
       {
-        name: azureServicesAuthConnectionStringSecretRef
-        value: azureServicesAuthConnectionString
+        name: servicePrincipalPasswordSecretRef
+        value: spClientSecret
       }
     ]
     ingressIsExternal: true
@@ -60,20 +63,36 @@ module tenancy_service '../../erp/bicep/container_app.bicep' = {
     includeDapr: false
     environmentVariables: [
       {
-        name: 'TenantCloudBlobContainerFactoryOptions__AzureServicesAuthConnectionString'
-        secretref: azureServicesAuthConnectionStringSecretRef
+        name: 'ServiceIdentity__IdentitySourceType'
+        value: 'AzureIdentityDefaultAzureCredential'
       }
       {
-        name: 'RootTenantBlobStorageConfigurationOptions__RootTenantBlobStorageConfiguration__KeyVaultName'
+        name: 'AZURE_CLIENT_SECRET'
+        secretref: servicePrincipalPasswordSecretRef
+      }
+      {
+        name: 'AZURE_CLIENT_ID'
+        value: spClientId
+      }
+      {
+        name: 'AZURE_TENANT_ID'
+        value: spTenantId
+      }
+      {
+        name: 'RootBlobStorageConfiguration__AccessKeyInKeyVault__VaultName'
         value: keyVaultName
       }
       {
-        name: 'RootTenantBlobStorageConfigurationOptions__RootTenantBlobStorageConfiguration__AccountKeySecretName'
+        name: 'RootBlobStorageConfiguration__AccessKeyInKeyVault__SecretName'
         value: storageSecretName
       }
       {
-        name: 'RootTenantBlobStorageConfigurationOptions__AccountName'
+        name: 'RootBlobStorageConfiguration__AccountName'
         value: storageName
+      }
+      {
+        name: 'ApplicationInsights_InstrumentationKey'
+        value: appInsightsInstrumentationKey
       }
     ]
     // When using an ACR the key need not be passed to this module as a parameter
@@ -81,6 +100,8 @@ module tenancy_service '../../erp/bicep/container_app.bicep' = {
     containerRegistryKey: useAzureContainerRegistry ? acr.listCredentials().passwords[0].value : containerRegistryKey
     containerRegistryServer: useAzureContainerRegistry ? acr.properties.loginServer : containerRegistryServer
     containerRegistryUser: useAzureContainerRegistry ? acr.listCredentials().username : containerRegistryUser
+    minReplicas: minReplicas
+    maxReplicas: maxReplicas
     resourceTags: resourceTags
   }
 }

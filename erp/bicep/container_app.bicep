@@ -13,7 +13,7 @@ param includeDapr bool
 param secrets array = []
 param daprComponents array = []
 param environmentVariables array = []
-param minReplicas int = 1
+param minReplicas int = 0
 param maxReplicas int = 1
 
 param containerRegistryServer string = 'docker.io'

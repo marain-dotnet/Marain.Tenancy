@@ -175,10 +175,11 @@ module tenancy_service 'tenancy-container-app.bicep' = {
     keyVaultName: keyVaultName
     storageName: tenancy_storage.outputs.name
     storageSecretName: tenancyStorageSecretName
+    appInsightsInstrumentationKey: existing_key_vault.getSecret('AppInsightsInstrumentationKey')
   }
 }
 
-module tenency_uri_app_config_key '../../erp/bicep/app_configuration_keys.bicep' = {
+module tenancy_uri_app_config_key '../../erp/bicep/set_app_configuration_keys.bicep' = {
   scope: resourceGroup(appConfigurationSubscription, appConfigurationStoreResourceGroupName)
   name: 'tenncyUriAppConfigKeyDeploy'
   params: {
@@ -198,7 +199,7 @@ resource aad_managed_id 'Microsoft.ManagedIdentity/userAssignedIdentities@2018-1
   scope: resourceGroup(aadDeploymentManagedIdentitySubscriptionId, aadDeploymentManagedIdentityResourceGroupName)
 }
 
-module tenency_aad_app '../../erp/bicep/aad_app_deployment_script.bicep' = {
+module tenancy_aad_app '../../erp/bicep/aad_app_deployment_script.bicep' = {
   scope: tenancy_rg
   name: 'aadAppScriptDeploy'
   params: {
@@ -208,7 +209,7 @@ module tenency_aad_app '../../erp/bicep/aad_app_deployment_script.bicep' = {
   }
 }
 
-module tenency_aad_app_id_config_key '../../erp/bicep/app_configuration_keys.bicep' = {
+module tenancy_aad_app_id_config_key '../../erp/bicep/set_app_configuration_keys.bicep' = {
   scope: resourceGroup(appConfigurationSubscription, appConfigurationStoreResourceGroupName)
   name: 'tenncyAadAppIdConfigKeyDeploy'
   params: {
@@ -217,14 +218,25 @@ module tenency_aad_app_id_config_key '../../erp/bicep/app_configuration_keys.bic
     entries: [
       {
         name: 'TenancyAadAppId'
-        value: tenency_aad_app.outputs.application_id
+        value: tenancy_aad_app.outputs.application_id
       }
     ]
+  }
+}
+
+module init_tenancy '../../erp/bicep/init_marain_tenancy_deployment_script.bicep' = {
+  scope: tenancy_rg
+  name: 'initTenancyDeploy'
+  params: {
+    managedIdentityResourceId: aad_managed_id.id
+    servicePrincipalCredential: existing_key_vault.getSecret(tenancyAdminSpCredentialSecretName)
+    tenencyServiceAppId: tenancy_aad_app.outputs.application_id
+    tenencyServiceUri: 'https://${tenancy_service.outputs.fqdn}/'
   }
 }
 
 output service_url string = tenancy_service.outputs.fqdn
 output sp_application_id string = tenancy_app_service_principal.outputs.app_id
 output sp_object_id string = tenancy_app_service_principal.outputs.object_id
-output aad_application_id string = tenency_aad_app.outputs.application_id
-output aad_object_id string = tenency_aad_app.outputs.object_id
+output aad_application_id string = tenancy_aad_app.outputs.application_id
+output aad_object_id string = tenancy_aad_app.outputs.object_id

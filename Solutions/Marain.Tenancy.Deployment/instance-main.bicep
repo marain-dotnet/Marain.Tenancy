@@ -102,7 +102,7 @@ module app_config '../../erp/bicep/app_configuration.bicep' = if (!useExistingAp
   }
 }
 
-module kubeenv_app_config_key '../../erp/bicep/app_configuration_keys.bicep' = {
+module kubeenv_app_config_key '../../erp/bicep/set_app_configuration_keys.bicep' = {
   scope: resourceGroup(appConfigurationStoreSubscription, appConfigurationStoreResourceGroupName)
   name: 'kubeenvAppConfigKeyDeploy'
   params: {
@@ -117,7 +117,7 @@ module kubeenv_app_config_key '../../erp/bicep/app_configuration_keys.bicep' = {
   }
 }
 
-module aikey_secret '../../erp/bicep/key_vault_secret.bicep' = {
+module aikey_secret '../../erp/bicep/key_vault_secret.bicep' = if (!useExistingAppEnvironment) {
   name: 'aiKeySecretDeploy'
   scope: rg
   params: {
