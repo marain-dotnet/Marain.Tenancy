@@ -1,15 +1,35 @@
 version: '3.4'
 
 services:
+
   marain.tenancy.host.aspnetcore:
     image: ${DOCKER_REGISTRY-}maraintenancyhostaspnetcore
     build:
       context: ./../
       dockerfile: Marain.Tenancy.Host.AspNetCore/Dockerfile
+    ports:
+    - "80:80" 
    
   marain.tenancy.host.aspnetcore-dapr:
     image: "daprio/daprd:latest"
-    command: [ "./daprd", "-app-id", "marain.tenancy.host.aspnetcore", "-app-port", "80" ]
+    command: [ "./daprd", "-app-id", "tenancy", "-app-port", "80" ]
     depends_on:
       - marain.tenancy.host.aspnetcore
     network_mode: "service:marain.tenancy.host.aspnetcore"
+
+  marain.tenancy.demofrontend:
+    image: ${DOCKER_REGISTRY-}maraintenancyhostaspnetcore
+    build:
+      context: ./../
+      dockerfile: Marain.Tenancy.DemoFrontEnd/Dockerfile
+    ports:
+    - "8000:80"
+    environment:
+    - "ASPNETCORE_ENVIRONMENT=Development"
+   
+  marain.tenancy.demofrontend-dapr:
+    image: "daprio/daprd:latest"
+    command: [ "./daprd", "-app-id", "demofe", "-app-port", "80" ]
+    depends_on:
+      - marain.tenancy.demofrontend
+    network_mode: "service:marain.tenancy.demofrontend"
