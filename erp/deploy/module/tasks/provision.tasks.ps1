@@ -7,5 +7,6 @@ task armDeployment {
                                         -ArmTemplatePath $armDeployment.TemplatePath `
                                         -TemplateParameters $armDeployment.TemplateParameters `
                                         -NoArtifacts `
+                                        -MaxRetries 1 `
                                         -Verbose
 }

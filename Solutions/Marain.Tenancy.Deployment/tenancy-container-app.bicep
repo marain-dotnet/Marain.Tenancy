@@ -91,7 +91,7 @@ module tenancy_service '../../erp/bicep/container_app.bicep' = {
         value: storageName
       }
       {
-        name: 'ApplicationInsights_InstrumentationKey'
+        name: 'ApplicationInsights__InstrumentationKey'
         value: appInsightsInstrumentationKey
       }
     ]

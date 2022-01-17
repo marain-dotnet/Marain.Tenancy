@@ -3,7 +3,7 @@ task RunFirst
 task EnsurePreReqs
 
 task PreAzureAd
-task AzureAdCore DeployAzureAdApplications
+task AzureAdCore
 task PostAzureAd
 task AzureAd PreAzureAd,AzureAdCore,PostAzureAd
 

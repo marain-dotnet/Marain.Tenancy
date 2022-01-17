@@ -1,8 +1,5 @@
-[CmdletBinding()]
+[CmdletBinding(SupportsShouldProcess)]
 param (
-    [Parameter(Position=0)]
-    [string[]] $Tasks = @("."),
-
     [Parameter(Mandatory = $true)]
     [string] $SubscriptionId,
     
@@ -19,10 +16,7 @@ param (
     [string] $Environment,
 
     [Parameter()]
-    [string] $ConfigPath,
-
-    [Parameter()]
-    [string] $DeployModulePath
+    [string] $ConfigPath
 )
 
 $ErrorActionPreference = 'Stop'
@@ -32,52 +26,14 @@ $here = Split-Path -Parent $PSCommandPath
 
 if (!$ConfigPath) { $ConfigPath = Join-Path $here "config" }
 
-#region InvokeBuild setup
-if (!(Get-Module -ListAvailable InvokeBuild)) {
-    Install-Module InvokeBuild -RequiredVersion 5.7.1 -Scope CurrentUser -Force -Repository PSGallery
-}
-Import-Module InvokeBuild
-# This handles calling the build engine when this file is run like a normal PowerShell script
-# (i.e. avoids the need to have another script to setup the InvokeBuild environment and issue the 'Invoke-Build' command )
-if ($MyInvocation.ScriptName -notlike '*Invoke-Build.ps1') {
-    try {
-        Invoke-Build $Tasks $MyInvocation.MyCommand.Path @PSBoundParameters
-    }
-    catch {
-        $_.ScriptStackTrace
-        throw
-    }
-    return
-}
-#endregion
-
-#region Import shared tasks and initialise deploy framework
-if (!($DeployModulePath)) {
-    if (!(Get-Module -ListAvailable Endjin.RecommendedPractices.Deploy)) {
-        Write-Information "Installing 'Endjin.RecommendedPractices.Deploy' module..."
-        Install-Module Endjin.RecommendedPractices.Deploy -RequiredVersion 0.0.1 -AllowPrerelease -Scope CurrentUser -Force -Repository PSGallery
-    }
-    $DeployModulePath = "Endjin.RecommendedPractices.Deploy"
-}
-else {
-    Write-Information "DeployModulePath: $DeployModulePath"
-}
-Import-Module $DeployModulePath -Force
-#endregion
-
 # Install/Import Corvus.Deployment
-Install-Module Corvus.Deployment -RequiredVersion 0.3.15 -Scope CurrentUser -Force -Repository PSGallery
+Install-Module Corvus.Deployment -RequiredVersion 0.3.17 -Scope CurrentUser -Force -Repository PSGallery
 Import-Module Corvus.Deployment -Force
 Connect-CorvusAzure -SubscriptionId $SubscriptionId -AadTenantId $AadTenantId
 
-# Load the deploy process & tasks
-. Endjin.RecommendedPractices.Deploy.tasks
-
-#region Custom functions
 function toResourceName($configValue, $serviceName, $resourceShortCode, $uniqueSuffix) {
     return [string]::IsNullOrEmpty($configValue) ? ("{0}{1}{2}" -f $serviceName, $resourceShortCode, $uniqueSuffix): $configValue
 }
-#endregion
 
 #region Placeholder Configuration
 $deploymentConfig = Read-CorvusDeploymentConfig -ConfigPath $ConfigPath  `
@@ -108,6 +64,7 @@ $defaultTags = @{
     stackName = $StackName
     environment = $Environment
 }
+#endregion
 
 # ARM template parameters
 $armDeployment = @{
@@ -129,11 +86,14 @@ $armDeployment = @{
         resourceTags = $defaultTags
     }
 }
-#endregion
 
-# Synopsis: Provision and Deploy
-task . FullDeploy
-
-task PostProvision {
-    $ArmDeploymentOutputs | fl | Out-String | Write-Host
-}
+Invoke-CorvusArmTemplateDeployment `
+    -BicepVersion "0.4.1124" `
+    -DeploymentScope $armDeployment.Scope `
+    -Location $armDeployment.Location `
+    -ArmTemplatePath $armDeployment.TemplatePath `
+    -TemplateParameters $armDeployment.TemplateParameters `
+    -NoArtifacts `
+    -MaxRetries 1 `
+    -Verbose `
+    -WhatIf:$WhatIfPreference

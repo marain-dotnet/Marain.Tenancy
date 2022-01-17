@@ -17,6 +17,10 @@ param (
 $ErrorActionPreference = 'Stop'
 Set-StrictMode -Version 4.0
 
+# Workaround current deployScripts limitation only available with v6.6
+# We want to use 7.x to take advantage of MS Graph (rather than the deprecated Azure Graph)
+# Update-Module Az.Resources -Verbose -Force
+
 $azCtx = Get-AzContext
 $azCtx | Format-List | Out-String | Write-Host
 
@@ -27,7 +31,7 @@ if ($CorvusModulePath) {
 }
 else {
     # Install the Corvus.Deployment module from PSGallery
-    Install-Module Corvus.Deployment -Scope CurrentUser -Repository PSGallery -Force -Verbose -AllowPrerelease
+    Install-Module Corvus.Deployment -Scope CurrentUser -Repository PSGallery -Force -Verbose
     Import-Module Corvus.Deployment -Verbose:$false
 }
 Get-Module Corvus.Deployment | Format-Table | Out-String | Write-Host

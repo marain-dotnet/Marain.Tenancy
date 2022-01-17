@@ -9,6 +9,10 @@ param (
 $ErrorActionPreference = 'Stop'
 Set-StrictMode -Version 4.0
 
+# Workaround current deployScripts limitation only available with v6.6
+# We want to use 7.x to take advantage of MS Graph (rather than the deprecated Azure Graph)
+# Update-Module Az.Resources -Verbose -Force
+
 $azCtx = Get-AzContext
 $azCtx | Format-List | Out-String | Write-Host
 
