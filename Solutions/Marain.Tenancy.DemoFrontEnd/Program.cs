@@ -1,7 +1,14 @@
+using Marain.Tenancy.Client;
+
 var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
 builder.Services.AddRazorPages();
+TenancyClientOptions options = new TenancyClientOptions();
+options.TenancyServiceBaseUri = new Uri("http://host.docker.internal:53658/v1.0/invoke/tenancy/method");
+
+builder.Services.AddSingleton(options);
+builder.Services.AddTenancyClient(enableResponseCaching:false);
 
 builder.Services.AddDaprClient();
 
