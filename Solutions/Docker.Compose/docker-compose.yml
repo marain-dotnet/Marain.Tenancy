@@ -8,7 +8,7 @@ services:
       context: ./../
       dockerfile: Marain.Tenancy.Host.AspNetCore/Dockerfile
     ports:
-    - "80:80" 
+    - "80:80" #comment out these lines to hide the local ports.
    
   marain.tenancy.host.aspnetcore-dapr:
     image: "daprio/daprd:latest"

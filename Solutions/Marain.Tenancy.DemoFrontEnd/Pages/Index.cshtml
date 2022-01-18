@@ -3,14 +3,12 @@
 @model IndexModel
 @{
     ViewData["Title"] = "Home page";
-    var tenant = ViewData["tenants"] as Tenant;
+    var tenant = ViewData["tenant"] as Tenant;
 }
-
-
 <div class="text-center">
     <h1 class="display-4">Welcome</h1>
     @{
-        foreach (var t in tenant._links)
+        foreach (var t in tenant?._links!)
         {
             <text>@t.Value<br/></text>
         }
