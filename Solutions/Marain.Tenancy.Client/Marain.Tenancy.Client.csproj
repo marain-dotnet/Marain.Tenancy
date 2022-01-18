@@ -1,29 +1,21 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
-
-  <!--
-  Not using normal Endjin.RecommendedPractices import, because this contains AutoRest-generated code, which makes
-  the analyzers we normally bring in unhappy.
-  -->
+  <Import Project="$(EndjinProjectPropsPath)" Condition="$(EndjinProjectPropsPath) != ''" />
 
   <PropertyGroup>
     <TargetFramework>net6.0</TargetFramework>
-    <RootNamespace />
-    <OutputPath>bin\$(Configuration)\</OutputPath>
-    <DocumentationFile>$(OutputPath)$(TargetFramework.ToLowerInvariant())\$(AssemblyName).xml</DocumentationFile>
   </PropertyGroup>
 
   <PropertyGroup>
     <NoWarn>1701;1702;1591;1573</NoWarn>
     <TreatWarningsAsErrors>false</TreatWarningsAsErrors>
-    <TreatSpecificWarningsAsErrors />
-    <WarningsAsErrors />
-  </PropertyGroup>
-
-  <PropertyGroup>
-    <DebugType>Full</DebugType>
+    <EndjinDisableCodeAnalysis>true</EndjinDisableCodeAnalysis>
   </PropertyGroup>
 
   <ItemGroup>
+    <PackageReference Include="Endjin.RecommendedPractices" Version="1.2.0">
+      <PrivateAssets>all</PrivateAssets>
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+    </PackageReference>
     <PackageReference Include="CacheCow.Client" Version="2.9.0" />
     <PackageReference Include="Corvus.ContentHandling.Json" Version="2.0.11" />
     <PackageReference Include="Corvus.Extensions" Version="1.1.4" />
