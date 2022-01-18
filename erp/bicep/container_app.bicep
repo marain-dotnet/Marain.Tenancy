@@ -10,6 +10,7 @@ param activeRevisionsMode string = 'multiple'
 param ingressIsExternal bool
 param ingressTargetPort int
 param includeDapr bool
+param daprAppId string = name
 param secrets array = []
 param daprComponents array = []
 param environmentVariables array = []
@@ -67,7 +68,7 @@ resource container_app 'Microsoft.Web/containerapps@2021-03-01' = {
       // Selectively include dapr-related properties
       dapr: includeDapr ? {
         enabled: true
-        appId: name
+        appId: daprAppId
         appPort: ingressTargetPort
         components: daprComponents
       } : {

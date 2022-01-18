@@ -130,6 +130,11 @@ $ContainersToBuild = @(
         ImageName = "marain/tenancy-service"
         ContextDir = "./Solutions"
     }
+    @{
+        Dockerfile = "./Solutions/Marain.Tenancy.DemoFrontEnd/Dockerfile"
+        ImageName = "marain/tenancy-demofrontend"
+        ContextDir = "./Solutions"
+    }
 )
 
 

@@ -1,4 +1,4 @@
-[CmdletBinding()]
+[CmdletBinding(SupportsShouldProcess)]
 param (
     [Parameter(Mandatory = $true)]
     [string] $Environment,
@@ -23,7 +23,7 @@ Write-Host "Deploying Marain.Instance..."
                       -ServiceInstance $ServiceInstance `
                       -Environment $Environment `
                       -ConfigPath "$here/Marain.Tenancy.Deployment/config" `
-                      -DeployModulePath $here/../erp/deploy/module/Endjin.RecommendedPractices.Deploy.psd1
+                      -WhatIf:$WhatIfPreference
 
 Write-Host "Deploying Marain.Tenancy..."
 ./deploy-tenancy.ps1 -SubscriptionId $ctx.Subscription.Id `
@@ -31,5 +31,7 @@ Write-Host "Deploying Marain.Tenancy..."
                       -StackName $StackName `
                       -ServiceInstance $ServiceInstance `
                       -Environment $Environment `
+                      -TenancyContainerName "marain/tenancy-service" `
+                      -TenancyContainerTag "2.0.2-dapr-erp-poc.34" `
                       -ConfigPath "$here/Marain.Tenancy.Deployment/config" `
-                      -DeployModulePath $here/../erp/deploy/module/Endjin.RecommendedPractices.Deploy.psd1
+                      -WhatIf:$WhatIfPreference

@@ -40,6 +40,33 @@ Connect-CorvusAzure -SubscriptionId $SubscriptionId -AadTenantId $AadTenantId
 function toResourceName($configValue, $serviceName, $resourceShortCode, $uniqueSuffix) {
     return [string]::IsNullOrEmpty($configValue) ? ("{0}{1}{2}" -f $serviceName, $resourceShortCode, $uniqueSuffix): $configValue
 }
+function Get-UniqueSuffix
+{
+    [CmdletBinding()]
+    param
+    (
+        [Parameter(Position=0)]
+        [string] $SubscriptionId,
+
+        [Parameter(Position=1)]
+        [string] $StackName,
+
+        [Parameter(Position=2)]
+        [string] $ServiceInstance,
+
+        [Parameter(Position=3)]
+        [string] $Environment
+    )
+
+    function Get-UniqueString ([string]$id, $length=12)
+    {
+        $hashArray = (New-Object System.Security.Cryptography.SHA512Managed).ComputeHash($id.ToCharArray())
+        -join ($hashArray[1..$length] | ForEach-Object { [char]($_ % 26 + [byte][char]'a') })
+    }
+
+    $inputString = "{0}__{1}__{2}__{3}" -f $SubscriptionId, $StackName, $ServiceInstance, $Environment
+    return Get-UniqueString $inputString
+}
 
 #region Placeholder Configuration
 $deploymentConfig = Read-CorvusDeploymentConfig -ConfigPath $ConfigPath  `

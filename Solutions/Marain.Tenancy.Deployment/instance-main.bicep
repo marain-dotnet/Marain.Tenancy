@@ -65,9 +65,20 @@ module key_vault '../../erp/bicep/key_vault.bicep' = {
           ]
         }
       }
+      // Graph deploy managed identity
       {
-        // SP
-        objectId: '8ec5ab5b-89e6-4afb-90de-7a502574e9fa'
+        objectId: '9074d238-3f1c-4e39-9a56-bf71f54907b8'
+        tenantId: tenantId
+        permissions: {
+          secrets: [
+            'get'
+            'set'
+          ]
+        }
+      }
+      {
+        // Tenancy service SP ('jd' env)
+        objectId: '454c822c-fa89-4a1c-9fbf-ab7203a9b5c6'
         tenantId: tenantId
         permissions: {
           secrets: [
