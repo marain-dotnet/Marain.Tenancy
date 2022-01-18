@@ -44,17 +44,20 @@ namespace Marain.Tenancy.Specs.Integration.Bindings
                         .Build();
                     serviceCollection.AddSingleton(config);
 
-                    serviceCollection.AddJsonNetSerializerSettingsProvider();
-                    serviceCollection.AddJsonNetPropertyBag();
-                    serviceCollection.AddJsonNetCultureInfoConverter();
-                    serviceCollection.AddJsonNetDateTimeOffsetToIso8601AndUnixTimeConverter();
-                    serviceCollection.AddSingleton<JsonConverter>(new StringEnumConverter(new CamelCaseNamingStrategy()));
+                    if (FunctionBindings.TestHostMode != MultiHost.TestHostModes.DirectInvocation)
+                    {
+                        serviceCollection.AddJsonNetSerializerSettingsProvider();
+                        serviceCollection.AddJsonNetPropertyBag();
+                        serviceCollection.AddJsonNetCultureInfoConverter();
+                        serviceCollection.AddJsonNetDateTimeOffsetToIso8601AndUnixTimeConverter();
+                        serviceCollection.AddSingleton<JsonConverter>(new StringEnumConverter(new CamelCaseNamingStrategy()));
 
-                    serviceCollection.AddSingleton(sp => sp.GetRequiredService<IConfigurationRoot>().Get<TenancyClientOptions>());
+                        serviceCollection.AddSingleton(sp => sp.GetRequiredService<IConfigurationRoot>().Get<TenancyClientOptions>());
 
-                    bool enableCaching = !featureContext.FeatureInfo.Tags.Contains("disableTenantCaching");
+                        bool enableCaching = !featureContext.FeatureInfo.Tags.Contains("disableTenantCaching");
 
-                    serviceCollection.AddTenantProviderServiceClient(enableCaching);
+                        serviceCollection.AddTenantProviderServiceClient(enableCaching);
+                    }
                 });
         }
     }

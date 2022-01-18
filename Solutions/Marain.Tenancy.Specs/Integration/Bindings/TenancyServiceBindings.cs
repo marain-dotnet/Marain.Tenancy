@@ -41,24 +41,25 @@ namespace Marain.Tenancy.Specs.Integration.Bindings
                 featureContext,
                 serviceCollection =>
                 {
-                    IConfiguration config = new ConfigurationBuilder()
-                        .AddEnvironmentVariables()
-                        .AddJsonFile("local.settings.json", true, true)
-                        .Build();
-                    serviceCollection.AddSingleton(config);
+                    if (FunctionBindings.TestHostMode == MultiHost.TestHostModes.DirectInvocation)
+                    {
+                        IConfiguration config = new ConfigurationBuilder()
+                            .AddEnvironmentVariables()
+                            .AddJsonFile("local.settings.json", true, true)
+                            .Build();
+                        serviceCollection.AddSingleton(config);
 
-                    serviceCollection.AddSingleton(sp => sp.GetRequiredService<IConfiguration>().Get<TenancyClientOptions>());
+                        serviceCollection.AddSingleton(sp => sp.GetRequiredService<IConfiguration>().Get<TenancyClientOptions>());
 
-                    BlobContainerConfiguration rootStorageConfiguration = config
-                                            .GetSection("RootBlobStorageConfiguration")
-                                            .Get<BlobContainerConfiguration>();
+                        BlobContainerConfiguration rootStorageConfiguration = config
+                                                .GetSection("RootBlobStorageConfiguration")
+                                                .Get<BlobContainerConfiguration>();
 
-                    serviceCollection.AddTenantStoreOnAzureBlobStorage(rootStorageConfiguration);
+                        serviceCollection.AddTenantStoreOnAzureBlobStorage(rootStorageConfiguration);
 
-                    serviceCollection.AddSingleton<SimpleOpenApiContext>();
-
-                    serviceCollection.AddTenantProviderServiceClient();
-                    serviceCollection.AddTenancyApiWithOpenApiActionResultHosting(ConfigureOpenApiHost);
+                        serviceCollection.AddSingleton<SimpleOpenApiContext>();
+                        serviceCollection.AddTenancyApiWithOpenApiActionResultHosting(ConfigureOpenApiHost);
+                    }
                 });
         }
 

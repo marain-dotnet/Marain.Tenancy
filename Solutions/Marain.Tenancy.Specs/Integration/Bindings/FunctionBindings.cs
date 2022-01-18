@@ -59,6 +59,7 @@ namespace Marain.Tenancy.Specs.Integration.Bindings
             IObjectContainer specFlowDiContainer)
         {
             IConfigurationRoot config = ContainerBindings.GetServiceProvider(featureContext).GetRequiredService<IConfigurationRoot>();
+            IServiceProvider serviceProvider = ContainerBindings.GetServiceProvider(featureContext);
 
             switch (TestHostMode)
             {
@@ -84,11 +85,14 @@ namespace Marain.Tenancy.Specs.Integration.Bindings
                         "csharp",
                         functionsConfig);
                     break;
+
+                case TestHostModes.DirectInvocation:
+                    // Doing this for the side effects only - it causes the OpenApi document
+                    // to be registered in Menes.
+                    serviceProvider.GetRequiredService<IOpenApiHost<HttpRequest, IActionResult>>();
+                    break;
             }
 
-            IServiceProvider serviceProvider = ContainerBindings.GetServiceProvider(featureContext);
-
-            serviceProvider.GetRequiredService<IOpenApiHost<HttpRequest, IActionResult>>();
 
             ITestableTenancyService serviceWrapper = TestHostMode == TestHostModes.DirectInvocation
                 ? new DirectTestableTenancyService(
