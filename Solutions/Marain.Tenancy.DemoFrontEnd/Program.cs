@@ -1,32 +1,30 @@
 using Marain.Tenancy.Client;
 
-var builder = WebApplication.CreateBuilder(args);
+WebApplicationBuilder builder = WebApplication.CreateBuilder(args);
+
+// Lookup dapr connection details
+string daprHost = "localhost"; //Environment.GetEnvironmentVariable("HOSTNAME") ?? "localhost"; //"host.docker.internal";
+string daprHttpPort = Environment.GetEnvironmentVariable("DAPR_HTTP_PORT");
 
 // Add services to the container.
 builder.Services.AddRazorPages();
-TenancyClientOptions options = new TenancyClientOptions();
-var daprHost = Environment.GetEnvironmentVariable("HOSTNAME");
-var daprHttpPort = Environment.GetEnvironmentVariable("DAPR_HTTP_PORT");
-options.TenancyServiceBaseUri = new Uri($"http://{daprHost}:{daprHttpPort}/v1.0/invoke/tenancy/method");
-
-builder.Services.AddSingleton(options);
+builder.Services.AddSingleton(new TenancyClientOptions
+{
+    TenancyServiceBaseUri = new Uri($"http://{daprHost}:{daprHttpPort}/v1.0/invoke/tenancy/method")
+});
 builder.Services.AddTenancyClient(enableResponseCaching:false);
-
 builder.Services.AddDaprClient();
 
-var app = builder.Build();
+WebApplication app = builder.Build();
 
 // Configure the HTTP request pipeline.
 if (!app.Environment.IsDevelopment())
 {
     app.UseExceptionHandler("/Error");
 }
+
 app.UseStaticFiles();
-
 app.UseRouting();
-
 app.UseAuthorization();
-
 app.MapRazorPages();
-
 app.Run();
