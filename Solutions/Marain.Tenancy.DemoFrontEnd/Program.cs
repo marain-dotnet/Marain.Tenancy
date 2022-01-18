@@ -5,7 +5,9 @@ var builder = WebApplication.CreateBuilder(args);
 // Add services to the container.
 builder.Services.AddRazorPages();
 TenancyClientOptions options = new TenancyClientOptions();
-options.TenancyServiceBaseUri = new Uri("http://host.docker.internal:53658/v1.0/invoke/tenancy/method");
+var daprHost = Environment.GetEnvironmentVariable("HOSTNAME");
+var daprHttpPort = Environment.GetEnvironmentVariable("DAPR_HTTP_PORT");
+options.TenancyServiceBaseUri = new Uri($"http://{daprHost}:{daprHttpPort}/v1.0/invoke/tenancy/method");
 
 builder.Services.AddSingleton(options);
 builder.Services.AddTenancyClient(enableResponseCaching:false);

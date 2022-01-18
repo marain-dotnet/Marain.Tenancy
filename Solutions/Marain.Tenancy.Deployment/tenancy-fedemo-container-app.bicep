@@ -16,9 +16,6 @@ param containerRegistryUser string = ''
 param containerRegistryKey string = ''
 
 // service config-related settings
-param keyVaultName string
-param storageName string
-param storageSecretName string
 @secure()
 param servicePrincipalCredential string
 @secure()
@@ -43,8 +40,8 @@ resource acr 'Microsoft.ContainerRegistry/registries@2021-09-01' existing = if (
   scope: resourceGroup(acrSubscription, acrResourceGroupName)
 }
 
-module tenancy_service '../../erp/bicep/container_app.bicep' = {
-  name: 'tenancyContainerAppDeploy'
+module tenancy_fedemo '../../erp/bicep/container_app.bicep' = {
+  name: 'tenancyFeDemoContainerAppDeploy'
   params: {
     location: location
     containerImage: useAzureContainerRegistry ? '${acr.properties.loginServer}/${containerImage}' : '${containerRegistryServer}/${containerImage}'
@@ -56,12 +53,12 @@ module tenancy_service '../../erp/bicep/container_app.bicep' = {
         value: spClientSecret
       }
     ]
-    ingressIsExternal: false
+    ingressIsExternal: true
     ingressTargetPort: 80
     kubeEnvironmentId: kubeEnvironmentId
     name: appName
     includeDapr: true
-    daprAppId: 'tenancy'
+    daprAppId: 'demofe'
     environmentVariables: [
       {
         name: 'ServiceIdentity__IdentitySourceType'
@@ -80,18 +77,6 @@ module tenancy_service '../../erp/bicep/container_app.bicep' = {
         value: spTenantId
       }
       {
-        name: 'RootBlobStorageConfiguration__AccessKeyInKeyVault__VaultName'
-        value: keyVaultName
-      }
-      {
-        name: 'RootBlobStorageConfiguration__AccessKeyInKeyVault__SecretName'
-        value: storageSecretName
-      }
-      {
-        name: 'RootBlobStorageConfiguration__AccountName'
-        value: storageName
-      }
-      {
         name: 'ApplicationInsights__InstrumentationKey'
         value: appInsightsInstrumentationKey
       }
@@ -107,6 +92,6 @@ module tenancy_service '../../erp/bicep/container_app.bicep' = {
   }
 }
 
-output id string = tenancy_service.outputs.id
-output name string = tenancy_service.outputs.name
-output fqdn string = tenancy_service.outputs.fqdn
+output id string = tenancy_fedemo.outputs.id
+output name string = tenancy_fedemo.outputs.name
+output fqdn string = tenancy_fedemo.outputs.fqdn

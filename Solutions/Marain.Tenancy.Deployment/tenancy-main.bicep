@@ -157,6 +157,7 @@ module tenancy_service 'tenancy-container-app.bicep' = {
     imageName: tenancyContainerName
     imageTag: tenancyContainerTag
     kubeEnvironmentId: kube_environment.id
+    minReplicas: 1
     location: location
     resourceTags: resourceTags
 
@@ -175,6 +176,37 @@ module tenancy_service 'tenancy-container-app.bicep' = {
     keyVaultName: keyVaultName
     storageName: tenancy_storage.outputs.name
     storageSecretName: tenancyStorageSecretName
+    appInsightsInstrumentationKey: existing_key_vault.getSecret('AppInsightsInstrumentationKey')
+  }
+}
+
+module tenancy_demofrontend 'tenancy-fedemo-container-app.bicep' = {
+  name: 'tenancyDemoFeAppDeploy'
+  scope: tenancy_rg
+  dependsOn: [
+    tenancy_app_service_principal
+  ]
+  params: {
+    appName: 'tenancyfedemo'
+    imageName: 'marain/tenancy-demofrontend'
+    imageTag: 'latest'
+    kubeEnvironmentId: kube_environment.id
+    minReplicas: 1
+    location: location
+    resourceTags: resourceTags
+
+    // container registry related settings
+    useAzureContainerRegistry: useAzureContainerRegistry
+    acrName: acrName
+    acrResourceGroupName: acrResourceGroupName
+    acrSubscription: acrSubscriptionId
+    containerRegistryServer: containerRegistryServer
+    containerRegistryUser: containerRegistryUser
+    containerRegistryKey: containerRegistryKey
+
+    // service config-related settings
+    // TODO: Get a key vault reference when not using an existing key vault to enable the getSecret() call
+    servicePrincipalCredential: existing_key_vault.getSecret(tenancySpCredentialSecretName)
     appInsightsInstrumentationKey: existing_key_vault.getSecret('AppInsightsInstrumentationKey')
   }
 }
@@ -236,6 +268,7 @@ module init_tenancy '../../erp/bicep/init_marain_tenancy_deployment_script.bicep
 }
 
 output service_url string = tenancy_service.outputs.fqdn
+output fedemo_url string = tenancy_demofrontend.outputs.fqdn
 output sp_application_id string = tenancy_app_service_principal.outputs.app_id
 output sp_object_id string = tenancy_app_service_principal.outputs.object_id
 output aad_application_id string = tenancy_aad_app.outputs.application_id
