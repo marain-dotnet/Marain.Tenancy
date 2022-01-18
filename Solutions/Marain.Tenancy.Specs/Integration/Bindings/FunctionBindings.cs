@@ -5,6 +5,7 @@
 namespace Marain.Tenancy.Specs.Integration.Bindings
 {
     using System;
+    using System.Linq;
     using System.Threading.Tasks;
 
     using BoDi;
@@ -16,9 +17,12 @@ namespace Marain.Tenancy.Specs.Integration.Bindings
 
     using Marain.Tenancy.OpenApi;
     using Marain.Tenancy.Specs.MultiHost;
-
+    using Menes;
+    using Menes.Hal;
+    using Menes.Internal;
     using Menes.Testing.AspNetCoreSelfHosting;
-
+    using Microsoft.AspNetCore.Http;
+    using Microsoft.AspNetCore.Mvc;
     using Microsoft.Extensions.Configuration;
     using Microsoft.Extensions.DependencyInjection;
 
@@ -83,9 +87,13 @@ namespace Marain.Tenancy.Specs.Integration.Bindings
             }
 
             IServiceProvider serviceProvider = ContainerBindings.GetServiceProvider(featureContext);
+
+            serviceProvider.GetRequiredService<IOpenApiHost<HttpRequest, IActionResult>>();
+
             ITestableTenancyService serviceWrapper = TestHostMode == TestHostModes.DirectInvocation
                 ? new DirectTestableTenancyService(
-                    serviceProvider.GetRequiredService<TenancyService>())
+                    serviceProvider.GetRequiredService<TenancyService>(),
+                    serviceProvider.GetRequiredService<SimpleOpenApiContext>())
                 : new ClientTestableTenancyService(
                     TenancyApiBaseUriText,
                     serviceProvider.GetRequiredService<IJsonSerializerSettingsProvider>().Instance);

@@ -1,6 +1,7 @@
 ﻿@perFeatureContainer
 @withTenancyClient
 @useTenancyFunction
+@directInvocation
 
 Feature: Tenancy Api
 	In order to use Marain Tenant services
