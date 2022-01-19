@@ -115,17 +115,45 @@ $SkipTest = $false
 $SkipTestReport = $false
 $SkipPackage = $false
 
+$SkipContainerImages = $false
+
 # Advanced build settings
 $EnableGitVersionAdoVariableWorkaround = $false
 
 #
 # Build process configuration
 #
-$SolutionToBuild = (Resolve-Path (Join-Path $here ".\Solutions\Marain.Tenancy.sln")).Path
+$SolutionToBuild = (Resolve-Path (Join-Path $here "./Solutions/Marain.Tenancy.sln")).Path
+$ContainersToBuild = @(
+    @{
+        Dockerfile = "./Solutions/Marain.Tenancy.Host.AspNetCore/Dockerfile"
+        ImageName = "marain/tenancy-service"
+        ContextDir = "./Solutions"
+    }
+    @{
+        Dockerfile = "./Solutions/Marain.Tenancy.DemoFrontEnd/Dockerfile"
+        ImageName = "marain/tenancy-demofrontend"
+        ContextDir = "./Solutions"
+    }
+)
 
 
 # Synopsis: Build, Test and Package
 task . FullBuild
+
+
+# Synopsis: Build Container Images
+task BuildContainerImages -If {!$SkipContainerImages} GitVersion,{
+    foreach ($buildInfo in $ContainersToBuild) {
+        $contextDir = $buildInfo.ContainsKey("ContextDir") ? $buildInfo.ContextDir : (Split-Path -Parent $buildInfo.Dockerfile)
+        exec {
+            docker build `
+                -t ("{0}:{1}" -f $buildInfo.ImageName, ($script:GitVersion).SemVer) `
+                -f $buildInfo.Dockerfile `
+                $contextDir
+        }
+    }
+}
 
 
 # build extensibility tasks
@@ -136,5 +164,5 @@ task PostTest {}
 task PreTestReport {}
 task PostTestReport {}
 task PrePackage {}
-task PostPackage {}
+task PostPackage BuildContainerImages
 

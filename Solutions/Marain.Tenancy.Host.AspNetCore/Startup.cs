@@ -2,6 +2,8 @@ namespace Marain.Tenancy.Host.AspNetCore
 {
     using System;
 
+    using Corvus.Identity.ClientAuthentication.Azure;
+    using Corvus.Monitoring.Instrumentation;
     using Corvus.Storage.Azure.BlobStorage;
 
     using Menes;
@@ -29,9 +31,17 @@ namespace Marain.Tenancy.Host.AspNetCore
             services.AddTenancyApiWithAspNetPipelineHosting(ConfigureOpenApiHost);
             services.AddOpenApiAuditing();
 
+            services.AddApplicationInsightsTelemetry();
+            services.AddApplicationInsightsInstrumentationTelemetry();
+
             BlobContainerConfiguration rootStorageConfiguration = this.Configuration
                 .GetSection("RootBlobStorageConfiguration")
                 .Get<BlobContainerConfiguration>();
+
+            ClientIdentityConfiguration serviceIdConfig = this.Configuration
+                .GetSection("ServiceIdentity").Get<ClientIdentityConfiguration>();
+
+            services.AddServiceIdentityAzureTokenCredentialSourceFromClientIdentityConfiguration(serviceIdConfig);
 
             services.AddTenantStoreOnAzureBlobStorage(rootStorageConfiguration);
 

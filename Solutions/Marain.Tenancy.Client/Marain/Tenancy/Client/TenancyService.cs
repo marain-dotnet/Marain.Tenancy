@@ -47,7 +47,7 @@ namespace Marain.Tenancy.Client
         /// </param>
         /// <param name='disposeHttpClient'>
         /// True: will dispose the provided httpClient on calling TenancyService.Dispose(). False: will not dispose provided httpClient</param>
-        protected TenancyService(HttpClient httpClient, bool disposeHttpClient) : base(httpClient, disposeHttpClient)
+        public TenancyService(HttpClient httpClient, bool disposeHttpClient) : base(httpClient, disposeHttpClient)
         {
             Initialize();
         }
@@ -280,7 +280,7 @@ namespace Marain.Tenancy.Client
         /// </summary>
         private void Initialize()
         {
-            BaseUri = new System.Uri("https://tenancy.marain.io");
+            // BaseUri = new System.Uri("https://tenancy.marain.io");
             SerializationSettings = new JsonSerializerSettings
             {
                 Formatting = Newtonsoft.Json.Formatting.Indented,

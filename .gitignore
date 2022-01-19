@@ -344,3 +344,5 @@ appsettings.json
 
 # ignore local settings file that may contain secrets.
 /Solutions/Marain.Tenancy.Host.AspNetCore/appsettings.Development.json
+# ignore outputs from local build
+_packages/

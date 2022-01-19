@@ -1,0 +1,16 @@
+﻿@page
+@using Marain.Tenancy.Client.Models
+@model IndexModel
+@{
+    ViewData["Title"] = "Home page";
+    var tenant = ViewData["tenant"] as Tenant;
+}
+<div class="text-center">
+    <h1 class="display-4">Using Dapr Service Invocation via DaprClient</h1>
+    @{
+        foreach (var t in tenant?._links!)
+        {
+            <text>@t.Value<br/></text>
+        }
+    }
+</div>
