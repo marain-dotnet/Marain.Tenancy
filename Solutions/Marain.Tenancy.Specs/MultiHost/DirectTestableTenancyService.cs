@@ -16,7 +16,6 @@ namespace Marain.Tenancy.Specs.MultiHost
     {
         private TenancyService tenancyService;
         private IOpenApiContext openApiContext;
-        private Guid clientOid = Guid.NewGuid();
 
         public DirectTestableTenancyService(TenancyService tenancyService, IOpenApiContext openApiContext)
         {
@@ -26,7 +25,7 @@ namespace Marain.Tenancy.Specs.MultiHost
 
         public async Task<TenancyResponse> CreateTenantAsync(string parentId, string name)
         {
-            OpenApiResult result = await this.tenancyService.CreateChildTenantAsync(parentId, name, clientOid, this.openApiContext);
+            OpenApiResult result = await this.tenancyService.CreateChildTenantAsync(parentId, name, null, this.openApiContext);
             return MakeResponse(result);
         }
 
