@@ -34,7 +34,7 @@ namespace Marain.Tenancy.Specs.Integration.Bindings
         /// </summary>
         /// <param name="featureContext">The SpecFlow test context.</param>
         /// 
-        [BeforeFeature("directInvocation", Order = ContainerBeforeFeatureOrder.PopulateServiceCollection)]
+        [BeforeFeature("withTenancyClient", Order = ContainerBeforeFeatureOrder.PopulateServiceCollection)]
         public static void SetupFeature(FeatureContext featureContext)
         {
             ContainerBindings.ConfigureServices(

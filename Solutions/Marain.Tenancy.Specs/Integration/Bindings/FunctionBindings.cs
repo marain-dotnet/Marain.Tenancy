@@ -58,7 +58,7 @@ namespace Marain.Tenancy.Specs.Integration.Bindings
             FeatureContext featureContext,
             IObjectContainer specFlowDiContainer)
         {
-            IConfigurationRoot config = ContainerBindings.GetServiceProvider(featureContext).GetRequiredService<IConfigurationRoot>();
+            IConfiguration config = ContainerBindings.GetServiceProvider(featureContext).GetRequiredService<IConfiguration>();
             IServiceProvider serviceProvider = ContainerBindings.GetServiceProvider(featureContext);
 
             switch (TestHostMode)

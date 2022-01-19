@@ -549,7 +549,7 @@
       "Microsoft.NETCore.Platforms": {
         "type": "Transitive",
         "resolved": "2.1.2",
-        "contentHash": "7J7veIH7Mu6zc4llWnM7YRgTv9+Ew+JWkkDj0K7cEe8wuFA6HRt6STtwux2g+qjpDXeYeWsK0UQ3uIgRiTYHIg=="
+        "contentHash": "mOJy3M0UN+LUG21dLGMxaWZEP6xYpQEpLuvuEQBaownaX4YuhH6NmNUlN9si+vNkAS6dwJ//N1O4DmLf2CikVg=="
       },
       "Microsoft.NETCore.Targets": {
         "type": "Transitive",
@@ -902,7 +902,7 @@
       "System.Interactive": {
         "type": "Transitive",
         "resolved": "3.2.0",
-        "contentHash": "8j5PArcXRlri+zUhcSUpyFMHUWQ35ns7BNrzT3vnmTYKE90EckgFdg9N5QoR8d6eFVICludo87ue8SL+peMT2g=="
+        "contentHash": "hoXiC7r+WvT/oQ/QcsCgIJMEcXKXyM26BvIcFVRgEMzXk9URu8oR2ADqrnHwIRiJmxQC/q8b3KTQSkdoFRO4TA=="
       },
       "System.IO": {
         "type": "Transitive",

@@ -33,26 +33,26 @@ namespace Marain.Tenancy.Specs.Integration.Bindings
                 featureContext,
                 serviceCollection =>
                 {
-                    var configData = new Dictionary<string, string>
-                    {
-                        { "TenancyServiceBaseUri", "http://localhost:7071" },
-                    };
-                    IConfigurationRoot config = new ConfigurationBuilder()
-                        .AddInMemoryCollection(configData)
-                        .AddEnvironmentVariables()
-                        .AddJsonFile("local.settings.json", true, true)
-                        .Build();
-                    serviceCollection.AddSingleton(config);
-
                     if (FunctionBindings.TestHostMode != MultiHost.TestHostModes.DirectInvocation)
                     {
+                        var configData = new Dictionary<string, string>
+                        {
+                            { "TenancyServiceBaseUri", "http://localhost:7071" },
+                        };
+                        IConfiguration config = new ConfigurationBuilder()
+                            .AddInMemoryCollection(configData)
+                            .AddEnvironmentVariables()
+                            .AddJsonFile("local.settings.json", true, true)
+                            .Build();
+                        serviceCollection.AddSingleton(config);
+
                         serviceCollection.AddJsonNetSerializerSettingsProvider();
                         serviceCollection.AddJsonNetPropertyBag();
                         serviceCollection.AddJsonNetCultureInfoConverter();
                         serviceCollection.AddJsonNetDateTimeOffsetToIso8601AndUnixTimeConverter();
                         serviceCollection.AddSingleton<JsonConverter>(new StringEnumConverter(new CamelCaseNamingStrategy()));
 
-                        serviceCollection.AddSingleton(sp => sp.GetRequiredService<IConfigurationRoot>().Get<TenancyClientOptions>());
+                        serviceCollection.AddSingleton(sp => sp.GetRequiredService<IConfiguration>().Get<TenancyClientOptions>());
 
                         bool enableCaching = !featureContext.FeatureInfo.Tags.Contains("disableTenantCaching");
 
