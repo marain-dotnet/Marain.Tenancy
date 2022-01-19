@@ -49,14 +49,14 @@ namespace Marain.Tenancy.Specs.MultiHost
         public async Task<TenancyResponse> GetTenantByLocationAsync(string location)
         {
             string locationId = location[1..location.IndexOf('/', 1)];
-            OpenApiResult result = await this.tenancyService.GetTenantAsync(locationId, string.Empty, this.openApiContext);
+            OpenApiResult result = await this.tenancyService.GetTenantAsync(locationId, null, this.openApiContext);
             return MakeResponse(result);
         }
 
         private TenancyResponse MakeResponse(OpenApiResult result)
         {
-            JObject parsedResponse = null;
-            if (result.Results.TryGetValue("application/json", out object document))
+            JObject? parsedResponse = null;
+            if (result.Results.TryGetValue("application/json", out object? document))
             {
                 var halDocument = document as HalDocument;
                 parsedResponse = halDocument?.Properties!;
@@ -64,11 +64,11 @@ namespace Marain.Tenancy.Specs.MultiHost
 
             return new TenancyResponse
             {
-                LocationHeader = (result.Results.TryGetValue("Location", out object location) ? location : "") as string,
-                EtagHeader = (result.Results.TryGetValue("ETag", out object etag) ? etag : null) as string,
+                LocationHeader = (result.Results.TryGetValue("Location", out object? location) ? location : "") as string,
+                EtagHeader = (result.Results.TryGetValue("ETag", out object? etag) ? etag : null) as string,
                 IsSuccessStatusCode = result.StatusCode >= 200 && result.StatusCode < 300,
                 StatusCode = (HttpStatusCode)result.StatusCode,
-                CacheControlHeader = (result.Results.TryGetValue("Cache-Control", out object cacheControl) ? cacheControl : "") as string,
+                CacheControlHeader = (result.Results.TryGetValue("Cache-Control", out object? cacheControl) ? cacheControl : "") as string,
                 BodyJson = parsedResponse
             };
         }

@@ -225,7 +225,7 @@ namespace Marain.Tenancy.OpenApi
         public async Task<OpenApiResult> GetTenantAsync(
             string tenantId,
             [OpenApiParameter("If-None-Match")]
-            string etag,
+            string? etag,
             IOpenApiContext context)
         {
             if (string.IsNullOrEmpty(tenantId))
