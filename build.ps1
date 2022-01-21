@@ -123,6 +123,13 @@ $EnableGitVersionAdoVariableWorkaround = $false
 #
 $SolutionToBuild = (Resolve-Path (Join-Path $here ".\Solutions\Marain.Tenancy.sln")).Path
 
+#
+# Specify files to exclude from code coverage
+# This option is for excluding generated code
+# - Use file path or directory path with globbing (e.g dir1/*.cs)
+# - Use single or multiple paths (separated by comma) (e.g. **/dir1/class1.cs,**/dir2/*.cs,**/dir3/**/*.cs)
+#
+$ExcludeFilesFromCodeCoverage = "**/Marain.Tenancy.Client/**/Models/*.cs,**/Marain.Tenancy.Client/**/TenancyService*.cs"
 
 # Synopsis: Build, Test and Package
 task . FullBuild
