@@ -150,7 +150,7 @@ This is actually a common decision you need to make for every resource you consu
 
 With shared infrastructure, compute and storage requirements for different tenants are dispatched in common services. Isolation is provided by features within those common services.
 
-For example, you might have a single SQL Server Database instance shared between multiple tenants, whose data is partitioned using Row Level Security. Or a service which abstracts a single instance of Twilio dispatching all the text messages on behalf of all tenants using common credentials owned the parent tenant provider.
+For example, you might have a single SQL Server Database instance shared between multiple tenants, whose data is partitioned using Row Level Security. Or a service which abstracts a single instance of Twilio dispatching all the text messages on behalf of all tenants using common credentials supplied by the parent tenant provider.
 
 With isolated infrastructure, each tenant gets its own service instances.
 
