@@ -17,15 +17,15 @@
     Id: bb49fb94-6ab5-40c3-a6da-dfd2e9bc4b00
     Measures:
         -
-            Score: 0
-            Description: None
+            Score: 1
+            Description: 'Specs which cover golden path / APIs have full OpenAPI Definition'
 -
     Name: 'Code Coverage'
     Id: 0449cadc-0078-4094-b019-520d75cc6cbb
     Measures:
         -
-            Score: 1
-            Description: '26-50'
+            Score: 2
+            Description: '51-75'
 -
     Name: Benchmarks
     Id: 64ed80dc-d354-45a9-9a56-c32437306afa
@@ -59,7 +59,7 @@
     Id: da4ed776-0365-4d8a-a297-c4e91a14d646
     Measures:
         -
-            Date: 2022-01-12
+            Date: 2022-01-26
             Description: None
         -
 -
