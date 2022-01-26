@@ -22,13 +22,13 @@ The security and fair-shares implications of this ultimately led to the developm
 
 As part of this shift, the line between “computer user” and “solution user” has also blurred.
 
-In a modern web application, for example, there is frequently a single logical “solution” serving hundreds, thousands, or millions of concurrent users.
+In a modern web application, for example, there is frequently a single logical solution serving hundreds, thousands, or millions of concurrent users.
 
 That solution is likely implemented using many compute and storage resources, distributed across various physical and virtual machines, but it is conceptually *one solution, lots of users*. To developer and user alike, it looks like a single set of resources, serving many users. Those users may work together in logical groups (like teams, or organizations) but they are fundamentally sharing a single solution.
 
-A multi-tenanted solution, on the other hand, can be thought of as *lots of solutions, lots of users*. To the *owner* of the multi-tenanted solution, it looks conceptually like *many isolated solutions*, each of which independently serves many users. To any individual tenant, their “tenancy” looks like a single set of resources serving their users, and no-one else’s.
+Multi-tenancy, on the other hand, can be thought of as *lots of solutions, lots of users*. To the *owner* of the multi-tenanted solution provider, it looks conceptually like *many isolated child solutions* (or *tenants*) consuming the resources it provides, each of which independently serves many users. To any individual tenant, their “tenancy” looks like a single set of resources that they use to serve their users, and no-one else’s.
 
-[multi-user v. multi tenant](multi-user v multi-tenant.png)
+![multi-user v. multi tenant](multi-user v multi-tenant.png)
 
 ## When should a solution be multi-tenanted, not multi-user?
 A multi-tenanted solution is required when one or more groups of users have a strong requirement for *isolation* from other groups of users.
@@ -38,8 +38,9 @@ Typically this isolation will manifest in one or more of the following ways:
 1. The ability for a tenant to bring their own resources (including, for example, application code, configuration, data, cryptographic keys, policy) and integrate into their solution
 1. The ability to provide particular kinds of security boundary around their solution and control identity and access (including the ability to deny access to the entity that provides the tenant with those resources)
 1. The inability for one tenant to determine the existence or otherwise of another tenant.
+1. The inability for one tenant to interfere with the operation or performance of another tenant e.g. by starving it of resources.
 
-Note that this is not simply *data isolation*. Most data storage solutions (blob storage, SQL databases etc.) have mechanisms that allow you to control access to subsets of the data, constrained to particular identities. For example, techniques like Row Level Security (RLS), filtering, and data partitioning provide various types of security and access boundary. Multi-user systems will often use these techniques to ensure segregation of user data.
+Note that this is not simply *data isolation*. Most data storage solutions (blob storage, SQL databases etc.) have mechanisms that allow you to control access to subsets of the data, constrained to particular identities. For example, techniques like Row Level Security (RLS), Attribute Based Access Control (ABAC), filtering, and data partitioning provide various types of security and access boundary. Multi-user systems will often use these techniques to ensure segregation of user data.
 
 A multi-tenanted system will also use these techniques to provide data segregation, but adds in other constraints from the list above. 
 
@@ -52,27 +53,29 @@ An Azure tenant has resources that are isolated in all the ways described above,
 
 With that in mind, you can think of tenancy as a tree, with a *root tenant* which owns the multi-tenanted solution. This root tenant has zero or more *child tenants* for which it provides some (other) services.
 
-[Tenant hierarchies](Tenant hierarchies.png)
+![Tenant hierarchies](Tenant hierarchies.png)
 
 Why *zero* or more children? Well – a root tenant with no children is our traditional single tenant application.
 
 ### Do we live in a root universe?
-The isolation rules for tenancy mean that from the perspective of the solution deployed in that tenant it is irrelevant that any given tenant has a parent (which may itself be parent...and so on...). 
+The isolation rules for tenancy mean that from the perspective of the solution deployed in that tenant it is usually irrelevant that any given tenant has a parent (which may itself be parent...and so on...).
 
 So, any given child tenant can be thought of as the *root of its own tenancy hierarchy*.
 
 Ultimately, there may well be a real “root” tenant somewhere in the tree, but a good tenancy model means we should not have to care whether we are the ultimate root tenant, or some child of a child of a child.
 
-[Tenant roots](Tenant roots.png)
+![Tenant roots](Tenant roots.png)
 
-For example, as an Azure customer, we don’t need to think about the fact that Azure has other tenants when we use it to provision and manage our own resources. Nor do we need to theorise about the way in which services like Cosmos DB or SQL Serverless are themselves provisioned and managed as tenants in Azure when we provision and consume resources from them.
+For example, as an Azure customer, we don’t need to think about the fact that Azure has other tenants when we use it to provision and manage our own resources. Nor do we need to theorise about the way in which services like Cosmos DB or SQL Serverless are themselves provisioned and managed as tenants in Azure when we provision and consume resources from them. This is not to say that they don't give us information about the way in which this is done (perhaps to prove that they meet paricularly legal or regulatory standards) - but we don't *need* to know in normal operation. 
 
-Should we wish to provide a multi-tenancy model for our solution, we are free to do so in any way we choose. We are not bound to the tenancy model of our parent.
+Should we wish to provide a multi-tenancy model in our tenanted solution, we are free to do so in any way we choose, to meet our operational, legal, and/or regulatory obligations. We are not bound to the tenancy model of our parent.
 
 A common challenge when designing a multi-tenanted system is thinking about the right “scope”. Am I thinking about the solution in my tenant (which should not expose details of tenancy) or the multi-tenancy solution itself (which should not depend on implementation details of the solutions that happen to be deployed as its tenants)? You must take care that one does not bleed into the other.
 
 ## Solution plane and management plane
-There is one respect in which the child tenant is aware of the existence of a parent. It needs to be able to *manage its tenancy*. To do so, it will provision, configure, and monitor services through tools provided by the parent that hosts it.
+You may have noted that I said "it is usually irrelevant that any given tenant has a parent". There is one respect in which the child tenant *is* aware of the existence of a parent. It needs to be able to *manage its tenancy*. To do so, it will provision, configure, and monitor services through tools provided by the parent that hosts it.
+
+Those tools may also provide means to grant temporary and/or limited access to the child tenant for identities in the parent tenant, in order to deliver support.
 
 We often refer to the divide between the services you *consume in your tenant* and the services you use to *manage your tenant* as the *solution plane* and the *management plane*.
 
@@ -84,16 +87,16 @@ Careful conceptual separation of solution plane and management plane is essentia
 Let’s think about a very generalised application. We might say that a typical application has a stimulus/response design like this:
 
 1. Receive a stimulus of some kind (e.g. HTTP request, event, message, timer)
-1. Connect to and authenticate against one or more services using service-specific credentials, in order to obtain the information required to respond to the stimulus.
-1. Process that information (and optionally respond), possibly connecting to other services to update state related to that request.
+1. Connect to and authenticate against one or more services within or outside the solution using appropriate credentials, in order to obtain the information required to respond to the stimulus.
+1. Process that information (and optionally respond), possibly connecting to other services within or outside the solution, using appropriate credentials, to update state related to that request.
 
 There are numerous services you can use with that basic pattern – HTTP requests, queues and message busses, event stores, various flavours of databases and storage, caching. The details of these services is outside the scope of this discussion, but they are all consumed using this basic pattern.
 
 In a multi-tenanted solution, you need to layer a notion of “the intended tenant” into your design:
 
 1. Receive a stimulus of some kind, and dispatch it to the appropriate tenant
-1. Connect to a service using the instance and credentials appropriate for the given tenant
-1. Process that information (and optionally respond) using code and configuration appropriate for that tenant, possibly connecting to the correct instance of other services to update state related to that request, using the instance and credentials appropriate for that tenant.
+1. Connect to and authenticate against one or more services within or outside the tenanted solution using credentials appropriate for the given tenant, in order to obtain the information required to respond to the stimulus.
+1. Process that information (and optionally respond) using code and configuration appropriate for that tenant, possibly connecting to the correct instance of other services within or outside the tenanted solution to update state related to that request, using the instances and credentials appropriate for that tenant.
 
 The way in which this is done is very technology specific, but in essence the environment hosting the tenancy needs to:
 
@@ -131,15 +134,19 @@ For any given technology or service, there are implementation choices which trad
 1. Noisy neighbours
     - Does the operation of one tenant have performance or scalability implications for the operation of another tenant? Can one tenant deny or degrade service to others?
 1. Scalability and density
-    - What are the scalability characteristics of the solution as an individual tenant scales up, and/or the number of tenants scales up?
+    - What are the scalability characteristics of the overall solution as an individual tenant scales up, and/or the number of tenants scales up? Can it grow elastically, shard, or scale out? Are there hard limits on the number of instances of particular resources you can create? Or the volume of data in a particular container?
 1. Portability
     - Can a tenant be moved (transparently) from one physical resource to another to resolve conflicts and/or as the tenant scales/buys more resources?
 1. Cost
     - What is the cost model for the resource?
 1. Deployment and Manageability
-    - What are the deployment and manageability implications as the number of tenants scales up? What are the observability and monitoring characteristics for a an individual tenant? For the root tenant?
+    - What are the deployment and manageability implications as the number of tenants scales up? What are the observability and monitoring characteristics for an individual tenant? For the root tenant?
 1. Versioning and updates
-    - Are there implications for versioning or updating tenanted solutions? What about the cost of updating the management plane for those services?
+    - Are there implications for versioning or updating tenanted solutions? What about the cost of updating the management plane for those services? Is it necessary to support individual tenants with different versions of the parent hosting environment? What are the uptime implications of upgrades and updates?
+1. Billing
+    - Are tenants billed for the use of your services? Do you have a consumption or a capacity model? How do you reconcile financial information with technical logs?
+
+These trade-offs need to be considered in conjunction with the Service Level Agreements (SLAs) that a tenant provider offers to its tenants.
 
 ## Shared infrastructure v. isolated infrastructure
 What about higher-level SaaS services like messaging, document creation, CRM, or telephony? What happens when we aggregate services outside our tenancy host?
@@ -151,6 +158,7 @@ This is actually a common decision you need to make for every resource you consu
 With shared infrastructure, compute and storage requirements for different tenants are dispatched in common services. Isolation is provided by features within those common services.
 
 For example, you might have a single SQL Server Database instance shared between multiple tenants, whose data is partitioned using Row Level Security. Or a service which abstracts a single instance of Twilio dispatching all the text messages on behalf of all tenants using common credentials supplied by the parent tenant provider.
+Or a blob store which co-mingles data from multiple tenants, but where the data in each blobs is encrypted using a tenant-specific key (either supplied by the tenant, or by the parent provider).
 
 With isolated infrastructure, each tenant gets its own service instances.
 
