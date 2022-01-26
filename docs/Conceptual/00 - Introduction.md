@@ -31,9 +31,8 @@ Multi-tenancy, on the other hand, can be thought of as *lots of solutions, lots 
 ![multi-user v. multi tenant](multi-user v multi-tenant.png)
 
 ## When should a solution be multi-tenanted, not multi-user?
-A multi-tenanted solution is required when one or more groups of users have a strong requirement for *isolation* from other groups of users.
+A multi-tenanted solution is required when one or more groups of users have a strong requirement for *isolation* from other groups of users. This is not simply a secure connection to services for that tenant. Isolation will typically manifest in one or more of the following ways:
 
-Typically this isolation will manifest in one or more of the following ways:
 1. The ability for a tenant to provision, manage, and monitor a collection of resources independently of other tenants.
 1. The ability for a tenant to bring their own resources (including, for example, application code, configuration, data, cryptographic keys, policy) and integrate into their solution
 1. The ability to provide particular kinds of security boundary around their solution and control identity and access (including the ability to deny access to the entity that provides the tenant with those resources)
