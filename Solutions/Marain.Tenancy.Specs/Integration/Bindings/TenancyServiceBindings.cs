@@ -4,10 +4,17 @@
 
 namespace Marain.Tenancy.Specs.Integration.Bindings
 {
+    using System;
     using System.Collections.Generic;
     using System.Linq;
+    using Corvus.Storage.Azure.BlobStorage;
     using Corvus.Testing.SpecFlow;
     using Marain.Tenancy.Client;
+    using Menes;
+    using Menes.Internal;
+    using Menes.Links;
+    using Microsoft.AspNetCore.Http;
+    using Microsoft.AspNetCore.Mvc;
     using Microsoft.Extensions.Configuration;
     using Microsoft.Extensions.DependencyInjection;
     using Newtonsoft.Json;
@@ -20,45 +27,55 @@ namespace Marain.Tenancy.Specs.Integration.Bindings
     /// Bindings for the integration tests for <see cref="TenancyService"/>.
     /// </summary>
     [Binding]
-    public static class TenancyClientBindings
+    public static class TenancyServiceBindings
     {
         /// <summary>
         /// Configures the DI container before tests start.
         /// </summary>
         /// <param name="featureContext">The SpecFlow test context.</param>
-        [BeforeFeature("@withTenancyClient", Order = ContainerBeforeFeatureOrder.PopulateServiceCollection)]
+        /// 
+        [BeforeFeature("withTenancyClient", Order = ContainerBeforeFeatureOrder.PopulateServiceCollection)]
         public static void SetupFeature(FeatureContext featureContext)
         {
             ContainerBindings.ConfigureServices(
                 featureContext,
                 serviceCollection =>
                 {
-                    if (FunctionBindings.TestHostMode != MultiHost.TestHostModes.DirectInvocation)
+                    if (FunctionBindings.TestHostMode == MultiHost.TestHostModes.DirectInvocation)
                     {
-                        var configData = new Dictionary<string, string>
-                        {
-                            { "TenancyServiceBaseUri", "http://localhost:7071" },
-                        };
                         IConfiguration config = new ConfigurationBuilder()
-                            .AddInMemoryCollection(configData)
                             .AddEnvironmentVariables()
                             .AddJsonFile("local.settings.json", true, true)
                             .Build();
                         serviceCollection.AddSingleton(config);
 
-                        serviceCollection.AddJsonNetSerializerSettingsProvider();
-                        serviceCollection.AddJsonNetPropertyBag();
-                        serviceCollection.AddJsonNetCultureInfoConverter();
-                        serviceCollection.AddJsonNetDateTimeOffsetToIso8601AndUnixTimeConverter();
-                        serviceCollection.AddSingleton<JsonConverter>(new StringEnumConverter(new CamelCaseNamingStrategy()));
-
                         serviceCollection.AddSingleton(sp => sp.GetRequiredService<IConfiguration>().Get<TenancyClientOptions>());
 
-                        bool enableCaching = !featureContext.FeatureInfo.Tags.Contains("disableTenantCaching");
+                        BlobContainerConfiguration rootStorageConfiguration = config
+                                                .GetSection("RootBlobStorageConfiguration")
+                                                .Get<BlobContainerConfiguration>();
 
-                        serviceCollection.AddTenantProviderServiceClient(enableCaching);
+                        serviceCollection.AddTenantStoreOnAzureBlobStorage(rootStorageConfiguration);
+
+                        serviceCollection.AddSingleton<SimpleOpenApiContext>();
+                        serviceCollection.AddTenancyApiWithOpenApiActionResultHosting(ConfigureOpenApiHost);
                     }
                 });
+        }
+
+        private static void ConfigureOpenApiHost(IOpenApiHostConfiguration config)
+        {
+            if (config == null)
+            {
+                throw new ArgumentNullException(nameof(config), "AddTenancyApi callback: config");
+            }
+
+            if (config.Documents == null)
+            {
+                throw new ArgumentNullException(nameof(config.Documents), "AddTenancyApi callback: config.Documents");
+            }
+
+            config.Documents.AddSwaggerEndpoint();
         }
     }
 }

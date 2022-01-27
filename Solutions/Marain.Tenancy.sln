@@ -31,6 +31,10 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Marain.Tenancy.Storage.Azur
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Marain.Tenancy.Storage.Azure.BlobStorage.Specs", "Marain.Tenancy.Storage.Azure.BlobStorage.Specs\Marain.Tenancy.Storage.Azure.BlobStorage.Specs.csproj", "{B9D61A6F-9330-4590-98F2-3A033C96CD2E}"
 EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Marain.Tenancy.Host.AspNetCore", "Marain.Tenancy.Host.AspNetCore\Marain.Tenancy.Host.AspNetCore.csproj", "{039CF3D2-264A-4073-8CA0-612186FF809A}"
+EndProject
+Project("{E53339B2-1760-4266-BCC7-CA923CBCF16C}") = "docker-compose", "Docker.Compose\docker-compose.dcproj", "{E6EF3336-38D7-43AE-9840-6359F20DB9C8}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -77,6 +81,14 @@ Global
 		{B9D61A6F-9330-4590-98F2-3A033C96CD2E}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{B9D61A6F-9330-4590-98F2-3A033C96CD2E}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{B9D61A6F-9330-4590-98F2-3A033C96CD2E}.Release|Any CPU.Build.0 = Release|Any CPU
+		{039CF3D2-264A-4073-8CA0-612186FF809A}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{039CF3D2-264A-4073-8CA0-612186FF809A}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{039CF3D2-264A-4073-8CA0-612186FF809A}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{039CF3D2-264A-4073-8CA0-612186FF809A}.Release|Any CPU.Build.0 = Release|Any CPU
+		{E6EF3336-38D7-43AE-9840-6359F20DB9C8}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{E6EF3336-38D7-43AE-9840-6359F20DB9C8}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{E6EF3336-38D7-43AE-9840-6359F20DB9C8}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{E6EF3336-38D7-43AE-9840-6359F20DB9C8}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

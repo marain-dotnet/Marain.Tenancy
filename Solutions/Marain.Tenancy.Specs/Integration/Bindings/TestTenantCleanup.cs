@@ -10,6 +10,14 @@ namespace Marain.Tenancy.Specs.Integration.Bindings
     using System.Net.Http;
     using System.Threading.Tasks;
 
+    using Corvus.Testing.SpecFlow;
+
+    using Marain.Tenancy.OpenApi;
+
+    using Menes;
+
+    using Microsoft.Extensions.DependencyInjection;
+
     using TechTalk.SpecFlow;
 
     [Binding]
@@ -29,16 +37,31 @@ namespace Marain.Tenancy.Specs.Integration.Bindings
         }
 
         [AfterScenario("@useTenancyFunction")]
-        public async Task CleanUpTestTenants()
+        public async Task CleanUpTestTenants(FeatureContext featureContext)
         {
+            IServiceProvider serviceProvider = ContainerBindings.GetServiceProvider(featureContext);
             var errors = new List<Exception>();
             foreach ((string parentId, string id) in this.tenantsToDelete.OrderByDescending(t => t.ParentId.Length + t.TenantId.Length))
             {
                 try
                 {
-                    var deleteUri = new Uri(FunctionBindings.TenancyApiBaseUri, $"/{parentId}/marain/tenant/children/{id}");
-                    HttpResponseMessage response = await HttpClient.DeleteAsync(deleteUri)
-                        .ConfigureAwait(false);
+                    if (FunctionBindings.TestHostMode != MultiHost.TestHostModes.DirectInvocation)
+                    {
+                        var deleteUri = new Uri(FunctionBindings.TenancyApiBaseUri, $"/{parentId}/marain/tenant/children/{id}");
+                        HttpResponseMessage response = await HttpClient.DeleteAsync(deleteUri)
+                            .ConfigureAwait(false);
+                    }
+                    else
+                    {
+                        // We were in direct mode, so there is no service with a delete endpoint
+                        // we can hit. Instead, we need to invoke the service method.
+                        TenancyService service = serviceProvider.GetRequiredService<TenancyService>();
+
+                        await service.DeleteChildTenantAsync(
+                            parentId,
+                            id,
+                            serviceProvider.GetRequiredService<SimpleOpenApiContext>());
+                    }
                 }
                 catch (Exception x)
                 {

@@ -5,6 +5,7 @@
 namespace Marain.Tenancy.Specs.Integration.Steps
 {
     using System;
+    using System.Collections.Generic;
     using System.Linq;
     using System.Net;
     using System.Net.Http;
@@ -15,7 +16,7 @@ namespace Marain.Tenancy.Specs.Integration.Steps
     using Corvus.Testing.SpecFlow;
 
     using Marain.Tenancy.Specs.Integration.Bindings;
-
+    using Marain.Tenancy.Specs.MultiHost;
     using Microsoft.Extensions.DependencyInjection;
 
     using Newtonsoft.Json;
@@ -29,41 +30,76 @@ namespace Marain.Tenancy.Specs.Integration.Steps
     public class TenancyApiSteps : Steps
     {        
         private static readonly HttpClient HttpClient = new ();
+        private readonly Dictionary<string, string> namedIds = new ();
         private readonly TestTenantCleanup testTenantCleanup;
+        private readonly ITestableTenancyService serviceWrapper;
+        private readonly JsonSteps jsonSteps;
         private HttpResponseMessage? response;
         private string? responseContent;
-
-        public TenancyApiSteps(TestTenantCleanup testTenantCleanup)
+        private TenancyResponse? tenancyResponse;
+        
+        public TenancyApiSteps(
+            TestTenantCleanup testTenantCleanup, 
+            ITestableTenancyService serviceWrapper,
+            JsonSteps jsonSteps)
         {
             this.testTenantCleanup = testTenantCleanup;
+            this.serviceWrapper = serviceWrapper;
+            this.jsonSteps = jsonSteps;
         }
 
-        private HttpResponseMessage Response => this.response ?? throw new InvalidOperationException("No response available");
+        private TenancyResponse Response => this.tenancyResponse ?? throw new InvalidOperationException("No response available");
 
         [When("I request the tenancy service endpoint '(.*)'")]
-        public Task WhenIRequestTheTenancyServiceEndpoint(string endpointPath)
+        public async Task WhenIRequestTheTenancyServiceEndpoint(string endpointPath)
         {
-            return this.SendGetRequest(FunctionBindings.TenancyApiBaseUri, endpointPath);
+            this.tenancyResponse = await this.serviceWrapper.GetSwaggerAsync();
+            // return this.SendGetRequest(FunctionBindings.TenancyApiBaseUri, endpointPath);
+        }
+
+        [Given(@"I have requested the tenant with the ID called '([^']*)'")]
+        public async Task GivenIHaveRequestedTheTenantWithTheIDCalledAsync(string idName)
+        {
+            await this.WhenIRequestTheTenantWithIdFromTheAPI(this.namedIds[idName]);
         }
 
         [When("I request the tenant with Id '(.*)' from the API")]
-        public Task WhenIRequestTheTenantWithIdFromTheAPI(string tenantId)
+        public async Task WhenIRequestTheTenantWithIdFromTheAPI(string tenantId)
         {
-            return this.SendGetRequest(FunctionBindings.TenancyApiBaseUri, $"/{tenantId}/marain/tenant");
+            this.tenancyResponse = await this.serviceWrapper.GetTenantAsync(tenantId);
+            this.jsonSteps.Json = this.tenancyResponse.BodyJson;
+            // return this.SendGetRequest(FunctionBindings.TenancyApiBaseUri, $"/{tenantId}/marain/tenant");
         }
 
         [When("I request the tenant using the Location from the previous response")]
-        public Task WhenIRequestTheTenantUsingTheLocationFromThePreviousResponse()
+        public async Task WhenIRequestTheTenantUsingTheLocationFromThePreviousResponse()
         {
-            return this.SendGetRequest(
-                FunctionBindings.TenancyApiBaseUri,
-                (this.Response.Headers.Location ?? throw new InvalidOperationException("Location header unavailable")).ToString());
+            this.tenancyResponse = await this.serviceWrapper.GetTenantByLocationAsync(this.Response.LocationHeader);
+            this.jsonSteps.Json = this.tenancyResponse.BodyJson;
+
+            //return this.SendGetRequest(
+            //    FunctionBindings.TenancyApiBaseUri,
+            //    this.Response.LocationHeader ?? throw new InvalidOperationException("Location header unavailable"));
+        }
+
+        [When(@"I request the tenant using the ID called '([^']*)' and the Etag from the previous response")]
+        public async Task WhenIRequestTheTenantUsingTheIDCalledAndTheEtagFromThePreviousResponseAsync(string idName)
+        {
+            this.tenancyResponse = await this.serviceWrapper.GetTenantAsync(this.namedIds[idName], this.Response.EtagHeader);
+            this.jsonSteps.Json = this.tenancyResponse.BodyJson;
+        }
+
+
+        [Given(@"I store the id from the response Location header as '([^']*)'")]
+        public void GivenIStoreTheIdFromTheResponseLocationHeaderAs(string idName)
+        {
+            this.namedIds.Add(idName, this.GetTenantIdFromLocationHeader());
         }
 
         [Given("I store the value of the response Location header as '(.*)'")]
         public void GivenIStoreTheValueOfTheResponseLocationHeaderAs(string name)
         {
-            this.ScenarioContext.Set(this.Response.Headers.Location?.ToString(), name);
+            this.ScenarioContext.Set(this.Response.LocationHeader, name);
         }
 
         [Given("I have requested the tenant using the path called '(.*)'")]
@@ -81,7 +117,7 @@ namespace Marain.Tenancy.Specs.Integration.Steps
             return this.SendGetRequest(
                 FunctionBindings.TenancyApiBaseUri,
                 path,
-                (this.Response.Headers.ETag ?? throw new InvalidOperationException("ETag not available from previous response")).Tag);
+                this.Response.EtagHeader ?? throw new InvalidOperationException("ETag not available from previous response"));
         }
 
         [Given("I have used the API to create a new tenant")]
@@ -91,13 +127,19 @@ namespace Marain.Tenancy.Specs.Integration.Steps
             string parentId = table.Rows[0]["ParentTenantId"];
             string name = table.Rows[0]["Name"];
 
-            await this.SendPostRequest(FunctionBindings.TenancyApiBaseUri, $"/{parentId}/marain/tenant/children?tenantName={Uri.EscapeDataString(name)}", null);
-            if (this.Response.IsSuccessStatusCode && this.Response.Headers.Location is not null)
+            //await this.SendPostRequest(FunctionBindings.TenancyApiBaseUri, $"/{parentId}/marain/tenant/children?tenantName={Uri.EscapeDataString(name)}", null);
+            this.tenancyResponse = await this.serviceWrapper.CreateTenantAsync(parentId, name);
+            if (this.Response.IsSuccessStatusCode && this.Response.LocationHeader is not null)
             {
-                string location = this.Response.Headers.Location.ToString();
-                string id = location[1..location.IndexOf('/', 1)];
+                string id = GetTenantIdFromLocationHeader();
                 this.testTenantCleanup.AddTenantToDelete(parentId, id);
             }
+        }
+
+        private string GetTenantIdFromLocationHeader()
+        {
+            string location = this.Response.LocationHeader ?? throw new InvalidOperationException("No location header");
+            return location[1..location.IndexOf('/', 1)];
         }
 
         [Then("I receive a '(.*)' response")]
@@ -108,28 +150,28 @@ namespace Marain.Tenancy.Specs.Integration.Steps
             Assert.AreEqual(expectedStatusCode, this.Response.StatusCode, this.responseContent);
         }
 
-        [Then("the response should contain a '(.*)' header")]
-        [Then("the response should contain an '(.*)' header")]
-        public void ThenTheResponseShouldContainAHeader(string headerName)
+        [Then(@"the response should contain a Location header")]
+        public void ThenTheResponseShouldContainALocationHeader()
         {
-            Assert.IsTrue(this.Response.Headers.Contains(headerName));
+            Assert.IsNotNull(this.Response.LocationHeader);
         }
 
-        [Then("the response should not contain a '(.*)' header")]
-        [Then("the response should not contain an '(.*)' header")]
-        public void ThenTheResponseShouldNotContainAHeader(string headerName)
+        [Then("the response should contain an Etag header")]
+        public void ThenTheResponseShouldContainAnEtagHeader()
         {
-            Assert.IsFalse(this.Response.Headers.Contains(headerName));
+            Assert.IsNotNull(this.Response.EtagHeader);
         }
 
-        [Then("the response should contain a '(.*)' header with value '(.*)'")]
-        [Then("the response should contain an '(.*)' header with value '(.*)'")]
-        public void ThenTheResponseShouldContainAHeaderWithValue(string headerName, string expectedValue)
+        [Then("the response should not contain an Etag header")]
+        public void ThenTheResponseShouldNotContainAnEtagHeader()
         {
-            Assert.IsTrue(this.Response.Headers.Contains(headerName));
+            Assert.IsNull(this.Response.EtagHeader);
+        }
 
-            string value = this.Response.Headers.GetValues(headerName).First();
-            Assert.AreEqual(expectedValue, value);
+        [Then("the response should contain a Cache-Control header with value '(.*)'")]
+        public void ThenTheResponseShouldContainAHeaderWithValue(string expectedValue)
+        {
+            Assert.AreEqual(expectedValue, this.Response.CacheControlHeader);
         }
 
         private async Task SendGetRequest(Uri baseUri, string path, string? etag = null)
@@ -149,22 +191,6 @@ namespace Marain.Tenancy.Specs.Integration.Steps
                 var parsedResponse = JObject.Parse(this.responseContent);
                 this.ScenarioContext.Set(parsedResponse);
             }
-        }
-
-        private async Task SendPostRequest(Uri baseUri, string path, object? data)
-        {
-            HttpContent? content = null;
-
-            if (data is not null)
-            {
-                IServiceProvider serviceProvider = ContainerBindings.GetServiceProvider(this.FeatureContext);
-                IJsonSerializerSettingsProvider serializerSettingsProvider = serviceProvider.GetRequiredService<IJsonSerializerSettingsProvider>();
-                string requestJson = JsonConvert.SerializeObject(data, serializerSettingsProvider.Instance);
-                content = new StringContent(requestJson, Encoding.UTF8, "application/json");
-            }
-
-            this.response = await HttpClient.PostAsync(new Uri(baseUri, path), content).ConfigureAwait(false);
-            this.responseContent = await this.response.Content.ReadAsStringAsync().ConfigureAwait(false);
         }
     }
 }

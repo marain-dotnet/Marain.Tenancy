@@ -5,14 +5,28 @@
 namespace Marain.Tenancy.Specs.Integration.Bindings
 {
     using System;
+    using System.Linq;
     using System.Threading.Tasks;
 
+    using BoDi;
+
+    using Corvus.Extensions.Json;
     using Corvus.Testing.AzureFunctions;
     using Corvus.Testing.AzureFunctions.SpecFlow;
     using Corvus.Testing.SpecFlow;
 
+    using Marain.Tenancy.OpenApi;
+    using Marain.Tenancy.Specs.MultiHost;
+    using Menes;
+    using Menes.Hal;
+    using Menes.Internal;
+    using Menes.Testing.AspNetCoreSelfHosting;
+    using Microsoft.AspNetCore.Http;
+    using Microsoft.AspNetCore.Mvc;
     using Microsoft.Extensions.Configuration;
     using Microsoft.Extensions.DependencyInjection;
+
+    using NUnit.Framework.Internal;
 
     using TechTalk.SpecFlow;
 
@@ -22,9 +36,17 @@ namespace Marain.Tenancy.Specs.Integration.Bindings
     [Binding]
     public static class FunctionBindings
     {
+        private static readonly string TenancyApiBaseUriText = $"http://localhost:{TenancyApiPort}";
+
         public const int TenancyApiPort = 7071;
 
-        public static readonly Uri TenancyApiBaseUri = new ($"http://localhost:{TenancyApiPort}");
+        public static readonly Uri TenancyApiBaseUri = new (TenancyApiBaseUriText);
+
+        public static TestHostModes TestHostMode => TestExecutionContext.CurrentContext.TestObject switch
+        {
+            IMultiModeTest<TestHostModes> multiModeTest => multiModeTest.TestType,
+            _ => TestHostModes.UseFunctionHost,
+        };
 
         /// <summary>
         /// Runs the public API function.
@@ -32,22 +54,55 @@ namespace Marain.Tenancy.Specs.Integration.Bindings
         /// <param name="featureContext">The current feature context.</param>
         /// <returns>A task that completes when the functions have been started.</returns>
         [BeforeFeature("useTenancyFunction", Order = ContainerBeforeFeatureOrder.ServiceProviderAvailable)]
-        public static Task RunPublicApiFunction(FeatureContext featureContext)
+        public static async Task RunPublicApiFunction(
+            FeatureContext featureContext,
+            IObjectContainer specFlowDiContainer)
         {
-            FunctionsController functionsController = FunctionsBindings.GetFunctionsController(featureContext);
-            FunctionConfiguration functionsConfig = FunctionsBindings.GetFunctionConfiguration(featureContext);
+            IConfiguration config = ContainerBindings.GetServiceProvider(featureContext).GetRequiredService<IConfiguration>();
+            IServiceProvider serviceProvider = ContainerBindings.GetServiceProvider(featureContext);
 
-            IConfigurationRoot config = ContainerBindings.GetServiceProvider(featureContext).GetRequiredService<IConfigurationRoot>();
+            switch (TestHostMode)
+            {
+                case TestHostModes.InProcessEmulateFunctionWithActionResult:
+                    var hostManager = new OpenApiWebHostManager();
+                    featureContext.Set(hostManager);
+                    await hostManager.StartInProcessFunctionsHostAsync<FunctionsStartupWrapper>(
+                        TenancyApiBaseUriText,
+                        config);
+                    break;
 
-            functionsConfig.CopyToEnvironmentVariables(config.AsEnumerable());
-            functionsConfig.EnvironmentVariables.Add("TenantCacheConfiguration__GetTenantResponseCacheControlHeaderValue", "max-age=300");
+                case TestHostModes.UseFunctionHost:
+                    FunctionsController functionsController = FunctionsBindings.GetFunctionsController(featureContext);
+                    FunctionConfiguration functionsConfig = FunctionsBindings.GetFunctionConfiguration(featureContext);
 
-            return functionsController.StartFunctionsInstance(
-                "Marain.Tenancy.Host.Functions",
-                TenancyApiPort,
-                "net6.0",
-                "csharp",
-                functionsConfig);
+                    functionsConfig.CopyToEnvironmentVariables(config.AsEnumerable());
+                    functionsConfig.EnvironmentVariables.Add("TenantCacheConfiguration__GetTenantResponseCacheControlHeaderValue", "max-age=300");
+
+                    await functionsController.StartFunctionsInstance(
+                        "Marain.Tenancy.Host.Functions",
+                        TenancyApiPort,
+                        "net6.0",
+                        "csharp",
+                        functionsConfig);
+                    break;
+
+                case TestHostModes.DirectInvocation:
+                    // Doing this for the side effects only - it causes the OpenApi document
+                    // to be registered in Menes.
+                    serviceProvider.GetRequiredService<IOpenApiHost<HttpRequest, IActionResult>>();
+                    break;
+            }
+
+
+            ITestableTenancyService serviceWrapper = TestHostMode == TestHostModes.DirectInvocation
+                ? new DirectTestableTenancyService(
+                    serviceProvider.GetRequiredService<TenancyService>(),
+                    serviceProvider.GetRequiredService<SimpleOpenApiContext>())
+                : new ClientTestableTenancyService(
+                    TenancyApiBaseUriText,
+                    serviceProvider.GetRequiredService<IJsonSerializerSettingsProvider>().Instance);
+
+            specFlowDiContainer.RegisterInstanceAs(serviceWrapper);
         }
 
         /// <summary>

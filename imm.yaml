@@ -91,6 +91,9 @@
             Description: 'Copyright headers in each source file'
         -
             Score: 1
+            Description: 'License in Source & Packages'
+        -
+            Score: 1
             Description: 'Contributor License Agreement Configured in Repo'
 -
     Name: 'Production Use'
