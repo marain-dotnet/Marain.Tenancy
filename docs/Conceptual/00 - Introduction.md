@@ -9,8 +9,10 @@ We will talk about
 - how tenancy impacts application code and resource choices
 - how Corvus.Tenancy and Marain.Tenancy help with building multi-tenanted services.
 
-## What does multi-tenanted mean? 
+## What does multi-tenanted mean?
 Let’s start by thinking about the distinction between *multi-tenant* and *multi-user*.
+
+That's the first challenge. There is no hard-and-fast definition of what *multi-tenant* even means. So we need to define the problem a bit more clearly.
 
 The chief problem with giving multiple users access to a computer is that we need a fair way of ensuring that they don’t tread on each other’s toes.
 
@@ -20,21 +22,23 @@ By the 1970s, the slightly confusingly named [time sharing](https://en.wikipedia
 
 The security and fair-shares implications of this ultimately led to the development of isolated process models, virtual machines, containers, and the cloud/edge computing model we know today. 
 
-As part of this shift, the line between “computer user” and “solution user” has also blurred.
+As part of this shift, the line between "computer user" and "solution user" has also blurred.
 
 In a modern web application, for example, there is frequently a single logical solution serving hundreds, thousands, or millions of concurrent users.
 
 That solution is likely implemented using many compute and storage resources, distributed across various physical and virtual machines, but it is conceptually *one solution, lots of users*. To developer and user alike, it looks like a single set of resources, serving many users. Those users may work together in logical groups (like teams, or organizations) but they are fundamentally sharing a single solution.
 
-Multi-tenancy, on the other hand, can be thought of as *lots of solutions, lots of users*. To the *owner* of the multi-tenanted solution provider, it looks conceptually like *many isolated child solutions* (or *tenants*) consuming the resources it provides, each of which independently serves many users. To any individual tenant, their “tenancy” looks like a single set of resources that they use to serve their users, and no-one else’s.
+Multi-tenancy, on the other hand, can be thought of as *lots of solutions, lots of users*. To the *owner* of the multi-tenanted solution provider, it looks conceptually like *many isolated child solutions* (or *tenants*) consuming the resources it provides, each of which independently serves many users. To any individual tenant, their "tenancy" looks like a single set of resources that they use to serve their users, and no-one else’s.
 
 ![multi-user v. multi tenant](multi-user v multi-tenant.png)
+
+This *conceptual difference* is often confused with the *implementation difference*. It is perfectly possible for the provider of a multi-tenanted service to implement their service using a single set of resources shared between all their tenants (if other constraints permit).
 
 ## When should a solution be multi-tenanted, not multi-user?
 A multi-tenanted solution is required when one or more groups of users have a strong requirement for *isolation* from other groups of users. This is not simply a secure connection to services for that tenant. Isolation will typically manifest in one or more of the following ways:
 
 1. The ability for a tenant to provision, manage, and monitor a collection of resources independently of other tenants.
-1. The ability for a tenant to bring their own resources (including, for example, application code, configuration, data, cryptographic keys, policy) and integrate into their solution
+1. The ability for a tenant to bring their own resources (including, for example, domain names, application code, configuration, data, cryptographic keys, policy) and integrate into their solution
 1. The ability to provide particular kinds of security boundary around their solution and control identity and access (including the ability to deny access to the entity that provides the tenant with those resources)
 1. The inability for one tenant to determine the existence or otherwise of another tenant.
 1. The inability for one tenant to interfere with the operation or performance of another tenant e.g. by starving it of resources.
@@ -44,7 +48,7 @@ Note that this is not simply *data isolation*. Most data storage solutions (blob
 A multi-tenanted system will also use these techniques to provide data segregation, but adds in other constraints from the list above. 
 
 ## Tenancy as a hierarchy
-It is also very common for a multi-tenanted solution to itself be used to provide other multi-tenanted solutions. This can be a source of considerable confusion.
+It is also very common for a multi-tenanted solution to itself be used to provide other multi-tenanted solutions. This can be a further source of confusion.
 
 For example, the Microsoft Azure platform is a multi-tenanted solution. 
 
@@ -61,7 +65,7 @@ The isolation rules for tenancy mean that from the perspective of the solution d
 
 So, any given child tenant can be thought of as the *root of its own tenancy hierarchy*.
 
-Ultimately, there may well be a real “root” tenant somewhere in the tree, but a good tenancy model means we should not have to care whether we are the ultimate root tenant, or some child of a child of a child.
+Ultimately, there may well be a real "root" tenant somewhere in the tree, but a good tenancy model means we should not have to care whether we are the ultimate root tenant, or some child of a child of a child.
 
 ![Tenant roots](Tenant roots.png)
 
@@ -69,7 +73,7 @@ For example, as an Azure customer, we don’t need to think about the fact that 
 
 Should we wish to provide a multi-tenancy model in our tenanted solution, we are free to do so in any way we choose, to meet our operational, legal, and/or regulatory obligations. We are not bound to the tenancy model of our parent.
 
-A common challenge when designing a multi-tenanted system is thinking about the right “scope”. Am I thinking about the solution in my tenant (which should not expose details of tenancy) or the multi-tenancy solution itself (which should not depend on implementation details of the solutions that happen to be deployed as its tenants)? You must take care that one does not bleed into the other.
+A common challenge when designing a multi-tenanted system is thinking about the right "scope". Am I thinking about the solution in my tenant (which should not expose details of tenancy) or the multi-tenancy provider itself (which should not depend on implementation details of the solutions that happen to be deployed as its tenants)? You must take care that one does not bleed into the other.
 
 ## Solution plane and management plane
 You may have noted that I said "it is usually irrelevant that any given tenant has a parent". There is one respect in which the child tenant *is* aware of the existence of a parent. It needs to be able to *manage its tenancy*. To do so, it will provision, configure, and monitor services through tools provided by the parent that hosts it.
@@ -91,7 +95,7 @@ Let’s think about a very generalised application. We might say that a typical 
 
 There are numerous services you can use with that basic pattern – HTTP requests, queues and message busses, event stores, various flavours of databases and storage, caching. The details of these services is outside the scope of this discussion, but they are all consumed using this basic pattern.
 
-In a multi-tenanted solution, you need to layer a notion of “the intended tenant” into your design:
+In a multi-tenanted solution, you need to layer a notion of "the intended tenant" into your design:
 
 1. Receive a stimulus of some kind, and dispatch it to the appropriate tenant
 1. Connect to and authenticate against one or more services within or outside the tenanted solution using credentials appropriate for the given tenant, in order to obtain the information required to respond to the stimulus.
@@ -114,15 +118,16 @@ As we dig down in the stack, we finally reach implementation concerns in the mul
 
 How do you design a SQL Azure database to host multi-tenanted data? What are the isolation characteristics? What about Blob storage? Cosmos DB? 
 
-These solution-level design choices are well explored in the Azure documentation for each individual service. For example
+These solution-level design choices are well explored in the Azure documentation for each individual service.
+
+For example
 - [Azure SQL Database]( https://docs.microsoft.com/en-us/azure/azure-sql/database/saas-tenancy-app-design-patterns)
 - [Cosmos DB]( https://docs.microsoft.com/en-us/azure/architecture/guide/multitenant/service/cosmos-db)
 - [Azure Storage]( https://docs.microsoft.com/en-us/azure/architecture/guide/multitenant/service/storage)
 
-When reading that documentation, it is important to consider whether it describes multi-tenant or multi-user scenarios, as we have defined them.
-They sometimes use terms such as *hostile* and *non-hostile* tenants (respectively), to distinguish between these models.
+There is also some [high-level conceptual documentation](https://docs.microsoft.com/en-gb/azure/architecture/guide/multitenant/considerations/overview) about multi-tenanted solution architecture.
 
-In general, the Azure documentation describes isolation mechanisms for a particular compute or storage service, to support different tenancy and user isolation models, rather than considering a more holistic/solution view of tenancy, bringing together a variety of services into a multi-tenanted solution.
+When reading that documentation, it is important to consider whether it describes multi-tenant or multi-user scenarios, as we have defined them above.
 
 It gives you the nuts-and-bolts (we will talk more about this below), but you will need to understand how each service you consume slots into your overall tenancy model.
 
@@ -163,7 +168,7 @@ With isolated infrastructure, each tenant gets its own service instances.
 
 For example each tenant might get its own SQL Server Database Instance, or even its own SQL Server instance. Or a service which dispatches text messages to a particular Twilio account on behalf of a particular tenant, using credentials specific to that tenant.
 
-The ultimate form of this isolated infrastructure is “bring your own service”. In this case, a multi-tenanted provider allows you to configure their solution with your own instances of particular storage or compute infrastructure, encryption keys, credentials etc.
+The ultimate form of this isolated infrastructure is "bring your own service". In this case, a multi-tenanted provider allows you to configure their solution with your own instances of particular storage or compute infrastructure, encryption keys, credentials etc.
 
 For example, a tenant might configure the text-message dispatch service provided by its parent to use the tenant’s own Twilio account, giving it access to a key in KeyVault that contains their Twilio credentials, configured with access rights appropriate for the service.
 
@@ -173,7 +178,7 @@ To help with implementing multi-tenanted solutions using the dotnet platform, we
 ### Management plane
 In Corvus.Tenancy, we provide low-level services for creating and managing Tenants as logical entities within your multi-tenanted solution. It also gives individual tenants within that solution the ability to manage features of their own tenancy and tenanted-service configuration.
 
-Marain.Tenancy then exposes these low-level services as APIs for you to develop your own multi-tenanted solutions “as a service”.
+Marain.Tenancy then exposes these low-level services as APIs for you to develop your own multi-tenanted solutions "as a service".
 You would use these APIs to develop your own management plane for your multi-tenanted solution.
 
 We also provide tooling and recommended practices to assist in the deployment and management of multi-tenanted solutions using this model. These are found in [Marain.Instance](https://github.com/marain-dotnet/Marain.Instance).
@@ -188,7 +193,7 @@ In this document, we’ve looked at aspects of multi-tenanted solution architect
 - when to choose a multi-tenanted architecture
 - the hierarchy of multi-tenanted solutions in multi-tenanted solutions
 - separation of the management plane and the solution plane
-- data and compute segregation strategies, including shared infrastructure, isolated infrastructure, and “bring your own service”
+- data and compute segregation strategies, including shared infrastructure, isolated infrastructure, and "bring your own service"
 - how Corvus.Tenancy and Marain.Tenancy help with building multi-tenanted services.
 
 ## Next steps
