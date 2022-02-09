@@ -211,11 +211,11 @@
       },
       "Corvus.Storage.Azure.BlobStorage.Tenancy": {
         "type": "Transitive",
-        "resolved": "3.0.0",
-        "contentHash": "20CJow+8yGU74wvZaSyxt3TiGxrxEPbqTohNvWIW50kCG+MOLbaN1PaKszcwgX5yCLb3sCo8C/LqCKO0E47Ckg==",
+        "resolved": "3.0.1",
+        "contentHash": "crxn/BF8nNh7Ad2E8hSyq2fdOF4tRv4BQSsa/XsKfYeJq1oA8pD6PZfLmONKnAgQ5T/68oyncpD62mUcS53Org==",
         "dependencies": {
           "Corvus.Storage.Azure.BlobStorage": "1.0.0",
-          "Corvus.Tenancy.Abstractions": "3.0.0"
+          "Corvus.Tenancy.Abstractions": "3.0.1"
         }
       },
       "Corvus.Storage.Common": {
@@ -229,8 +229,8 @@
       },
       "Corvus.Tenancy.Abstractions": {
         "type": "Transitive",
-        "resolved": "3.0.0",
-        "contentHash": "pDCUxkUHTCE0fywCBmNnTjoBofrY5wo3IMfEvuCws2T6gi823UpwHWqWOJLhc8xxw8Br4tX1FWuSOVx2DFAHyA==",
+        "resolved": "3.0.1",
+        "contentHash": "QE9fCTBTSrYl97TjRLC97/31ppGynWU64Cmy+G1x694pXcycJvOYE/vkVH0nY/dH2IFI22o2hbUnN5hRcivy3A==",
         "dependencies": {
           "Corvus.ContentHandling.Json": "2.0.11",
           "Corvus.Extensions": "1.1.4",
@@ -386,8 +386,8 @@
       },
       "Microsoft.AspNetCore.JsonPatch": {
         "type": "Transitive",
-        "resolved": "6.0.1",
-        "contentHash": "vLgQbgudEQfGNaGyAvm+jlfLHu5Ynav8/RnhwM0QaKFjVW2crEOGm7tRHHjM5iofF8VZnEYfyvUvyK82dBej1w==",
+        "resolved": "6.0.2",
+        "contentHash": "SifO3B9FwrRMXIdBHgVoMU17j6E43nYGUIC/3WRpNldCyZKOeBGJ8eT1KfQK80FaxkkJU+4MPm0uCbeYnXvkFQ==",
         "dependencies": {
           "Microsoft.CSharp": "4.7.0",
           "Newtonsoft.Json": "13.0.1"
@@ -1932,7 +1932,7 @@
       "marain.tenancy.openapi.service": {
         "type": "Project",
         "dependencies": {
-          "Corvus.Tenancy.Abstractions": "3.0.0",
+          "Corvus.Tenancy.Abstractions": "3.0.1",
           "Menes.Abstractions": "3.0.0",
           "Microsoft.ApplicationInsights": "2.20.0",
           "Microsoft.AspNetCore.JsonPatch": "6.0.0",
@@ -1943,7 +1943,7 @@
       "marain.tenancy.storage.azure.blobstorage": {
         "type": "Project",
         "dependencies": {
-          "Corvus.Storage.Azure.BlobStorage.Tenancy": "3.0.0",
+          "Corvus.Storage.Azure.BlobStorage.Tenancy": "3.0.1",
           "Microsoft.Extensions.DependencyInjection.Abstractions": "6.0.0"
         }
       }

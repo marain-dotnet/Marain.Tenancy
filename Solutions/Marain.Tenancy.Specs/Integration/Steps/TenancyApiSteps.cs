@@ -74,7 +74,7 @@ namespace Marain.Tenancy.Specs.Integration.Steps
         [When("I request the tenant using the Location from the previous response")]
         public async Task WhenIRequestTheTenantUsingTheLocationFromThePreviousResponse()
         {
-            this.tenancyResponse = await this.serviceWrapper.GetTenantByLocationAsync(this.Response.LocationHeader);
+            this.tenancyResponse = await this.serviceWrapper.GetTenantByLocationAsync(this.Response.LocationHeader ?? throw new InvalidOperationException("This test step should only be executed if an earlier step produced a response with a location header."));
             this.jsonSteps.Json = this.tenancyResponse.BodyJson;
 
             //return this.SendGetRequest(
