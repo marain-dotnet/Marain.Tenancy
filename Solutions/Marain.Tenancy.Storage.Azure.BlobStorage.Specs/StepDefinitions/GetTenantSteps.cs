@@ -2,6 +2,8 @@
 // Copyright (c) Endjin Limited. All rights reserved.
 // </copyright>
 
+#pragma warning disable RCS1196 // Call extension method as instance methods - TenantExtensions is evil: it defines extensions methods for string. I will not bow to this.
+
 namespace Marain.Tenancy.Storage.Azure.BlobStorage.Specs.StepDefinitions
 {
     using System;
@@ -23,8 +25,8 @@ namespace Marain.Tenancy.Storage.Azure.BlobStorage.Specs.StepDefinitions
         {
         }
 
-        [Given(@"I get the tenant with the id from label '([^']*)' labelled '([^']*)'")]
-        [When(@"I get the tenant with the id from label '([^']*)' labelled '([^']*)'")]
+        [Given("I get the tenant with the id from label '([^']*)' labelled '([^']*)'")]
+        [When("I get the tenant with the id from label '([^']*)' labelled '([^']*)'")]
         public async Task GivenIGetTheTenantUsingTheDetailsCalledAndCallItAsync(string existingLabel, string fetchedLabel)
         {
             // This is used in tests for GetTenantAsync. But it is also used in scenarios where we
@@ -60,14 +62,14 @@ namespace Marain.Tenancy.Storage.Azure.BlobStorage.Specs.StepDefinitions
             await this.WhenIGetATenantWithId(RootTenant.RootTenantId, label);
         }
 
-        [When(@"I get the tenant with the details called '([^']*)' labelled '([^']*)'")]
+        [When("I get the tenant with the details called '([^']*)' labelled '([^']*)'")]
         public async Task WhenIGetTheTenantWithTheDetailsCalledAsync(string existingLabel, string label)
         {
             ITenant tenant = this.Tenants[existingLabel];
             await this.WhenIGetATenantWithId(tenant.Id, label);
         }
 
-        [When(@"I try to get the tenant using the details called '([^']*)' passing the ETag")]
+        [When("I try to get the tenant using the details called '([^']*)' passing the ETag")]
         public async Task WhenITryToGetTheTenantWithTheDetailsCalledPassingTheETagAsync(
             string existingLabel)
         {
@@ -90,14 +92,14 @@ namespace Marain.Tenancy.Storage.Azure.BlobStorage.Specs.StepDefinitions
             tenantToInspect.Id.Should().Be(RootTenant.RootTenantId);
         }
 
-        [Then(@"the tenant details labelled '([^']*)' should have the root tenant name")]
+        [Then("the tenant details labelled '([^']*)' should have the root tenant name")]
         public void ThenTenantShouldHaveTheRootTenantName(string detailsToInspect)
         {
             ITenant tenantToInspect = this.Tenants[detailsToInspect];
             tenantToInspect.Name.Should().Be(RootTenant.RootTenantName);
         }
 
-        [Then(@"the tenant details labelled '([^']*)' should match the tenant details labelled '([^']*)'")]
+        [Then("the tenant details labelled '([^']*)' should match the tenant details labelled '([^']*)'")]
         public void ThenTenantShouldMatchingTheDetails(string detailsToInspect, string detailsToCompareWith)
         {
             ITenant tenantToInspect = this.Tenants[detailsToInspect];
@@ -108,7 +110,7 @@ namespace Marain.Tenancy.Storage.Azure.BlobStorage.Specs.StepDefinitions
             tenantToInspect.ETag.Should().Be(tenantToCompareWith.ETag);
         }
 
-        [Then(@"the tenant details labelled '([^']*)' should have tenant Id that is the hash of the Guid labelled '([^']*)'")]
+        [Then("the tenant details labelled '([^']*)' should have tenant Id that is the hash of the Guid labelled '([^']*)'")]
         public void ThenGetTenantShouldHaveTheTenantId(string detailsToInspect, string wellKnownGuidLabel)
         {
             Guid wellKnownGuid = this.WellKnownGuids[wellKnownGuidLabel];
@@ -117,7 +119,7 @@ namespace Marain.Tenancy.Storage.Azure.BlobStorage.Specs.StepDefinitions
             tenantToInspect.Id.Should().Be(expectedId);
         }
 
-        [Then(@"the tenant details labelled '([^']*)' should have tenant Id that is the concatenated hashes of the Guids labelled '([^']*)' and '([^']*)'")]
+        [Then("the tenant details labelled '([^']*)' should have tenant Id that is the concatenated hashes of the Guids labelled '([^']*)' and '([^']*)'")]
         public void ThenTheTenantDetailsLabelledShouldHaveTenantIdThatIsTheConcatenatedHashesOfTheGuidsLabelledAnd(
             string detailsToInspect, string wellKnownGuidLabel1, string wellKnownGuidLabel2)
         {
@@ -128,7 +130,7 @@ namespace Marain.Tenancy.Storage.Azure.BlobStorage.Specs.StepDefinitions
             tenantToInspect.Id.Should().Be(expectedId);
         }
 
-        [Then(@"the tenant labelled '([^']*)' should have the same ID as the tenant labelled '([^']*)'")]
+        [Then("the tenant labelled '([^']*)' should have the same ID as the tenant labelled '([^']*)'")]
         public void ThenGetTenantShouldHaveTheSameTenantIdAs(string detailsToInspect, string detailsToCompareWith)
         {
             ITenant tenantToInspect = this.Tenants[detailsToInspect];
@@ -136,7 +138,7 @@ namespace Marain.Tenancy.Storage.Azure.BlobStorage.Specs.StepDefinitions
             tenantToInspect.Id.Should().Be(tenantToCompareWith.Id);
         }
 
-        [Then(@"the tenant labelled '([^']*)' should have the name '([^']*)'")]
+        [Then("the tenant labelled '([^']*)' should have the name '([^']*)'")]
         public void ThenGetTenantShouldHaveTheName(string detailsToInspect, string expectedName)
         {
             ITenant tenantToInspect = this.Tenants[detailsToInspect];

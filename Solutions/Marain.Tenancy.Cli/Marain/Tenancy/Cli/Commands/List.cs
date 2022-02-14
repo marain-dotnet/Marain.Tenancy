@@ -58,9 +58,7 @@ namespace Marain.Tenancy.Cli.Commands
             ShortName = "p",
             LongName = "property",
             Description = "The names of tenant properties to include in the output. If omitted, only the tenant Ids will be listed.")]
-#pragma warning disable SA1011 // Closing square brackets should be spaced correctly
         public string[]? IncludeProperties { get; set; }
-#pragma warning restore SA1011 // Closing square brackets should be spaced correctly
 
         /// <summary>
         /// Executes the command.
@@ -97,8 +95,22 @@ namespace Marain.Tenancy.Cli.Commands
             }
             else
             {
-                this.OutputTenantIds(childTenantIds, app.Out);
+                OutputTenantIds(childTenantIds, app.Out);
             }
+        }
+
+        private static void OutputTenantIds(List<string> children, TextWriter output)
+        {
+            var builder = new StringBuilder();
+
+            builder.AppendLine("Child Tenant Ids:");
+
+            foreach (string current in children)
+            {
+                builder.Append('\t').AppendLine(current);
+            }
+
+            output.WriteLine(builder.ToString());
         }
 
         private async Task LoadAndOutputTenantDetailsAsync(List<string> children, TextWriter output)
@@ -146,20 +158,6 @@ namespace Marain.Tenancy.Cli.Commands
             }
 
             table.Write(Format.Minimal);
-        }
-
-        private void OutputTenantIds(List<string> children, TextWriter output)
-        {
-            var builder = new StringBuilder();
-
-            builder.AppendLine("Child Tenant Ids:");
-
-            foreach (string current in children)
-            {
-                builder.AppendLine($"\t{current}");
-            }
-
-            output.WriteLine(builder.ToString());
         }
     }
 }

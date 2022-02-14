@@ -17,10 +17,10 @@ namespace Marain.Tenancy.Specs.Integration.Bindings
 
     using Marain.Tenancy.OpenApi;
     using Marain.Tenancy.Specs.MultiHost;
+
     using Menes;
-    using Menes.Hal;
-    using Menes.Internal;
     using Menes.Testing.AspNetCoreSelfHosting;
+
     using Microsoft.AspNetCore.Http;
     using Microsoft.AspNetCore.Mvc;
     using Microsoft.Extensions.Configuration;
@@ -36,11 +36,14 @@ namespace Marain.Tenancy.Specs.Integration.Bindings
     [Binding]
     public static class FunctionBindings
     {
-        private static readonly string TenancyApiBaseUriText = $"http://localhost:{TenancyApiPort}";
-
+        /// <summary>
+        /// The port on which we host the function.
+        /// </summary>
         public const int TenancyApiPort = 7071;
 
-        public static readonly Uri TenancyApiBaseUri = new (TenancyApiBaseUriText);
+        private static readonly string TenancyApiBaseUriText = $"http://localhost:{TenancyApiPort}";
+
+        public static Uri TenancyApiBaseUri { get; } = new(TenancyApiBaseUriText);
 
         public static TestHostModes TestHostMode => TestExecutionContext.CurrentContext.TestObject switch
         {
@@ -52,6 +55,7 @@ namespace Marain.Tenancy.Specs.Integration.Bindings
         /// Runs the public API function.
         /// </summary>
         /// <param name="featureContext">The current feature context.</param>
+        /// <param name="specFlowDiContainer">Specflow's dependency injection container.</param>
         /// <returns>A task that completes when the functions have been started.</returns>
         [BeforeFeature("useTenancyFunction", Order = ContainerBeforeFeatureOrder.ServiceProviderAvailable)]
         public static async Task RunPublicApiFunction(
@@ -92,7 +96,6 @@ namespace Marain.Tenancy.Specs.Integration.Bindings
                     serviceProvider.GetRequiredService<IOpenApiHost<HttpRequest, IActionResult>>();
                     break;
             }
-
 
             ITestableTenancyService serviceWrapper = TestHostMode == TestHostModes.DirectInvocation
                 ? new DirectTestableTenancyService(

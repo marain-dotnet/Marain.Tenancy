@@ -18,7 +18,7 @@ namespace Marain.Tenancy.Storage.Azure.BlobStorage.Specs.Bindings
     {
         private readonly TenantProperties tenantProperties;
 
-        public TenantStepsBase(TenantProperties tenantProperties)
+        protected TenantStepsBase(TenantProperties tenantProperties)
         {
             this.tenantProperties = tenantProperties;
         }
@@ -71,7 +71,7 @@ namespace Marain.Tenancy.Storage.Azure.BlobStorage.Specs.Bindings
                     "string" => value,
                     "integer" => int.Parse(value),
                     "datetimeoffset" => DateTimeOffset.Parse(value),
-                    string t => throw new InvalidOperationException($"Unknown type {t} in test table")
+                    string t => throw new InvalidOperationException($"Unknown type {t} in test table"),
                 };
                 return new KeyValuePair<string, object>(row["Key"], interprettedValue);
             });

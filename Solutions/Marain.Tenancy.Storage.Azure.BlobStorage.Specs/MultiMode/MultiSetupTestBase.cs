@@ -77,7 +77,7 @@ namespace Marain.Tenancy.Storage.Azure.BlobStorage.Specs.MultiMode
         [AttributeUsage(AttributeTargets.Class)]
         public class MultiSetupTestAttribute : Attribute, IFixtureBuilder2
         {
-            private readonly NUnitTestFixtureBuilder builder = new ();
+            private readonly NUnitTestFixtureBuilder builder = new();
 
             /// <inheritdoc/>
             public IEnumerable<TestSuite> BuildFrom(ITypeInfo typeInfo, IPreFilter filter)
@@ -112,7 +112,7 @@ namespace Marain.Tenancy.Storage.Azure.BlobStorage.Specs.MultiMode
 
             private class NullPrefilter : IPreFilter
             {
-                public static readonly NullPrefilter Instance = new ();
+                public static readonly NullPrefilter Instance = new();
 
                 public bool IsMatch(Type type) => true;
 

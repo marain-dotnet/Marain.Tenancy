@@ -19,7 +19,7 @@ namespace Marain.Tenancy.Storage.Azure.BlobStorage.Specs.Bindings
 
     internal class TenancyContainerSetupViaApi : ITenancyContainerSetup
     {
-        private static readonly Lazy<SHA1> Sha1 = new (() => SHA1.Create());
+        private static readonly Lazy<SHA1> Sha1 = new(() => SHA1.Create());
         private readonly BlobContainerConfiguration configuration;
 
         // Deferred tenant store fetching - it's important we don't try to use this before
@@ -65,7 +65,7 @@ namespace Marain.Tenancy.Storage.Azure.BlobStorage.Specs.Bindings
                         AccountKeySecretName = v3Config.AccessKeyInKeyVault?.SecretName,
                     };
 
-                    storageConfig = new ("StorageConfiguration__corvustenancy", v2Config);
+                    storageConfig = new("StorageConfiguration__corvustenancy", v2Config);
                 }
             }
             else
@@ -74,7 +74,7 @@ namespace Marain.Tenancy.Storage.Azure.BlobStorage.Specs.Bindings
                 {
                     BlobContainerConfiguration v3Config = LegacyConfigurationConverter.FromV2ToV3(v2Config);
 
-                    storageConfig = new ("StorageConfigurationV3__corvustenancy", v3Config);
+                    storageConfig = new("StorageConfigurationV3__corvustenancy", v3Config);
                 }
             }
 
@@ -136,9 +136,7 @@ namespace Marain.Tenancy.Storage.Azure.BlobStorage.Specs.Bindings
             // directly with the storage API to validate that it works when the storage account
             // wasn't previously populated by the current Corvus and Marain APIs.
             BlobContainerClient rootTenantContainerFromConfig = await this.blobContainerSource.GetStorageContextAsync(
-#pragma warning disable SA1101 // Prefix local calls with this - StyleCop doesn't recognize records, or the with syntax yet
                 this.configuration with { Container = "dummy" });
-#pragma warning restore SA1101 // Prefix local calls with this
             return rootTenantContainerFromConfig.GetParentBlobServiceClient();
         }
     }

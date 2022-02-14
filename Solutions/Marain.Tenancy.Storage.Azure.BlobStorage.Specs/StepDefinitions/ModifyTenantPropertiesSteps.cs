@@ -24,7 +24,7 @@ namespace Marain.Tenancy.Storage.Azure.BlobStorage.Specs.StepDefinitions
         {
         }
 
-        [When(@"I update the properties of the tenant labelled '([^']*)' and label the returned tenant '([^']*)'")]
+        [When("I update the properties of the tenant labelled '([^']*)' and label the returned tenant '([^']*)'")]
         public async Task GivenIUpdateTenantProperties(
             string tenantLabel, string updatedTenantLabel, Table propertyTable)
         {
@@ -34,7 +34,7 @@ namespace Marain.Tenancy.Storage.Azure.BlobStorage.Specs.StepDefinitions
             this.Tenants.Add(updatedTenantLabel, updatedTenant);
         }
 
-        [When(@"I remove the '(.*)' property of the tenant labelled '(.*)' and label the returned tenant '(.*)'")]
+        [When("I remove the '(.*)' property of the tenant labelled '(.*)' and label the returned tenant '(.*)'")]
         public async Task WhenIRemoveThePropertyOfTheTenantLabelledAndLabelTheReturnedTenantAsync(
             string propertykey, string existingTenantLabel, string updatedTenantLabel)
         {
@@ -45,7 +45,7 @@ namespace Marain.Tenancy.Storage.Azure.BlobStorage.Specs.StepDefinitions
             this.Tenants.Add(updatedTenantLabel, updatedTenant);
         }
 
-        [When(@"I update the properties of the tenant labelled '(.*)' and remove the '(.*)' property and call the returned tenant '(.*)'")]
+        [When("I update the properties of the tenant labelled '(.*)' and remove the '(.*)' property and call the returned tenant '(.*)'")]
         public async Task WhenIUpdateThePropertiesOfTheTenantLabelledAndRemoveThePropertyAndCallTheReturnedTenantAsync(
             string existingTenantLabel, string propertykey, string updatedTenantLabel, Table propertyTable)
         {
@@ -58,7 +58,7 @@ namespace Marain.Tenancy.Storage.Azure.BlobStorage.Specs.StepDefinitions
             this.Tenants.Add(updatedTenantLabel, updatedTenant);
         }
 
-        [Then(@"the tenant labelled '([^']*)' should have the properties")]
+        [Then("the tenant labelled '([^']*)' should have the properties")]
         public void ThenTheTenantCalledShouldHaveTheProperties(string tenantLabel, Table propertyTable)
         {
             ITenant tenant = this.Tenants[tenantLabel];

@@ -1,4 +1,8 @@
-﻿namespace Marain.Tenancy.Specs.Integration.Steps
+﻿// <copyright file="TenancyClientSteps.cs" company="Endjin Limited">
+// Copyright (c) Endjin Limited. All rights reserved.
+// </copyright>
+
+namespace Marain.Tenancy.Specs.Integration.Steps
 {
     using System;
     using System.Collections.Generic;
@@ -210,7 +214,7 @@
                         {
                             "string" => value,
                             "integer" => int.Parse(value),
-                            _ => throw new InvalidOperationException($"Unknown data type '{type}'")
+                            _ => throw new InvalidOperationException($"Unknown data type '{type}'"),
                         };
                         propertiesToSetOrAdd.Add(propertyName, actualValue);
                         break;
