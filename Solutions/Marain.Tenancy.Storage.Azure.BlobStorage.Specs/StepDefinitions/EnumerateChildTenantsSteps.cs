@@ -20,7 +20,7 @@ namespace Marain.Tenancy.Storage.Azure.BlobStorage.Specs.StepDefinitions
     [Binding]
     public class EnumerateChildTenantsSteps : TenantStepsBase
     {
-        private readonly List<TenantCollectionResult> getChildrenResults = new ();
+        private readonly List<TenantCollectionResult> getChildrenResults = new();
 
         public EnumerateChildTenantsSteps(TenantProperties tenantProperties)
             : base(tenantProperties)
@@ -49,7 +49,7 @@ namespace Marain.Tenancy.Storage.Azure.BlobStorage.Specs.StepDefinitions
             this.getChildrenResults[pageIndex].Tenants.Should().BeEquivalentTo(ids);
         }
 
-        [Then(@"the ids of all the children across all pages should match these tenant ids")]
+        [Then("the ids of all the children across all pages should match these tenant ids")]
         public void IdsFromAllGetChildTenantsMatch(Table idTable)
         {
             IEnumerable<string> expectedIds = idTable.CreateSet(row => this.Tenants[row["TenantName"]].Id);

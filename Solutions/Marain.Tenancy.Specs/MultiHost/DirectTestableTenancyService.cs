@@ -1,21 +1,23 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Net;
-using System.Text;
-using System.Threading.Tasks;
-using Marain.Tenancy.OpenApi;
-using Menes;
-using Menes.Hal;
-using Moq;
-using Newtonsoft.Json.Linq;
+﻿// <copyright file="DirectTestableTenancyService.cs" company="Endjin Limited">
+// Copyright (c) Endjin Limited. All rights reserved.
+// </copyright>
 
 namespace Marain.Tenancy.Specs.MultiHost
 {
+    using System.Net;
+    using System.Threading.Tasks;
+
+    using Marain.Tenancy.OpenApi;
+
+    using Menes;
+    using Menes.Hal;
+
+    using Newtonsoft.Json.Linq;
+
     internal class DirectTestableTenancyService : ITestableTenancyService
     {
-        private TenancyService tenancyService;
-        private IOpenApiContext openApiContext;
+        private readonly TenancyService tenancyService;
+        private readonly IOpenApiContext openApiContext;
 
         public DirectTestableTenancyService(TenancyService tenancyService, IOpenApiContext openApiContext)
         {
@@ -32,11 +34,13 @@ namespace Marain.Tenancy.Specs.MultiHost
         public Task<TenancyResponse> GetSwaggerAsync()
         {
             OpenApiResult result = this.tenancyService.NotFoundResult();
+
             // TODO: Fix if statement to check for swagger endpoint
             if (this.openApiContext != null)
             {
                 result = this.tenancyService.OkResult();
             }
+
             return Task.FromResult(MakeResponse(result));
         }
 
@@ -53,7 +57,7 @@ namespace Marain.Tenancy.Specs.MultiHost
             return MakeResponse(result);
         }
 
-        private TenancyResponse MakeResponse(OpenApiResult result)
+        private static TenancyResponse MakeResponse(OpenApiResult result)
         {
             JObject? parsedResponse = null;
             if (result.Results.TryGetValue("application/json", out object? document))
@@ -69,9 +73,8 @@ namespace Marain.Tenancy.Specs.MultiHost
                 IsSuccessStatusCode = result.StatusCode >= 200 && result.StatusCode < 300,
                 StatusCode = (HttpStatusCode)result.StatusCode,
                 CacheControlHeader = (result.Results.TryGetValue("Cache-Control", out object? cacheControl) ? cacheControl : "") as string,
-                BodyJson = parsedResponse
+                BodyJson = parsedResponse,
             };
         }
-
     }
 }

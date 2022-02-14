@@ -361,7 +361,8 @@ namespace Marain.Tenancy.OpenApi
                 return this.OkResult(
                     await this.tenantMapper
                         .MapAsync(result)
-                        .ConfigureAwait(false), "application/json");
+                        .ConfigureAwait(false),
+                    "application/json");
             }
             catch (InvalidOperationException)
             {

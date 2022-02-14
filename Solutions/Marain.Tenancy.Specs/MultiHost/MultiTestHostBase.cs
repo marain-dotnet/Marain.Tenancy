@@ -73,7 +73,7 @@ namespace Marain.Tenancy.Specs.MultiHost
         [AttributeUsage(AttributeTargets.Class)]
         public class MultiHostTestAttribute : Attribute, IFixtureBuilder2
         {
-            private readonly NUnitTestFixtureBuilder builder = new NUnitTestFixtureBuilder();
+            private readonly NUnitTestFixtureBuilder builder = new();
 
             public IEnumerable<TestSuite> BuildFrom(ITypeInfo typeInfo, IPreFilter filter)
             {
@@ -125,7 +125,7 @@ namespace Marain.Tenancy.Specs.MultiHost
 
             private class NullPrefilter : IPreFilter
             {
-                public static readonly NullPrefilter Instance = new NullPrefilter();
+                public static readonly NullPrefilter Instance = new();
 
                 public bool IsMatch(Type type) => true;
 

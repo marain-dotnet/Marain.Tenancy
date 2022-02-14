@@ -28,7 +28,7 @@ namespace Marain.Tenancy.Storage.Azure.BlobStorage.Specs.StepDefinitions
         {
         }
 
-        [When(@"I create a child tenant of the root tenant called '([^']*)' labelled '([^']*)'")]
+        [When("I create a child tenant of the root tenant called '([^']*)' labelled '([^']*)'")]
         public async Task GivenICreateAChildOfTheRootTenantCalledWithTheDetailsAvailableAsAsync(
             string tenantName, string newTenantLabel)
         {
@@ -61,7 +61,7 @@ namespace Marain.Tenancy.Storage.Azure.BlobStorage.Specs.StepDefinitions
             this.AddWellKnownTenantToDelete(newTenant.Id);
         }
 
-        [When(@"I create a child of the tenant labelled '([^']*)' named '([^']*)' labelled '([^']*)'")]
+        [When("I create a child of the tenant labelled '([^']*)' named '([^']*)' labelled '([^']*)'")]
         public async Task GivenICreateAChildOfAChildOfTheRootTenantAsync(
             string parentTenantLabel, string newTenantName, string newTenantLabel)
         {

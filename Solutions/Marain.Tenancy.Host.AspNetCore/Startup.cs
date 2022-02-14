@@ -1,3 +1,7 @@
+// <copyright file="Startup.cs" company="Endjin Limited">
+// Copyright (c) Endjin Limited. All rights reserved.
+// </copyright>
+
 namespace Marain.Tenancy.Host.AspNetCore
 {
     using System;
@@ -13,17 +17,26 @@ namespace Marain.Tenancy.Host.AspNetCore
     using Microsoft.Extensions.DependencyInjection;
     using Microsoft.Extensions.Hosting;
 
+    /// <summary>
+    /// Web host startup class.
+    /// </summary>
     public class Startup
     {
-        public IConfiguration Configuration { get; }
-
+        /// <summary>
+        /// Called by ASP.NET to create our startup class.
+        /// </summary>
+        /// <param name="configuration">Application configuration settings.</param>
         public Startup(IConfiguration configuration)
         {
             this.Configuration = configuration;
         }
 
-        // This method gets called by the runtime. Use this method to add services to the container.
-        // For more information on how to configure your application, visit https://go.microsoft.com/fwlink/?LinkID=398940
+        private IConfiguration Configuration { get; }
+
+        /// <summary>
+        /// Called by ASP.NET so that we can add services to the DI container.
+        /// </summary>
+        /// <param name="services">DI service collection.</param>
         public void ConfigureServices(IServiceCollection services)
         {
             services.AddTenancyApiWithAspNetPipelineHosting(ConfigureOpenApiHost);
@@ -40,7 +53,11 @@ namespace Marain.Tenancy.Host.AspNetCore
 #endif
         }
 
-        // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
+        /// <summary>
+        /// This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
+        /// </summary>
+        /// <param name="app">Enables us to configure the pipeline.</param>
+        /// <param name="env">Information about our host environment.</param>
         public void Configure(IApplicationBuilder app, IWebHostEnvironment env)
         {
             if (env.IsDevelopment())

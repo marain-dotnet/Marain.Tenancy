@@ -1,25 +1,20 @@
-﻿// <copyright file="TenancyClientBindings.cs" company="Endjin Limited">
+﻿// <copyright file="TenancyServiceBindings.cs" company="Endjin Limited">
 // Copyright (c) Endjin Limited. All rights reserved.
 // </copyright>
 
 namespace Marain.Tenancy.Specs.Integration.Bindings
 {
     using System;
-    using System.Collections.Generic;
-    using System.Linq;
+
     using Corvus.Storage.Azure.BlobStorage;
     using Corvus.Testing.SpecFlow;
+
     using Marain.Tenancy.Client;
+
     using Menes;
-    using Menes.Internal;
-    using Menes.Links;
-    using Microsoft.AspNetCore.Http;
-    using Microsoft.AspNetCore.Mvc;
+
     using Microsoft.Extensions.Configuration;
     using Microsoft.Extensions.DependencyInjection;
-    using Newtonsoft.Json;
-    using Newtonsoft.Json.Converters;
-    using Newtonsoft.Json.Serialization;
 
     using TechTalk.SpecFlow;
 
@@ -33,7 +28,6 @@ namespace Marain.Tenancy.Specs.Integration.Bindings
         /// Configures the DI container before tests start.
         /// </summary>
         /// <param name="featureContext">The SpecFlow test context.</param>
-        /// 
         [BeforeFeature("withTenancyClient", Order = ContainerBeforeFeatureOrder.PopulateServiceCollection)]
         public static void SetupFeature(FeatureContext featureContext)
         {

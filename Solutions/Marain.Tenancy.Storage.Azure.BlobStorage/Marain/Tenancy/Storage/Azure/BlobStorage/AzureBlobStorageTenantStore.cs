@@ -301,7 +301,7 @@ namespace Marain.Tenancy.Storage.Azure.BlobStorage
             {
                 // This indicates that the blob changed between us reading it and applying the modification.
                 // TODO: perform a retry instead of bailing.
-                throw new InvalidOperationException($"Concurrent modifications detected.");
+                throw new InvalidOperationException("Concurrent modifications detected.");
             }
 
             return updatedTenant;
@@ -328,7 +328,7 @@ namespace Marain.Tenancy.Storage.Azure.BlobStorage
         private static string? GenerateContinuationToken(string? continuationToken)
             => string.IsNullOrWhiteSpace(continuationToken) ? null : continuationToken.Base64UrlEncode();
 
-        private async Task<(ITenant, BlobContainerClient)> GetContainerAndTenantForChildTenantsOfAsync(string tenantId)
+        private async Task<(ITenant ParentTenant, BlobContainerClient Container)> GetContainerAndTenantForChildTenantsOfAsync(string tenantId)
         {
             // Get the repo for the root tenant
             BlobContainerClient blobContainer = await this.GetBlobContainer(this.Root)
@@ -338,10 +338,7 @@ namespace Marain.Tenancy.Storage.Azure.BlobStorage
             {
                 await LazyInitializer.EnsureInitialized(
                     ref this.rootContainerExistsCheck,
-                    async () =>
-                    {
-                        await blobContainer.CreateIfNotExistsAsync().ConfigureAwait(false);
-                    });
+                    async () => await blobContainer.CreateIfNotExistsAsync().ConfigureAwait(false));
                 return (this.Root, blobContainer);
             }
 
@@ -399,8 +396,8 @@ namespace Marain.Tenancy.Storage.Azure.BlobStorage
             }
 
             Tenant tenant;
-            using (StreamReader sr = new (response.Value.Content.ToStream(), leaveOpen: false))
-            using (JsonTextReader jr = new (sr))
+            using (StreamReader sr = new(response.Value.Content.ToStream(), leaveOpen: false))
+            using (JsonTextReader jr = new(sr))
             {
                 tenant = this.jsonSerializer.Deserialize<Tenant>(jr);
             }

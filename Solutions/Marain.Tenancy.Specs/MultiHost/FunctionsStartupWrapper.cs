@@ -13,7 +13,7 @@ namespace Marain.Tenancy.Specs.MultiHost
 
     public class FunctionsStartupWrapper : FunctionsStartup
     {
-        private readonly Startup wrappedStartup = new Startup();
+        private readonly Startup wrappedStartup = new();
 
         public override void Configure(IFunctionsHostBuilder builder)
         {

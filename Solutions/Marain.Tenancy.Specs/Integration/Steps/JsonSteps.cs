@@ -13,6 +13,8 @@ namespace Marain.Tenancy.Specs.Integration.Steps
     [Binding]
     public class JsonSteps : Steps
     {
+        public JObject? Json { get; internal set; }
+
         [Then("the response content should have a property called '(.*)'")]
         public void ThenTheResponseObjectShouldHaveAPropertyCalled(string propertyPath)
         {
@@ -27,8 +29,6 @@ namespace Marain.Tenancy.Specs.Integration.Steps
             string? actualValue = actualToken.Value<string>();
             Assert.AreEqual(expectedValue, actualValue, $"Expected value of property '{propertyPath}' was '{expectedValue}', but actual value was '{actualValue}'");
         }
-
-        public JObject? Json { get; internal set; }
 
         [Then("the response content should have a boolean property called '(.*)' with value '(.*)'")]
         public void ThenTheResponseContentShouldHaveABooleanPropertyCalledWithValue(string propertyPath, bool expectedValue)

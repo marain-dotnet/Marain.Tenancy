@@ -6,7 +6,6 @@ namespace Microsoft.Extensions.DependencyInjection
 {
     using Corvus.Storage.Azure.BlobStorage;
     using Corvus.Tenancy;
-    using Corvus.Tenancy.Internal;
 
     using Marain.Tenancy.Storage.Azure.BlobStorage;
 

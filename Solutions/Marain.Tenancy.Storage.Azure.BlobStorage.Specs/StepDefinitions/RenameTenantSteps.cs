@@ -2,6 +2,8 @@
 // Copyright (c) Endjin Limited. All rights reserved.
 // </copyright>
 
+#pragma warning disable RCS1196 // Call extension method as instance methods - TenantExtensions is evil: it defines extensions methods for string. I will not bow to this.
+
 namespace Marain.Tenancy.Storage.Azure.BlobStorage.Specs.StepDefinitions
 {
     using System;
