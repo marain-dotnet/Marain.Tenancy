@@ -43,6 +43,7 @@ namespace Marain.Tenancy.Cli
                 };
 
                 services.AddServiceIdentityAzureTokenCredentialSourceFromLegacyConnectionString(msiTokenSourceOptions);
+                services.AddMicrosoftRestAdapterForServiceIdentityAccessTokenSource();
 
                 var tenancyClientOptions = new TenancyClientOptions
                 {
