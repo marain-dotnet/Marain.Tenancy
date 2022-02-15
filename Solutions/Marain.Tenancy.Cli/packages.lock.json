@@ -215,8 +215,8 @@
       },
       "Corvus.Tenancy.Abstractions": {
         "type": "Transitive",
-        "resolved": "3.0.1",
-        "contentHash": "QE9fCTBTSrYl97TjRLC97/31ppGynWU64Cmy+G1x694pXcycJvOYE/vkVH0nY/dH2IFI22o2hbUnN5hRcivy3A==",
+        "resolved": "3.1.0",
+        "contentHash": "hSufeLf93Clem0WwpGsOBE4yTJTPmVZje9Epv1jYehWDjH3mQIk33w35xLNzL++Mz2iUrubi8KzfGTZKpHqEPA==",
         "dependencies": {
           "Corvus.ContentHandling.Json": "2.0.11",
           "Corvus.Extensions": "1.1.4",
@@ -1591,7 +1591,7 @@
       "marain.tenancy.clienttenantprovider": {
         "type": "Project",
         "dependencies": {
-          "Corvus.Tenancy.Abstractions": "3.0.1",
+          "Corvus.Tenancy.Abstractions": "3.1.0",
           "Marain.Tenancy.Client": "1.0.0",
           "Microsoft.AspNetCore.WebUtilities": "2.2.0"
         }
