@@ -204,8 +204,8 @@
       },
       "Menes.Abstractions": {
         "type": "Transitive",
-        "resolved": "3.0.0",
-        "contentHash": "puLN8wrfuMCFmwOMvaJNsegbTcr0UlocejkZbNXuULfaDcNBLB7rQvLVqt6TVWjIWrw94RaJoD6+wg8aY0EITg==",
+        "resolved": "3.1.3",
+        "contentHash": "YN2hawnAXFzjdjgk1CLobnxUej96X6guM4eL7pK3objQ3kR1jgveirVFUipBul4FG7H+1uWSyl/z6PIbF4zdnA==",
         "dependencies": {
           "Corvus.ContentHandling": "2.0.11",
           "Corvus.Extensions": "1.1.4",
@@ -221,18 +221,18 @@
       },
       "Menes.Hosting": {
         "type": "Transitive",
-        "resolved": "3.0.0",
-        "contentHash": "VQYzTjmxAnMRMw3hsiS+tWYPJg3GYavRxu9Fqi//p9m0oBIBIgohmFRqfanPSBZiYfzOtrI/gOVNuhigWovplg==",
+        "resolved": "3.1.3",
+        "contentHash": "FKCCsuWpI3qkrOt0Grphlr2sk5SAK1qcDm3ZvwaWekXJj7tBFEw/C29tDhDtIUy/2WFjlHYx9MR+OQnrViJIOA==",
         "dependencies": {
-          "Menes.Abstractions": "3.0.0"
+          "Menes.Abstractions": "3.1.3"
         }
       },
       "Menes.Hosting.AspNetCore": {
         "type": "Transitive",
-        "resolved": "3.0.0",
-        "contentHash": "8GlsYJeDqhlWrxYcXyvBehe8OFEkK4bwUAt4Ll+UbHpuVioYUvvtt2unhoo07oTqbjbMzNQUotMpreZSGMqQ6w==",
+        "resolved": "3.1.3",
+        "contentHash": "OdU1rXNw20AomA8xH6DLX7SHB1zF/2GdAHZnqsIVIdsoL7A68sh6B0QyrikSv5yz1dzSBrMDa2zY9/23EGRVzA==",
         "dependencies": {
-          "Menes.Hosting": "3.0.0"
+          "Menes.Hosting": "3.1.3"
         }
       },
       "Microsoft.ApplicationInsights": {
@@ -1351,14 +1351,14 @@
         "type": "Project",
         "dependencies": {
           "Marain.Tenancy.OpenApi.Service": "1.0.0",
-          "Menes.Hosting.AspNetCore": "3.0.0"
+          "Menes.Hosting.AspNetCore": "3.1.3"
         }
       },
       "marain.tenancy.openapi.service": {
         "type": "Project",
         "dependencies": {
           "Corvus.Tenancy.Abstractions": "3.1.0",
-          "Menes.Abstractions": "3.0.0",
+          "Menes.Abstractions": "3.1.3",
           "Microsoft.ApplicationInsights": "2.20.0",
           "Microsoft.AspNetCore.JsonPatch": "6.0.0",
           "Microsoft.Extensions.Configuration.Abstractions": "6.0.0",
