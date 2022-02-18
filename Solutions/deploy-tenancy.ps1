@@ -136,8 +136,26 @@ else {
 
 # If not specified, derive same generated values as the 'instance' deployment
 # TODO: Lookup details from AppConfig?
-$appEnvironmentResourceGroupName = toResourceName $deploymentConfig.AppEnvironmentResourceGroupName "marain" "rg" $uniqueSuffix
-$appEnvironmentName = toResourceName $deploymentConfig.AppEnvironmentName "marain" "kubeenv" $uniqueSuffix
+if ($deploymentConfig.HostingPlatformType -ieq "functions") {
+    if ($deploymentConfig.UseSharedMarainHosting) {
+        $hostingPlatformName = toResourceName $deploymentConfig.HostPlatformName "marain" "appsvc" $uniqueSuffix
+        $hostingPlatformResourceGroupName = toResourceName $deploymentConfig.HostPlatformResourceGroupName "marain" "rg" $uniqueSuffix
+    }
+    else {
+        $hostingPlatformName = toResourceName $deploymentConfig.HostPlatformName $serviceName "appsvc" $uniqueSuffix
+        $hostingPlatformResourceGroupName = toResourceName $deploymentConfig.HostPlatformResourceGroupName $serviceName "rg" $uniqueSuffix
+    }
+}
+else {
+    if ($deploymentConfig.UseSharedMarainHosting) {
+        $hostingPlatformName = toResourceName $deploymentConfig.HostPlatformName "marain" "kubeenv" $uniqueSuffix
+        $hostingPlatformResourceGroupName = toResourceName $deploymentConfig.HostPlatformResourceGroupName "marain" "rg" $uniqueSuffix
+    }
+    else {
+        $hostingPlatformName = toResourceName $deploymentConfig.HostPlatformName $serviceName "kubeenv" $uniqueSuffix
+        $hostingPlatformResourceGroupName = toResourceName $deploymentConfig.HostPlatformResourceGroupName $serviceName "rg" $uniqueSuffix
+    }
+}
 
 # If not specified, derive same default values used by the 'instance' deployment
 $acrName = [string]::IsNullOrEmpty($deploymentConfig.AcrName) ? "$($appEnvironmentName)acr" : $deploymentConfig.AcrName
@@ -165,6 +183,7 @@ $armDeployment = @{
         tenancyStorageSecretName = $deploymentConfig.TenancyStorageSecretName
         tenancyAppName = $appName
         tenancyAadAppName = $aadAppName
+        enableAuth = $false
         tenancySpCredentialSecretName = $deploymentConfig.TenancySpCredentialSecretName
         tenancyAdminSpName = $tenancyAdminSpName
         tenancyAdminSpCredentialSecretName = $deploymentConfig.TenancyAdminSpCredentialSecretName
@@ -179,9 +198,11 @@ $armDeployment = @{
         existingKeyVaultResourceGroupName = $deploymentConfig.UseSharedKeyVault ? $sharedKeyVaultResourceGroupName : ''
         keyVaultName = $keyVaultName
         
-        appEnvironmentName = $appEnvironmentName
-        appEnvironmentResourceGroupName = $appEnvironmentResourceGroupName
-        # appEnvironmentSubscription = ""
+        hostingPlatformType = $deploymentConfig.HostingPlatformType
+        useExistingHosting = $deploymentConfig.UseSharedMarainHosting
+        hostingPlatformName = $hostingPlatformName
+        hostingPlatformResourceGroupName = $hostingPlatformResourceGroupName
+        # hostingPlatformSubscriptionId = ""
         
         useAzureContainerRegistry = !$deploymentConfig.UseNonAzureContainerRegistry
         acrName = $acrName
