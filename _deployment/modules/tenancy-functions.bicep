@@ -11,6 +11,8 @@ param hostingEnvironmentName string
 param useExistingHostingEnvironment bool = false
 param hostingEnvironmentResourceGroupName string = resourceGroup().name
 
+param location string = resourceGroup().location
+
 // param aadDeploymentManagedIdentityName string
 // param aadDeploymentManagedIdentityResourceGroupName string
 // param aadDeploymentManagedIdentitySubscriptionId string = subscription().subscriptionId
@@ -20,7 +22,7 @@ param appConfigurationStoreResourceGroupName string
 param appConfigurationSubscription string = subscription().subscriptionId
 param appConfigurationLabel string
 
-param tenancyAadAppName string = ''
+// param tenancyAadAppName string = ''
 
 // param tenancyAdminSpName string
 // param tenancyAdminSpCredentialSecretName string
@@ -33,8 +35,8 @@ param storageSecretName string
 // param tenancyStorageConnectionString string
 // @secure()
 // param servicePrincipalCredential string
-@secure()
-param appInsightsInstrumentationKey string
+
+param appInsightsInstrumentationKeySecretName string
 
 param resourceTags object = {}
 
@@ -47,14 +49,14 @@ targetScope = 'resourceGroup'
 // var spTenantId = json(servicePrincipalCredential).tenant
 // var azureServicesAuthConnectionString = ''
 
-resource app_config 'Microsoft.AppConfiguration/configurationStores@2020-06-01' existing = {
-  name: appConfigurationStoreName
-  scope: resourceGroup(appConfigurationSubscription, appConfigurationStoreResourceGroupName)
-}
+// resource app_config 'Microsoft.AppConfiguration/configurationStores@2020-06-01' existing = {
+//   name: appConfigurationStoreName
+//   scope: resourceGroup(appConfigurationSubscription, appConfigurationStoreResourceGroupName)
+// }
 
 
 // Retrieve/provision the target AppService plan
-module hosting_plan '../../erp/bicep/app_service_plan.bicep' = {
+module hosting_plan 'br:endjintestacr.azurecr.io/bicep/modules/app_service_plan:0.1.0-initial-modules-and-build.33' = {
   name: 'tenancyHostingPlan'
   scope:resourceGroup(hostingEnvironmentResourceGroupName)
   params: {
@@ -63,7 +65,7 @@ module hosting_plan '../../erp/bicep/app_service_plan.bicep' = {
     existingPlanResourceGroupName: hostingEnvironmentResourceGroupName
     skuName: 'Y1'
     skuTier: 'Dynamic'
-    location: resourceGroup().location
+    location: location
   }
 }
 
@@ -74,7 +76,7 @@ resource key_vault 'Microsoft.KeyVault/vaults@2021-06-01-preview' existing = {
 }
 
 // Lookup the storage secret as we'll use its URI later in app settings
-module storage_secret '../../erp/bicep/key_vault_secret.bicep' = {
+module storage_secret 'br:endjintestacr.azurecr.io/bicep/modules/key_vault_secret:0.1.0-initial-modules-and-build.33' = {
   name: 'getStorageSecret'
   scope: resourceGroup(keyVaultResourceGroupName)
   params: {
@@ -85,7 +87,7 @@ module storage_secret '../../erp/bicep/key_vault_secret.bicep' = {
 }
 
 // Deploy Tenancy as a Function App
-module tenancy_service '../../erp/bicep/functions-app.bicep' = {
+module tenancy_service 'functions-app.bicep' = {
   name: 'tenancyFunctionApp'
   params: {
     functionsAppName: tenancyAppName
@@ -93,19 +95,20 @@ module tenancy_service '../../erp/bicep/functions-app.bicep' = {
     keyVaultName: keyVaultName
     keyVaultResourceGroupName: keyVaultResourceGroupName
     functionStorageKeySecretName: 'tenancy-function-storage-key'
+    location: location
     resourceTags: resourceTags
   }
 }
 
 // Configure the Tenancy app settings
-module tenancy_app_settings '../../erp/bicep/function-app-settings.bicep' = {
+module tenancy_app_settings 'function-app-settings.bicep' = {
   name: 'tenancyFunctionAppSettings'
   params: {
     functionName: tenancy_service.outputs.name
     storageAccountKey: key_vault.getSecret(storageSecretName)
     storageAccountName: storageName
+    appInsightsInstrumentationKey: key_vault.getSecret(appInsightsInstrumentationKeySecretName)
     appSettings: {
-      APPINSIGHTS_INSTRUMENTATIONKEY: appInsightsInstrumentationKey
       AzureServicesAuthConnectionString: ''     
       'RootTenantBlobStorageConfigurationOptions:AccountName': storageName
       'RootTenantBlobStorageConfigurationOptions:KeyVaultName': keyVaultName
@@ -132,83 +135,20 @@ module tenancy_app_settings '../../erp/bicep/function-app-settings.bicep' = {
 //   }
 // }
 
-
-
-// module key_vault '../../erp/bicep/key_vault.bicep' = if (!useExistingKeyVault) {
-//   scope: tenancy_rg
-//   name: 'keyVaultDeploy'
-//   params: {
-//     name: keyVaultName
-//     enabledForTemplateDeployment: true
-//     enable_diagnostics: true
-//     access_policies: [
-//       {
-//         // JamesD
-//         objectId: 'f3498fd9-cff0-44a9-991c-c017f481adf0'
-//         tenantId: tenantId
-//         permissions: {
-//           secrets: [
-//             'all'
-//           ]
-//         }
-//       }
-//       {
-//         // Managed identity
-//         objectId: aad_managed_id.id
-//         tenantId: tenantId
-//         permissions: {
-//           secrets: [
-//             'get'
-//             'set'
-//           ]
-//         }
-//       }
-//     ]
-//     tenantId: tenantId
-//     resource_tags: resourceTags
-//   }
-// }
-
-// module tenancy_storage '../../erp/bicep/storage_account.bicep' = {
-//   scope: tenancy_rg
-//   name: storageAccountName
-//   params: {
-//     name: storageAccountName
-//     sku: storageSku
-//     saveAccessKeyToKeyVault: true
-//     keyVaultResourceGroupName: useExistingKeyVault ? existingKeyVaultResourceGroupName : resourceGroupName
-//     keyVaultName: useExistingKeyVault ? existing_key_vault.name : key_vault.name
-//     keyVaultSecretName: tenancyStorageSecretName
-//     resource_tags: resourceTags
-//   }
-// }
-
-// module tenant_admin_service_principal '../../erp/bicep/aad_service_principal_script.bicep' = {
-//   scope: tenancy_rg
-//   name: 'adminSpDeploy'
-//   params: {
-//     displayName: tenancyAdminSpName
-//     keyVaultName: keyVaultName
-//     keyVaultSecretName: tenancyAdminSpCredentialSecretName
-//     managedIdentityResourceId: aad_managed_id.id
-//     resourceTags: resourceTags
-//   }
-// }
-
-// module tenancy_uri_app_config_key '../../erp/bicep/set_app_configuration_keys.bicep' = {
-//   scope: resourceGroup(appConfigurationSubscription, appConfigurationStoreResourceGroupName)
-//   name: 'tenncyUriAppConfigKeyDeploy'
-//   params: {
-//     appConfigStoreName: appConfigurationStoreName
-//     label: appConfigurationLabel
-//     entries: [
-//       {
-//         name: 'TenancyServiceUrl'
-//         value: 'https://${tenancy_service.outputs.fqdn}'
-//       }
-//     ]
-//   }
-// }
+module tenancy_uri_app_config_key 'br:endjintestacr.azurecr.io/bicep/modules/set_app_configuration_keys:0.1.0-initial-modules-and-build.33' = {
+  scope: resourceGroup(appConfigurationSubscription, appConfigurationStoreResourceGroupName)
+  name: 'tenncyUriAppConfigKeyDeploy'
+  params: {
+    appConfigStoreName: appConfigurationStoreName
+    label: appConfigurationLabel
+    entries: [
+      {
+        name: 'TenancyServiceUrl'
+        value: 'https://${tenancy_service.outputs.fqdn}'
+      }
+    ]
+  }
+}
 
 // resource aad_managed_id 'Microsoft.ManagedIdentity/userAssignedIdentities@2018-11-30' existing = {
 //   name: aadDeploymentManagedIdentityName
@@ -240,19 +180,8 @@ module tenancy_app_settings '../../erp/bicep/function-app-settings.bicep' = {
 //   }
 // }
 
-// module init_tenancy '../../erp/bicep/init_marain_tenancy_deployment_script.bicep' = {
-//   scope: tenancy_rg
-//   name: 'initTenancyDeploy'
-//   params: {
-//     managedIdentityResourceId: aad_managed_id.id
-//     servicePrincipalCredential: existing_key_vault.getSecret(tenancyAdminSpCredentialSecretName)
-//     tenencyServiceAppId: tenancy_aad_app.outputs.application_id
-//     tenencyServiceUri: 'https://${tenancy_service.outputs.fqdn}/'
-//   }
-// }
 
 output service_url string = tenancy_service.outputs.fqdn
-// output fedemo_url string = tenancy_demofrontend.outputs.fqdn
 output sp_application_id string = tenancy_service.outputs.servicePrincipalId
 // output sp_object_id string = tenancy_app_service_principal.outputs.object_id
 // output aad_application_id string = tenancy_aad_app.outputs.application_id

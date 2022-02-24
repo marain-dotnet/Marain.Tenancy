@@ -11,6 +11,8 @@ param hostingPlanResourceId string
 // param useExistingHostingPlan bool = false
 // param existingHostingPlanResourceGroupName string = ''
 
+param functionsAppPackageUri string = 'https://github.com/marain-dotnet/Marain.Tenancy/releases/download/1.1.14/Marain.Tenancy.Host.Functions.zip'
+
 @description('Storage Account type')
 @allowed([
   'Standard_LRS'
@@ -23,7 +25,9 @@ param keyVaultName string
 param keyVaultResourceGroupName string
 param functionStorageKeySecretName string
 
-param functionAadAppClientId string = ''
+param location string = resourceGroup().location
+
+// param functionAadAppClientId string = ''
 
 // @description('Enable EasyAuth for AAD using the specified Client ID/App ID')
 // param easyAuthAadClientId string = ''
@@ -36,17 +40,18 @@ param functionAadAppClientId string = ''
 
 param resourceTags object = {}
 
-var storageAccountName_var = substring('${functionsAppName}func${uniqueString(resourceGroup().id)}', 0, 24)
+var storageAccountName = substring('${functionsAppName}func${uniqueString(resourceGroup().id)}', 0, 24)
 // var storageAccountid = '${resourceGroup().id}/providers/Microsoft.Storage/storageAccounts/${storageAccountName_var}'
 // var packageUri = '${artifactsLocation}/${functionsAppPackageFolder}/${functionsAppPackageFileName}${artifactsLocationSasToken}'
+
 
 targetScope = 'resourceGroup'
 
 
-module storage 'storage_account.bicep' = {
+module storage 'br:endjintestacr.azurecr.io/bicep/modules/storage_account:0.1.0-initial-modules-and-build.33' = {
   name: '${functionsAppName}FunctionAppStorage'
   params: {
-    name: storageAccountName_var
+    name: storageAccountName
     sku: storageAccountType
     saveAccessKeyToKeyVault: true
     keyVaultName: keyVaultName
@@ -56,21 +61,16 @@ module storage 'storage_account.bicep' = {
   }
 }
 
-resource key_vault 'Microsoft.KeyVault/vaults@2021-06-01-preview' existing = {
-  name: keyVaultName
-  scope: resourceGroup(keyVaultResourceGroupName)
-}
-
 module function_app '_functions_app.bicep' = {
   name: '${functionsAppName}FunctionAppInstance'
   params: {
     name: functionsAppName
+    location: location
     hostingPlanResourceId: hostingPlanResourceId
-    packageUri: 'https://github.com/marain-dotnet/Marain.Tenancy/releases/download/1.1.14/Marain.Tenancy.Host.Functions.zip'
+    packageUri: functionsAppPackageUri
     resourceTags: resourceTags
   }
 }
-
 
 
 // output storageAccountConnectionString string = 'DefaultEndpointsProtocol=https;AccountName=${storageAccountName_var};AccountKey=${listKeys(storageAccountid, '2015-05-01-preview').key1}'

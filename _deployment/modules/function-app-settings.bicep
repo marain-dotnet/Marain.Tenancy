@@ -1,6 +1,8 @@
 param functionName string
 param extensionVersion string = '~3'
 param workerRuntime string = 'dotnet'
+@secure()
+param appInsightsInstrumentationKey string = ''
 param appSettings object
 param storageAccountName string
 @secure()
@@ -22,6 +24,7 @@ var functionSettings = {
   FUNCTIONS_WORKER_RUNTIME: workerRuntime
   WEBSITE_CONTENTAZUREFILECONNECTIONSTRING: 'DefaultEndpointsProtocol=https;AccountName=${storageAccountName};AccountKey=${storageAccountKey}'
   WEBSITE_CONTENTSHARE: toLower(functionName)
+  APPINSIGHTS_INSTRUMENTATIONKEY: appInsightsInstrumentationKey
 }
 var finalAppSettings = union(functionSettings,appSettings)
 

@@ -1,14 +1,17 @@
 param name string
 param hostingPlanResourceId string
+param location string = resourceGroup().location
 param packageUri string = ''
 param resourceTags object = {}
 
+
 targetScope = 'resourceGroup'
+
 
 resource function_app 'Microsoft.Web/sites@2021-02-01' = {
   kind: 'functionapp'
   name: name
-  location: resourceGroup().location
+  location: location
   identity: {
     type: 'SystemAssigned'
   }
