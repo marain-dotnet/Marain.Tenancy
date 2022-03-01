@@ -359,14 +359,11 @@ namespace Marain.Tenancy.Storage.Azure.BlobStorage
 
         private async Task<BlobContainerClient> GetBlobContainer(ITenant tenant)
         {
-            string tenantedLogicalContainerName = AzureStorageBlobTenantedContainerNaming.GetTenantedLogicalBlobContainerNameFor(
-                tenant,
-                TenancyContainerName);
             return await this.containerSource.GetBlobContainerClientFromTenantAsync(
                 tenant,
                 TenancyV2ConfigKey,
                 TenancyV3ConfigKey,
-                tenantedLogicalContainerName)
+                TenancyContainerName)
                 .ConfigureAwait(false);
         }
 
