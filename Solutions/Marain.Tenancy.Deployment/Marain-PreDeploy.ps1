@@ -48,7 +48,16 @@ Function MarainDeployment([MarainServiceDeploymentContext] $ServiceDeploymentCon
         }
         else {
             Write-Host "Creating default tenancy administrator service principal"
-            $newSp = New-AzADServicePrincipal -DisplayName $defaultTenantAdminSpName -SkipAssignment
+            $newSpParams = @{
+                DisplayName = $defaultTenantAdminSpName
+            }
+            if ((Get-Module Az.Resources).Version.Major -lt 5) {
+                # Earlier versions of Azure PowerShell grant the 'Contributor' role by default, however, current versions
+                # do not and the 'SkipAssignment' switch has been removed (i.e. it is no longer valid)
+                # ref: https://docs.microsoft.com/en-us/powershell/azure/azps-msgraph-migration-changes
+                $newSpParams += @{ SkipAssignment = $true }
+            }
+            $newSp = New-AzADServicePrincipal @newSpParams  
 
             $ServiceDeploymentContext.InstanceContext.TenantAdminAppId = $newSp.ApplicationId
             $ServiceDeploymentContext.InstanceContext.TenantAdminObjectId = $newSp.Id
