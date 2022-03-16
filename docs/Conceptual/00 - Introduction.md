@@ -34,7 +34,7 @@ Multi-tenancy, on the other hand, can be thought of as *lots of solutions, lots 
 
 This *conceptual difference* is often confused with the *implementation difference*. It is perfectly possible for the provider of a multi-tenanted service to implement their service using a single set of resources shared between all their tenants (if other constraints permit).
 
-## When should a solution be multi-tenanted, not multi-user?
+## When should a solution be multi-tenanted, not just multi-user?
 A multi-tenanted solution is required when one or more groups of users have a strong requirement for *isolation* from other groups of users. This is not simply a secure connection to services for that tenant. Isolation will typically manifest in one or more of the following ways:
 
 1. The ability for a tenant to provision, manage, and monitor a collection of resources independently of other tenants.
@@ -45,7 +45,9 @@ A multi-tenanted solution is required when one or more groups of users have a st
 
 Note that this is not simply *data isolation*. Most data storage solutions (blob storage, SQL databases etc.) have mechanisms that allow you to control access to subsets of the data, constrained to particular identities. For example, techniques like Row Level Security (RLS), Attribute Based Access Control (ABAC), filtering, and data partitioning provide various types of security and access boundary. Multi-user systems will often use these techniques to ensure segregation of user data.
 
-A multi-tenanted system will also use these techniques to provide data segregation, but adds in other constraints from the list above. 
+A multi-tenanted system will also use these techniques to provide data segregation, but adds in other constraints from the list above.
+
+In the "simplest" case, your multi-tenanted solution might have exactly 1 user per tenant - each and every user requires those isolation characteristics. But most multi-tenanted solutions evolve to need multiple users in a single tenant, over time (for reasons of cost, density, or ease of information sharing within a trust boundary).
 
 ## Tenancy as a hierarchy
 It is also very common for a multi-tenanted solution to itself be used to provide other multi-tenanted solutions. This can be a further source of confusion.
@@ -65,7 +67,9 @@ The isolation rules for tenancy mean that from the perspective of the solution d
 
 So, any given child tenant can be thought of as the *root of its own tenancy hierarchy*.
 
-Ultimately, there may well be a real "root" tenant somewhere in the tree, but a good tenancy model means we should not have to care whether we are the ultimate root tenant, or some child of a child of a child.
+Indeed, this hierarchy is <i>heterogenous</i>. There is no reason that one particular tenancy model or implementation technique should apply at all nodes in the tree. I can build my application as a tenant of Azure, and then provide a tenancy model to my children that uses <i>nothing</i> of Azure's tenancy capabilities.
+
+Ultimately, there may well be a real "root" tenant somewhere in the tree, but a good tenancy model means we should not have to care whether we are the ultimate root tenant, some child of a child of a child, or even that another service we consume is a peer in the same tenant provider.
 
 ![Tenant roots](Tenant roots.png)
 
@@ -89,7 +93,7 @@ Careful conceptual separation of solution plane and management plane is essentia
 ## Common requirements of a multi-tenanted solution
 Let’s think about a very generalised application. We might say that a typical application has a stimulus/response design like this:
 
-1. Receive a stimulus of some kind (e.g. HTTP request, event, message, timer)
+1. Receive a stimulus of some kind (e.g. HTTP request, event, message, timer) and dispatch it to the appropriate handler
 1. Connect to and authenticate against one or more services within or outside the solution using appropriate credentials, in order to obtain the information required to respond to the stimulus.
 1. Process that information (and optionally respond), possibly connecting to other services within or outside the solution, using appropriate credentials, to update state related to that request.
 
@@ -97,7 +101,7 @@ There are numerous services you can use with that basic pattern – HTTP request
 
 In a multi-tenanted solution, you need to layer a notion of "the intended tenant" into your design:
 
-1. Receive a stimulus of some kind, and dispatch it to the appropriate tenant
+1. Receive a stimulus of some kind, and dispatch it to the appropriate handler, supplying a context identifying the appropriate tenant.
 1. Connect to and authenticate against one or more services within or outside the tenanted solution using credentials appropriate for the given tenant, in order to obtain the information required to respond to the stimulus.
 1. Process that information (and optionally respond) using code and configuration appropriate for that tenant, possibly connecting to the correct instance of other services within or outside the tenanted solution to update state related to that request, using the instances and credentials appropriate for that tenant.
 
