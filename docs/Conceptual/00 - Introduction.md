@@ -129,7 +129,7 @@ For example
 - [Cosmos DB]( https://docs.microsoft.com/en-us/azure/architecture/guide/multitenant/service/cosmos-db)
 - [Azure Storage]( https://docs.microsoft.com/en-us/azure/architecture/guide/multitenant/service/storage)
 
-There is also some [high-level conceptual documentation](https://docs.microsoft.com/en-gb/azure/architecture/guide/multitenant/considerations/overview) about multi-tenanted solution architecture.
+There is also some [high-level conceptual documentation](https://docs.microsoft.com/en-gb/azure/architecture/guide/multitenant/considerations/overview) about multi-tenanted solution architecture and an [excellent Microsoft talk](https://www.youtube.com/watch?v=aem8elgN7iI)
 
 When reading that documentation, it is important to consider whether it describes multi-tenant or multi-user scenarios, as we have defined them above.
 
