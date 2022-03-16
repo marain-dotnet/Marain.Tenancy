@@ -24,8 +24,8 @@
     Id: 0449cadc-0078-4094-b019-520d75cc6cbb
     Measures:
         -
-            Score: 2
-            Description: '51-75'
+            Score: 3
+            Description: '75+'
 -
     Name: Benchmarks
     Id: 64ed80dc-d354-45a9-9a56-c32437306afa
@@ -38,8 +38,8 @@
     Id: 2a7fc206-d578-41b0-85f6-a28b6b0fec5f
     Measures:
         -
-            Score: 0
-            Description: None
+            Score: 1
+            Description: 'Good quality'
 -
     Name: 'Design & Implementation Documentation'
     Id: f026d5a2-ce1a-4e04-af15-5a35792b164b
@@ -59,7 +59,7 @@
     Id: da4ed776-0365-4d8a-a297-c4e91a14d646
     Measures:
         -
-            Date: 2022-01-26
+            Date: 2022-03-16
             Description: None
         -
 -
