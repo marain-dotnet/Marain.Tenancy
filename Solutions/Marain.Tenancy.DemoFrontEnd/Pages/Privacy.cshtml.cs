@@ -1,11 +1,8 @@
 ﻿namespace Marain.Tenancy.DemoFrontEnd.Pages
 {
     using Marain.Tenancy.Client;
-    using Marain.Tenancy.Client.Models;
 
-    using Microsoft.AspNetCore.Mvc;
     using Microsoft.AspNetCore.Mvc.RazorPages;
-    using Microsoft.Rest;
 
     public class PrivacyModel : PageModel
     {

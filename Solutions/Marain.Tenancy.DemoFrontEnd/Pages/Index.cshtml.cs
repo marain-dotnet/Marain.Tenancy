@@ -1,10 +1,11 @@
-﻿using Dapr.Client;
-using Marain.Tenancy.Client.Models;
-using Microsoft.AspNetCore.Mvc;
-using Microsoft.AspNetCore.Mvc.RazorPages;
-
-namespace Marain.Tenancy.DemoFrontEnd.Pages
+﻿namespace Marain.Tenancy.DemoFrontEnd.Pages
 {
+    using Dapr.Client;
+
+    using Marain.Tenancy.Client.Models;
+
+    using Microsoft.AspNetCore.Mvc.RazorPages;
+
     public class IndexModel : PageModel
     {
         private readonly ILogger<IndexModel> logger;

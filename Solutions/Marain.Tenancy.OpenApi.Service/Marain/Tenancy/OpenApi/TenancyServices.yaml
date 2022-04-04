@@ -292,7 +292,7 @@ components:
       description: An update to a tenant in the form of a JSON Patch document as described by RFC6902
       type: array
       items:
-        $ref: "#/components/schemas/UpdateTenantJsonPatchEntry"
+        $ref: '#/components/schemas/UpdateTenantJsonPatchEntry'
     UpdateTenantJsonPatchEntry:
       type: object
       description: An operation describing one change to a tenant as part of an UpdateTenantJsonPatchArray

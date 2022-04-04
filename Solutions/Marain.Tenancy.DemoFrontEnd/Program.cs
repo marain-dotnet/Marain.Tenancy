@@ -3,7 +3,7 @@ using Marain.Tenancy.Client;
 WebApplicationBuilder builder = WebApplication.CreateBuilder(args);
 
 // Lookup dapr connection details
-string daprHost = "localhost"; //Environment.GetEnvironmentVariable("HOSTNAME") ?? "localhost"; //"host.docker.internal";
+string daprHost = "localhost";
 string daprHttpPort = Environment.GetEnvironmentVariable("DAPR_HTTP_PORT");
 string daprTenancyBaseUri = $"http://{daprHost}:{daprHttpPort}/v1.0/invoke/tenancy/method";
 Console.WriteLine($"daprTenancyBaseUri: {daprTenancyBaseUri}");
