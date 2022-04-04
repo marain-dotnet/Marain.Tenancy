@@ -26,7 +26,7 @@ resource aad_service_principal_deploy_script 'Microsoft.Resources/deploymentScri
     arguments: '-DisplayName "${displayName}" -KeyVaultName "${keyVaultName}" -KeyVaultSecretName "${keyVaultSecretName}"'
     azPowerShellVersion: '6.6'
     cleanupPreference: 'OnSuccess'
-    forceUpdateTag: timestamp   // the script is idempotent, so it can always run
+    // forceUpdateTag: timestamp   // the script is idempotent, so it can always run
     retentionInterval: 'P1D'
     scriptContent: scriptContent
     timeout: 'PT30M'
