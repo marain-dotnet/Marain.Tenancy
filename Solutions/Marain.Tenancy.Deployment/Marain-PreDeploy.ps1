@@ -35,6 +35,11 @@ Function MarainDeployment([MarainServiceDeploymentContext] $ServiceDeploymentCon
     $tenantAdminSecretName = "DefaultTenantAdminPassword"
     $defaultTenantAdminSpName = '{0}{1}tenantadmin' -f $ServiceDeploymentContext.InstanceContext.Prefix, $ServiceDeploymentContext.InstanceContext.EnvironmentSuffix
 
+    # Handle the breaking changes for versions of Azure PowerShell that use Microsoft Graph for its AAD interactions
+    # ref: https://docs.microsoft.com/en-us/powershell/azure/azps-msgraph-migration-changes
+    $appIdPropertyName = (Get-Module Az.Resources).Version.Major -ge 5 ? "AppId" : "ApplicationId"
+    $objectIdPropertyName = (Get-Module Az.Resources).Version.Major -ge 5 ? "Id" : "ObjectId"
+
     # Ensure a default tenancy administrator principal is setup/available
     if ($ServiceDeploymentContext.InstanceContext.AadAppIds.ContainsKey($defaultTenantAdminSpName)) {
         # Use AadAppId provided on the command-line
@@ -44,14 +49,23 @@ Function MarainDeployment([MarainServiceDeploymentContext] $ServiceDeploymentCon
         # look-up from AAD directly, if we have access
         $existingSp = Get-AzADServicePrincipal -DisplayName $defaultTenantAdminSpName        
         if ($existingSp) {
-            $ServiceDeploymentContext.InstanceContext.TenantAdminAppId = $existingSp.ApplicationId
+            $ServiceDeploymentContext.InstanceContext.TenantAdminAppId = $existingSp.$appIdPropertyName
         }
         else {
             Write-Host "Creating default tenancy administrator service principal"
-            $newSp = New-AzADServicePrincipal -DisplayName $defaultTenantAdminSpName -SkipAssignment
+            $newSpParams = @{
+                DisplayName = $defaultTenantAdminSpName
+            }
+            if ((Get-Module Az.Resources).Version.Major -lt 5) {
+                # Earlier versions of Azure PowerShell grant the 'Contributor' role by default, however, current versions
+                # do not and the 'SkipAssignment' switch has been removed (i.e. it is no longer valid)
+                # ref: https://docs.microsoft.com/en-us/powershell/azure/azps-msgraph-migration-changes
+                $newSpParams += @{ SkipAssignment = $true }
+            }
+            $newSp = New-AzADServicePrincipal @newSpParams  
 
-            $ServiceDeploymentContext.InstanceContext.TenantAdminAppId = $newSp.ApplicationId
-            $ServiceDeploymentContext.InstanceContext.TenantAdminObjectId = $newSp.Id
+            $ServiceDeploymentContext.InstanceContext.TenantAdminAppId = $newSp.$appIdPropertyName
+            $ServiceDeploymentContext.InstanceContext.TenantAdminObjectId = $newSp.$objectIdPropertyName
             Set-AzKeyVaultSecret -VaultName $keyVaultName -Name $tenantAdminSecretName -SecretValue $newSp.Secret | Out-Null
         }
     }
