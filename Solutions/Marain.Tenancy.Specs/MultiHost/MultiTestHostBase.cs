@@ -6,6 +6,7 @@ namespace Marain.Tenancy.Specs.MultiHost
 {
     using System;
     using System.Collections.Generic;
+    using System.Linq;
     using System.Reflection;
     using NUnit.Framework.Interfaces;
     using NUnit.Framework.Internal;
@@ -92,7 +93,7 @@ namespace Marain.Tenancy.Specs.MultiHost
                 ICustomAttributeProvider assemblyLifeCycleAttributeProvider = typeInfo.Type.GetTypeInfo().Assembly;
                 ICustomAttributeProvider typeLifeCycleAttributeProvider = typeInfo.Type.GetTypeInfo();
 
-                foreach (object[] args in FixtureArgs)
+                foreach (object[] args in FixtureArgs.Cast<object[]>())
                 {
                     var arg = (TestHostModes)args[0];
                     ITestFixtureData parms = new TestFixtureParameters(new object[] { arg });

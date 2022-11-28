@@ -6,6 +6,7 @@ namespace Marain.Tenancy.Storage.Azure.BlobStorage.Specs.MultiMode
 {
     using System;
     using System.Collections.Generic;
+    using System.Linq;
     using System.Reflection;
 
     using NUnit.Framework.Interfaces;
@@ -90,7 +91,7 @@ namespace Marain.Tenancy.Storage.Azure.BlobStorage.Specs.MultiMode
                 ICustomAttributeProvider assemblyLifeCycleAttributeProvider = typeInfo.Type.GetTypeInfo().Assembly;
                 ICustomAttributeProvider typeLifeCycleAttributeProvider = typeInfo.Type.GetTypeInfo();
 
-                foreach (object[] args in FixtureArgs)
+                foreach (object[] args in FixtureArgs.Cast<object[]>())
                 {
                     var arg = (SetupModes)args[0];
                     ITestFixtureData parms = new TestFixtureParameters(new object[] { arg });

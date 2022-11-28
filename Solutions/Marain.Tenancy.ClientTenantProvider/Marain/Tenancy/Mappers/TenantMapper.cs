@@ -32,7 +32,7 @@ namespace Marain.Tenancy.Mappers
         /// <inheritdoc/>
         public ITenant MapTenant(object source)
         {
-            Client.Models.Tenant tenantFromService = ((JObject)source).ToObject<Client.Models.Tenant>();
+            Client.Models.Tenant tenantFromService = ((JObject)source).ToObject<Client.Models.Tenant>()!;
             return new Tenant(
                 tenantFromService.Id,
                 tenantFromService.Name,
