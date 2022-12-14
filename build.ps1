@@ -138,7 +138,8 @@ $SkipPublish = $false
 #
 $SolutionToBuild = (Resolve-Path (Join-Path $here ".\Solutions\Marain.Tenancy.sln")).Path
 $ProjectsToPublish = @(
-    # "Solutions/MySolution/MyWebSite/MyWebSite.csproj"
+    "Solutions/Marain.Tenancy.Host.AspNetCore/Marain.Tenancy.Host.AspNetCore.csproj"
+    "Solutions/Marain.Tenancy.Host.Functions/Marain.Tenancy.Host.Functions.csproj"
 )
 $NuSpecFilesToPackage = @(
     # "Solutions/MySolution/MyProject/MyProject.nuspec"
