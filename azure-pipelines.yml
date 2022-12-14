@@ -9,11 +9,11 @@ trigger:
     - '*'
 
 parameters:
-- name: Endjin.ForcePublish
+- name: ForcePublish
   type: boolean
   default: false
   displayName: When checked, a new release will be created and NuGet packages published; otherwise only 'master' branch changes will be published
-- name: Endjin.InternalPublish
+- name: InternalPublish
   type: boolean
   default: false
   displayName: When checked, NuGet packages will be published to an internal feed; this is independent of whether a public release is performed 
@@ -26,8 +26,8 @@ resources:
       endpoint: marain-github
 
 variables:
-  'Endjin.ForcePublish': ${{ parameters.Endjin.ForcePublish }}
-  'Endjin.InternalPublish': ${{ parameters.Endjin.InternalPublish }}
+  Endjin.ForcePublish: ${{ parameters.ForcePublish }}
+  Endjin.InternalPublish: ${{ parameters.InternalPublish }}
 
 jobs:
 - template: templates/build.and.release.scripted.yml@recommended_practices
