@@ -9,7 +9,7 @@ trigger:
     - '*'
 
 parameters:
-- name: Endjin.ForceDeploy
+- name: Endjin.ForcePublish
   type: boolean
   default: false
   displayName: When checked, a new release will be created and NuGet packages published; otherwise only 'master' branch changes will be published
@@ -24,6 +24,10 @@ resources:
       type: github
       name: endjin/Endjin.RecommendedPractices.AzureDevopsPipelines.GitHub
       endpoint: marain-github
+
+variables:
+  Endjin.ForcePublish: ${{ parameters.Endjin.ForcePublish }}
+  Endjin.InternalPublish: ${{ parameters.Endjin.InternalPublish }}
 
 jobs:
 - template: templates/build.and.release.scripted.yml@recommended_practices
