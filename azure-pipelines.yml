@@ -26,8 +26,8 @@ resources:
       endpoint: marain-github
 
 variables:
-  Endjin.ForcePublish: ${{ parameters.Endjin.ForcePublish }}
-  Endjin.InternalPublish: ${{ parameters.Endjin.InternalPublish }}
+  'Endjin.ForcePublish': ${{ parameters.Endjin.ForcePublish }}
+  'Endjin.InternalPublish': ${{ parameters.Endjin.InternalPublish }}
 
 jobs:
 - template: templates/build.and.release.scripted.yml@recommended_practices
