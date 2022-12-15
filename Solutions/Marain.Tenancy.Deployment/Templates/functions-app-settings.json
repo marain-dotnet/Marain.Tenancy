@@ -69,6 +69,7 @@
         "RootBlobStorageConfiguration:AccountName": "[parameters('storageAccountName')]",
         "RootBlobStorageConfiguration:AccessKeyInKeyVault:VaultName": "[parameters('keyVaultName')]",
         "RootBlobStorageConfiguration:AccessKeyInKeyVault:SecretName": "[parameters('storageAccountKeyName')]",
+        "RootBlobStorageConfiguration:AccessKeyInKeyVault:VaultClientIdentity:IdentitySourceType": "Managed",
         "TenantCacheConfiguration:GetTenantResponseCacheControlHeaderValue": "[parameters('tenantCacheControlHeaderValue')]"
       }
     }
