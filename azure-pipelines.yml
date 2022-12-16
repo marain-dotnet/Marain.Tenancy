@@ -3,7 +3,6 @@ trigger:
     include:
     - master
     - main
-    - feature/*
   tags:
     include:
     - '*'
