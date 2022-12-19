@@ -66,7 +66,7 @@ Function MarainDeployment([MarainServiceDeploymentContext] $ServiceDeploymentCon
 
             $ServiceDeploymentContext.InstanceContext.TenantAdminAppId = $newSp.$appIdPropertyName
             $ServiceDeploymentContext.InstanceContext.TenantAdminObjectId = $newSp.$objectIdPropertyName
-            Set-AzKeyVaultSecret -VaultName $keyVaultName -Name $tenantAdminSecretName -SecretValue $newSp.Secret | Out-Null
+            Set-AzKeyVaultSecret -VaultName $keyVaultName -Name $tenantAdminSecretName -SecretValue $newSp.SecretValue | Out-Null
         }
     }
     else {
@@ -80,7 +80,7 @@ Function MarainDeployment([MarainServiceDeploymentContext] $ServiceDeploymentCon
     if (!$tenantAdminSecret -and !$ServiceDeploymentContext.InstanceContext.DoNotUseGraph) {
         Write-Host "Resetting credential for default tenancy admnistrator service principal"
         $newSpCred = $existingSp | New-AzADServicePrincipalCredential
-        Set-AzKeyVaultSecret -VaultName $keyVaultName -Name $tenantAdminSecretName -SecretValue $newSpCred.Secret | Out-Null
+        Set-AzKeyVaultSecret -VaultName $keyVaultName -Name $tenantAdminSecretName -SecretValue (ConvertTo-SecureString $newSpCred.SecretText -AsPlainText) | Out-Null
         $tenantAdminSecret = Get-AzKeyVaultSecret -VaultName $keyVaultName -Name $tenantAdminSecretName
     }
     elseif (!$tenantAdminSecret) {

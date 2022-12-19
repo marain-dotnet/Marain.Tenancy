@@ -59,16 +59,17 @@
         "WEBSITE_RUN_FROM_PACKAGE": "[parameters('runFromPackage')]",
         "AzureConfigurationStorage": "[parameters('storageAccountConnectionString')]",
         "APPINSIGHTS_INSTRUMENTATIONKEY": "[parameters('applicationInsightsInstrumentationKey')]",
-        "FUNCTIONS_EXTENSION_VERSION": "~3",
+        "FUNCTIONS_EXTENSION_VERSION": "~4",
         "FUNCTIONS_WORKER_RUNTIME": "dotnet",
         "SubscriptionId": "[parameters('subscriptionId')]",
         "TenantId": "[parameters('tenantId')]",
         "AzureWebJobsDashboard": "[parameters('storageAccountConnectionString')]",
         "AzureWebJobsStorage": "[parameters('storageAccountConnectionString')]",
         "TenantCloudBlobContainerFactoryOptions:AzureServicesAuthConnectionString": "",
-        "RootTenantBlobStorageConfigurationOptions:AccountName": "[parameters('storageAccountName')]",
-        "RootTenantBlobStorageConfigurationOptions:KeyVaultName": "[parameters('keyVaultName')]",
-        "RootTenantBlobStorageConfigurationOptions:AccountKeySecretName": "[parameters('storageAccountKeyName')]",
+        "RootBlobStorageConfiguration:AccountName": "[parameters('storageAccountName')]",
+        "RootBlobStorageConfiguration:AccessKeyInKeyVault:VaultName": "[parameters('keyVaultName')]",
+        "RootBlobStorageConfiguration:AccessKeyInKeyVault:SecretName": "[parameters('storageAccountKeyName')]",
+        "RootBlobStorageConfiguration:AccessKeyInKeyVault:VaultClientIdentity:IdentitySourceType": "Managed",
         "TenantCacheConfiguration:GetTenantResponseCacheControlHeaderValue": "[parameters('tenantCacheControlHeaderValue')]"
       }
     }
