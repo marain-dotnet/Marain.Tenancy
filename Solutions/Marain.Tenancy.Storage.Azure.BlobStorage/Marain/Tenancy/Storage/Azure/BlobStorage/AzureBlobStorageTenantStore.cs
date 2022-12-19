@@ -377,7 +377,8 @@ namespace Marain.Tenancy.Storage.Azure.BlobStorage
                 response = await blob.DownloadContentAsync(
                     string.IsNullOrEmpty(etag)
                         ? null
-                        : new BlobRequestConditions { IfNoneMatch = new ETag(etag) })
+                        : new BlobRequestConditions { IfNoneMatch = new ETag(etag) },
+                    CancellationToken.None)
                     .ConfigureAwait(false);
             }
             catch (RequestFailedException x)
@@ -396,7 +397,7 @@ namespace Marain.Tenancy.Storage.Azure.BlobStorage
             using (StreamReader sr = new(response.Value.Content.ToStream(), leaveOpen: false))
             using (JsonTextReader jr = new(sr))
             {
-                tenant = this.jsonSerializer.Deserialize<Tenant>(jr);
+                tenant = this.jsonSerializer.Deserialize<Tenant>(jr)!;
             }
 
             tenant.ETag = response.Value.Details.ETag.ToString("H");
