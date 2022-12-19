@@ -1,11 +1,11 @@
-trigger:
-  branches:
-    include:
-    - master
-    - main
-  tags:
-    include:
-    - '*'
+trigger: none
+#   branches:
+#     include:
+#     - master
+#     - main
+#   tags:
+#     include:
+#     - '*'
 
 parameters:
 - name: ForcePublish
