@@ -26,7 +26,7 @@ resources:
     - repository: recommended_practices
       type: github
       name: endjin/Endjin.RecommendedPractices.AzureDevopsPipelines.GitHub
-      endpoint: marain-github
+      endpoint: marain-dotnet-github
 
 variables:
   Endjin.ForcePublish: ${{ parameters.ForcePublish }}
