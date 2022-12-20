@@ -57,7 +57,8 @@ Function MarainDeployment([MarainServiceDeploymentContext] $ServiceDeploymentCon
 
             $ServiceDeploymentContext.InstanceContext.TenantAdminAppId = $newSp.AppId
             $ServiceDeploymentContext.InstanceContext.TenantAdminObjectId = $newSp.Id
-            Set-AzKeyVaultSecret -VaultName $keyVaultName -Name $tenantAdminSecretName -SecretValue $newSp.PasswordCredentials[0].SecretText | Out-Null
+            $spSecret = ConvertTo-SecureString $newSp.PasswordCredentials[0].SecretText -AsPlainText
+            Set-AzKeyVaultSecret -VaultName $keyVaultName -Name $tenantAdminSecretName -SecretValue $spSecret | Out-Null
         }
     }
     else {
