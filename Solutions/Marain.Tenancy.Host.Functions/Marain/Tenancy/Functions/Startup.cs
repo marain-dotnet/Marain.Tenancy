@@ -8,6 +8,9 @@ namespace Marain.Tenancy.ControlHost
 {
     using System;
 
+    using Azure.Identity;
+
+    using Corvus.Identity.ClientAuthentication.Azure;
     using Corvus.Storage.Azure.BlobStorage;
 
     using Menes;
@@ -36,6 +39,14 @@ namespace Marain.Tenancy.ControlHost
                 .Get<BlobContainerConfiguration>();
             services.AddTenantStoreOnAzureBlobStorage(rootStorageConfiguration);
             services.AddTenancyApiWithOpenApiActionResultHosting(this.ConfigureOpenApiHost);
+            if (rootStorageConfiguration?.AccessKeyInKeyVault?.VaultClientIdentity is ClientIdentityConfiguration idconfig)
+            {
+                services.AddServiceIdentityAzureTokenCredentialSourceFromClientIdentityConfiguration(idconfig);
+            }
+            else
+            {
+                services.AddServiceIdentityAzureTokenCredentialSourceFromAzureCoreTokenCredential(new DefaultAzureCredential());
+            }
         }
 
         private void ConfigureOpenApiHost(IOpenApiHostConfiguration config)
