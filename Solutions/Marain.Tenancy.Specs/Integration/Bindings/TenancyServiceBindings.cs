@@ -43,11 +43,13 @@ namespace Marain.Tenancy.Specs.Integration.Bindings
                             .Build();
                         serviceCollection.AddSingleton(config);
 
-                        serviceCollection.AddSingleton(sp => sp.GetRequiredService<IConfiguration>().Get<TenancyClientOptions>());
+                        serviceCollection.AddSingleton(sp => sp.GetRequiredService<IConfiguration>().Get<TenancyClientOptions>()
+                            ?? throw new InvalidOperationException("TenancyClientOptions missing from Configuration."));
 
                         BlobContainerConfiguration rootStorageConfiguration = config
-                                                .GetSection("RootBlobStorageConfiguration")
-                                                .Get<BlobContainerConfiguration>();
+                            .GetSection("RootBlobStorageConfiguration")
+                            .Get<BlobContainerConfiguration>()
+                                ?? throw new InvalidOperationException("RootBlobStorageConfiguration:BlobContainerConfiguration missing from Configuration.");
 
                         serviceCollection.AddTenantStoreOnAzureBlobStorage(rootStorageConfiguration);
 

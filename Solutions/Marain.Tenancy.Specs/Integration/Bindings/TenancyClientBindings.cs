@@ -4,6 +4,7 @@
 
 namespace Marain.Tenancy.Specs.Integration.Bindings
 {
+    using System;
     using System.Collections.Generic;
     using System.Linq;
     using Corvus.Testing.SpecFlow;
@@ -13,6 +14,8 @@ namespace Marain.Tenancy.Specs.Integration.Bindings
     using Newtonsoft.Json;
     using Newtonsoft.Json.Converters;
     using Newtonsoft.Json.Serialization;
+
+    using NUnit.Framework.Constraints;
 
     using TechTalk.SpecFlow;
 
@@ -35,7 +38,7 @@ namespace Marain.Tenancy.Specs.Integration.Bindings
                 {
                     if (FunctionBindings.TestHostMode != MultiHost.TestHostModes.DirectInvocation)
                     {
-                        var configData = new Dictionary<string, string>
+                        var configData = new Dictionary<string, string?>
                         {
                             { "TenancyServiceBaseUri", "http://localhost:7071" },
                         };
@@ -52,7 +55,9 @@ namespace Marain.Tenancy.Specs.Integration.Bindings
                         serviceCollection.AddJsonNetDateTimeOffsetToIso8601AndUnixTimeConverter();
                         serviceCollection.AddSingleton<JsonConverter>(new StringEnumConverter(new CamelCaseNamingStrategy()));
 
-                        serviceCollection.AddSingleton(sp => sp.GetRequiredService<IConfiguration>().Get<TenancyClientOptions>());
+                        serviceCollection.AddSingleton(sp =>
+                            sp.GetRequiredService<IConfiguration>().Get<TenancyClientOptions>()
+                                ?? throw new InvalidOperationException("TenancyClientOptions missing from Configuration."));
 
                         bool enableCaching = !featureContext.FeatureInfo.Tags.Contains("disableTenantCaching");
 

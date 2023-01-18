@@ -8,6 +8,7 @@ namespace Marain.Tenancy.Client
     using System.Linq;
     using System.Net.Http;
     using CacheCow.Client;
+
     using Corvus.Extensions.Json;
     using Corvus.Identity.ClientAuthentication;
     using Corvus.Identity.ClientAuthentication.MicrosoftRest;

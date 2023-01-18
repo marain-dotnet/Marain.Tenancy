@@ -10,12 +10,13 @@ namespace Marain.Tenancy.Storage.Azure.BlobStorage
     using System.Linq;
     using System.Net;
     using System.Text;
+    using System.Text.Json;
     using System.Threading;
     using System.Threading.Tasks;
 
     using Corvus.Extensions;
-    using Corvus.Extensions.Json;
     using Corvus.Json;
+    using Corvus.Json.Serialization;
     using Corvus.Storage.Azure.BlobStorage;
     using Corvus.Storage.Azure.BlobStorage.Tenancy;
     using Corvus.Tenancy;
@@ -25,8 +26,6 @@ namespace Marain.Tenancy.Storage.Azure.BlobStorage
     using global::Azure.Storage.Blobs;
     using global::Azure.Storage.Blobs.Models;
     using global::Azure.Storage.Blobs.Specialized;
-
-    using Newtonsoft.Json;
 
     /// <summary>
     /// Tenant store implemented on Azure Blob Storage.
@@ -38,10 +37,9 @@ namespace Marain.Tenancy.Storage.Azure.BlobStorage
         private const string TenancyV3ConfigKey = "StorageConfigurationV3__" + TenancyContainerName;
         private const string LiveTenantsPrefix = "live/";
         private const string DeletedTenantsPrefix = "deleted/";
-        private static readonly Encoding UTF8WithoutBom = new UTF8Encoding(false);
         private readonly IBlobContainerSourceWithTenantLegacyTransition containerSource;
         private readonly IPropertyBagFactory propertyBagFactory;
-        private readonly JsonSerializer jsonSerializer;
+        private readonly JsonSerializerOptions serializerOptions;
         private readonly bool propagateRootStorageConfigAsV2;
         private Task? rootContainerExistsCheck;
 
@@ -50,17 +48,17 @@ namespace Marain.Tenancy.Storage.Azure.BlobStorage
         /// </summary>
         /// <param name="configuration">Configuration settings.</param>
         /// <param name="containerSource">Provides access to tenanted blob storage.</param>
-        /// <param name="serializerSettingsProvider">Settings for tenant serialization.</param>
+        /// <param name="serializerOptionsProvider">Settings for tenant serialization.</param>
         /// <param name="propertyBagFactory">Property bag services.</param>
         public AzureBlobStorageTenantStore(
             AzureBlobStorageTenantStoreConfiguration configuration,
             IBlobContainerSourceWithTenantLegacyTransition containerSource,
-            IJsonSerializerSettingsProvider serializerSettingsProvider,
+            IJsonSerializerOptionsProvider serializerOptionsProvider,
             IPropertyBagFactory propertyBagFactory)
         {
             this.containerSource = containerSource;
             this.propertyBagFactory = propertyBagFactory;
-            this.jsonSerializer = JsonSerializer.Create(serializerSettingsProvider.Instance);
+            this.serializerOptions = serializerOptionsProvider.Instance;
             this.propagateRootStorageConfigAsV2 = configuration.PropagateRootTenancyStorageConfigAsV2;
 
             // The root tenant is necessarily synthetic because we can't get access to storage
@@ -148,10 +146,10 @@ namespace Marain.Tenancy.Storage.Azure.BlobStorage
             // code if a blob with the same Id already exists.
             BlockBlobClient blob = GetLiveTenantBlockBlobReference(child.Id, container);
             var content = new MemoryStream();
-            using (var sw = new StreamWriter(content, UTF8WithoutBom, leaveOpen: true))
-            using (JsonWriter writer = new JsonTextWriter(sw))
+            ////using (var sw = new StreamWriter(content, UTF8WithoutBom, leaveOpen: true))
+            using (Utf8JsonWriter writer = new(content))
             {
-                this.jsonSerializer.Serialize(writer, child);
+                JsonSerializer.Serialize(writer, child, this.serializerOptions);
             }
 
             content.Position = 0;
@@ -281,10 +279,10 @@ namespace Marain.Tenancy.Storage.Azure.BlobStorage
 
             BlockBlobClient blob = GetLiveTenantBlockBlobReference(tenantId, parentContainer);
             var content = new MemoryStream();
-            using (var sw = new StreamWriter(content, UTF8WithoutBom, leaveOpen: true))
-            using (JsonWriter writer = new JsonTextWriter(sw))
+            ////using (var sw = new StreamWriter(content, UTF8WithoutBom, leaveOpen: true))
+            using (Utf8JsonWriter writer = new(content))
             {
-                this.jsonSerializer.Serialize(writer, updatedTenant);
+                JsonSerializer.Serialize(writer, updatedTenant, this.serializerOptions);
             }
 
             content.Position = 0;
@@ -393,12 +391,7 @@ namespace Marain.Tenancy.Storage.Azure.BlobStorage
                 throw new TenantNotModifiedException();
             }
 
-            Tenant tenant;
-            using (StreamReader sr = new(response.Value.Content.ToStream(), leaveOpen: false))
-            using (JsonTextReader jr = new(sr))
-            {
-                tenant = this.jsonSerializer.Deserialize<Tenant>(jr)!;
-            }
+            Tenant tenant = JsonSerializer.Deserialize<Tenant>(response.Value.Content.ToStream(), this.serializerOptions)!;
 
             tenant.ETag = response.Value.Details.ETag.ToString("H");
             return tenant;

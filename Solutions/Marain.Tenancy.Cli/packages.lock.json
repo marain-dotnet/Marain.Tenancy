@@ -13,11 +13,11 @@
       },
       "Corvus.Identity.MicrosoftRest": {
         "type": "Direct",
-        "requested": "[3.2.0, )",
-        "resolved": "3.2.0",
-        "contentHash": "Ix8RDwSQTjVQjd/aIrZ5f1rzUnPZvoQ78F920al3eUy6J8RrFsvySTKs6xWTNvpRGvE9sPQk1ZqTy3xPBgS2eg==",
+        "requested": "[3.2.1, )",
+        "resolved": "3.2.1",
+        "contentHash": "rBr1ZQ3AIOhge8db70vZq4rfUyKaKu87ZXbDav6WhfqaYJnJ7jg/Ohg3nmxkqJJ5Ld1lMzULwYrU59P4A38WLQ==",
         "dependencies": {
-          "Corvus.Identity.Azure": "3.2.0",
+          "Corvus.Identity.Azure": "3.2.1",
           "Microsoft.Extensions.DependencyInjection.Abstractions": "6.0.0",
           "Microsoft.Rest.ClientRuntime": "2.3.24"
         }
@@ -112,8 +112,8 @@
       },
       "Azure.Identity": {
         "type": "Transitive",
-        "resolved": "1.8.0",
-        "contentHash": "xnsY/lgAG4bO5d2akXc1hqfvknIk+u3gh5Ma33KN2uyNeU3C5AzIfrwO/N/b9D/7dk4MyXai4JGKHNgHjcoFsA==",
+        "resolved": "1.8.1",
+        "contentHash": "pxpGgVW6SCG+RewCVVlsEtcnQsLmlRobVlknY1Ir6t00iu2eRbdH/+ignhDnTaKlNN8pHfMJH5rTkJs9W4rQOg==",
         "dependencies": {
           "Azure.Core": "1.25.0",
           "Microsoft.Identity.Client": "4.46.0",
@@ -194,17 +194,17 @@
       },
       "Corvus.Identity.Abstractions": {
         "type": "Transitive",
-        "resolved": "3.2.0",
-        "contentHash": "Tp0R4VDJmO7xl8s7V92r+SnTUsfWQCeb5Ru9RUVaX0iQ0yBU7qfYxfjTAMOjN/8VTnJiv0Vy8nBcrGVwt62aaA=="
+        "resolved": "3.2.1",
+        "contentHash": "h3/Z5orspzN1c01fgx7KCIKtHXn8eaCZvWtkMQ5NMLIGcZ9xvcX7doXTwUkg9R6EinrHalsitSZ3hrl79m7DPw=="
       },
       "Corvus.Identity.Azure": {
         "type": "Transitive",
-        "resolved": "3.2.0",
-        "contentHash": "0aFxQgIE9N1ZAHVtWI032LujhMKaQdFHPRIKSdaQL7rggu9Jp3iDaFWJvClfENeTtsU2f7xqDmMqmGCDmF6snw==",
+        "resolved": "3.2.1",
+        "contentHash": "4PJ71dxmlhMt5r8unCVRN+pLeDAIyHtJ6OzLK/R/TLF4H0YpKadfVDUIIB8RkkDoqqCRAD3+LbfEA4MJhjNL1w==",
         "dependencies": {
-          "Azure.Identity": "1.8.0",
+          "Azure.Identity": "1.8.1",
           "Azure.Security.KeyVault.Secrets": "4.4.0",
-          "Corvus.Identity.Abstractions": "3.2.0",
+          "Corvus.Identity.Abstractions": "3.2.1",
           "Microsoft.Extensions.Caching.Memory": "6.0.1",
           "Microsoft.Extensions.DependencyInjection.Abstractions": "6.0.0"
         }
@@ -1618,7 +1618,7 @@
           "CacheCow.Client": "[2.11.3, )",
           "Corvus.ContentHandling.Json": "[3.0.0, )",
           "Corvus.Extensions": "[1.1.10, )",
-          "Corvus.Identity.MicrosoftRest": "[3.2.0, )",
+          "Corvus.Identity.MicrosoftRest": "[3.2.1, )",
           "Microsoft.Extensions.DependencyInjection.Abstractions": "[6.0.0.*, )",
           "Microsoft.Rest.ClientRuntime": "[2.3.24, )"
         }

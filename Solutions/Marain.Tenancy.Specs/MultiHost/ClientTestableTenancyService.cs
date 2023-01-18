@@ -7,24 +7,23 @@ namespace Marain.Tenancy.Specs.MultiHost
     using System;
     using System.Net.Http;
     using System.Text;
+    using System.Text.Json;
+    using System.Text.Json.Nodes;
     using System.Threading.Tasks;
-
-    using Newtonsoft.Json;
-    using Newtonsoft.Json.Linq;
 
     internal class ClientTestableTenancyService : ITestableTenancyService
     {
-        private static readonly HttpClient HttpClient = new();
+        private readonly HttpClient httpClient = new();
         private readonly string tenancyApiBaseUriText;
-        private readonly JsonSerializerSettings serializerSettings;
+        private readonly JsonSerializerOptions serializerOptions;
         private HttpResponseMessage? response;
         private string? responseContent;
-        private JObject? parsedResponse;
+        private JsonObject? parsedResponse;
 
-        public ClientTestableTenancyService(string tenancyApiBaseUriText, JsonSerializerSettings serializerSettings)
+        public ClientTestableTenancyService(string tenancyApiBaseUriText, JsonSerializerOptions serializerOptions)
         {
             this.tenancyApiBaseUriText = tenancyApiBaseUriText;
-            this.serializerSettings = serializerSettings;
+            this.serializerOptions = serializerOptions;
         }
 
         public async Task<TenancyResponse> CreateTenantAsync(string parentId, string name)
@@ -74,12 +73,12 @@ namespace Marain.Tenancy.Specs.MultiHost
                 request.Headers.Add("If-None-Match", etag);
             }
 
-            this.response = await HttpClient.SendAsync(request).ConfigureAwait(false);
+            this.response = await this.httpClient.SendAsync(request).ConfigureAwait(false);
             this.responseContent = await this.response.Content.ReadAsStringAsync().ConfigureAwait(false);
 
             if (this.response.IsSuccessStatusCode && !string.IsNullOrEmpty(this.responseContent))
             {
-                this.parsedResponse = JObject.Parse(this.responseContent);
+                this.parsedResponse = (JsonObject)JsonNode.Parse(this.responseContent)!;
             }
         }
 
@@ -89,11 +88,11 @@ namespace Marain.Tenancy.Specs.MultiHost
 
             if (data is not null)
             {
-                string requestJson = JsonConvert.SerializeObject(data, this.serializerSettings);
+                string requestJson = JsonSerializer.Serialize(data, this.serializerOptions);
                 content = new StringContent(requestJson, Encoding.UTF8, "application/json");
             }
 
-            this.response = await HttpClient.PostAsync(new Uri(baseUri, path), content).ConfigureAwait(false);
+            this.response = await this.httpClient.PostAsync(new Uri(baseUri, path), content).ConfigureAwait(false);
             this.responseContent = await this.response.Content.ReadAsStringAsync().ConfigureAwait(false);
         }
     }

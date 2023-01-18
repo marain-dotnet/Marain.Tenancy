@@ -2,9 +2,7 @@
 // Copyright (c) Endjin Limited. All rights reserved.
 // </copyright>
 
-[assembly: Microsoft.Azure.WebJobs.Hosting.WebJobsStartup(typeof(Marain.Tenancy.ControlHost.Startup))]
-
-namespace Marain.Tenancy.ControlHost
+namespace Marain.Tenancy.Functions
 {
     using System;
 
@@ -12,21 +10,25 @@ namespace Marain.Tenancy.ControlHost
 
     using Menes;
 
-    using Microsoft.Azure.Functions.Extensions.DependencyInjection;
+    using Microsoft.ApplicationInsights;
     using Microsoft.Extensions.Configuration;
     using Microsoft.Extensions.DependencyInjection;
 
     /// <summary>
     /// Startup code for the Function.
     /// </summary>
-    public class Startup : FunctionsStartup
+    public static class Startup
     {
-        /// <inheritdoc/>
-        public override void Configure(IFunctionsHostBuilder builder)
+        /// <summary>
+        /// Di initialization.
+        /// </summary>
+        /// <param name="services">Service collection.</param>
+        /// <param name="configuration">Configuration.</param>
+        public static void Configure(
+            IServiceCollection services,
+            IConfiguration configuration)
         {
-            IServiceCollection services = builder.Services;
-            IConfiguration configuration = builder.GetContext().Configuration;
-
+            services.AddSingleton(new TelemetryClient(new Microsoft.ApplicationInsights.Extensibility.TelemetryConfiguration()));
             services.AddApplicationInsightsInstrumentationTelemetry();
 
             services.AddLogging();
@@ -35,15 +37,21 @@ namespace Marain.Tenancy.ControlHost
                 .GetSection("RootBlobStorageConfiguration")
                 .Get<BlobContainerConfiguration>();
             services.AddTenantStoreOnAzureBlobStorage(rootStorageConfiguration);
-            services.AddTenancyApiWithOpenApiActionResultHosting(this.ConfigureOpenApiHost);
+
+            services.AddTenancyApiWithIsolatedAzureFunctionsHosting<SimpleOpenApiContext>(
+                ConfigureOpenApiHost);
         }
 
-        private void ConfigureOpenApiHost(IOpenApiHostConfiguration config)
+        /// <summary>
+        /// OpenApi document configuration.
+        /// </summary>
+        /// <param name="config">Configuration object.</param>
+        /// <exception cref="ArgumentNullException">
+        /// Thrown if <paramref name="config"/> is null.
+        /// </exception>
+        private static void ConfigureOpenApiHost(IOpenApiHostConfiguration config)
         {
-            if (config == null)
-            {
-                throw new ArgumentNullException(nameof(config), "AddTenancyApi callback: config");
-            }
+            ArgumentNullException.ThrowIfNull(config);
 
             if (config.Documents == null)
             {

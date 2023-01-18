@@ -60,7 +60,7 @@
         "AzureConfigurationStorage": "[parameters('storageAccountConnectionString')]",
         "APPINSIGHTS_INSTRUMENTATIONKEY": "[parameters('applicationInsightsInstrumentationKey')]",
         "FUNCTIONS_EXTENSION_VERSION": "~4",
-        "FUNCTIONS_WORKER_RUNTIME": "dotnet",
+        "FUNCTIONS_WORKER_RUNTIME": "dotnet-isolated",
         "SubscriptionId": "[parameters('subscriptionId')]",
         "TenantId": "[parameters('tenantId')]",
         "AzureWebJobsDashboard": "[parameters('storageAccountConnectionString')]",

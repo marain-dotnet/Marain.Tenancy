@@ -5,6 +5,7 @@
 namespace Marain.Tenancy.Specs.MultiHost
 {
     using System.Net;
+    using System.Text.Json.Nodes;
     using System.Threading.Tasks;
 
     using Marain.Tenancy.OpenApi;
@@ -59,7 +60,7 @@ namespace Marain.Tenancy.Specs.MultiHost
 
         private static TenancyResponse MakeResponse(OpenApiResult result)
         {
-            JObject? parsedResponse = null;
+            JsonObject? parsedResponse = null;
             if (result.Results.TryGetValue("application/json", out object? document))
             {
                 var halDocument = document as HalDocument;

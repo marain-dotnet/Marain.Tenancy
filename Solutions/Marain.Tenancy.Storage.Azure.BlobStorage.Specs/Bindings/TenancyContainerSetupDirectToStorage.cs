@@ -10,10 +10,11 @@ namespace Marain.Tenancy.Storage.Azure.BlobStorage.Specs.Bindings
     using System.Linq;
     using System.Security.Cryptography;
     using System.Text;
+    using System.Text.Json;
     using System.Threading.Tasks;
 
-    using Corvus.Extensions.Json;
     using Corvus.Json;
+    using Corvus.Json.Serialization;
     using Corvus.Storage.Azure.BlobStorage;
     using Corvus.Storage.Azure.BlobStorage.Tenancy;
     using Corvus.Tenancy;
@@ -23,27 +24,25 @@ namespace Marain.Tenancy.Storage.Azure.BlobStorage.Specs.Bindings
     using global::Azure.Storage.Blobs.Models;
     using global::Azure.Storage.Blobs.Specialized;
 
-    using Newtonsoft.Json;
-
     internal class TenancyContainerSetupDirectToStorage : ITenancyContainerSetup
     {
         private static readonly Lazy<SHA1> Sha1 = new(() => SHA1.Create());
         private readonly BlobContainerConfiguration configuration;
         private readonly IBlobContainerSourceFromDynamicConfiguration blobContainerSource;
         private readonly IPropertyBagFactory propertyBagFactory;
-        private readonly JsonSerializer jsonSerializer;
+        private readonly JsonSerializerOptions serializerOptions;
 
         public TenancyContainerSetupDirectToStorage(
             BlobContainerConfiguration configuration,
             IBlobContainerSourceFromDynamicConfiguration blobContainerSource,
-            IJsonSerializerSettingsProvider serializerSettingsProvider,
+            IJsonSerializerOptionsProvider serializerOptionsProvider,
             IPropertyBagFactory propertyBagFactory)
         {
             this.configuration = configuration;
             this.blobContainerSource = blobContainerSource;
             this.propertyBagFactory = propertyBagFactory;
 
-            this.jsonSerializer = JsonSerializer.Create(serializerSettingsProvider.Instance);
+            this.serializerOptions = serializerOptionsProvider.Instance;
         }
 
         public async Task<ITenant> EnsureWellKnownChildTenantExistsAsync(
@@ -85,10 +84,10 @@ namespace Marain.Tenancy.Storage.Azure.BlobStorage.Specs.Bindings
                     .Append(storageConfig)));
             Tenant newTenant = new(newTenantId, name, tenantProperties);
             var content = new MemoryStream();
-            using (var sw = new StreamWriter(content, new UTF8Encoding(false), leaveOpen: true))
-            using (JsonWriter writer = new JsonTextWriter(sw))
+            ////using (var sw = new StreamWriter(content, new UTF8Encoding(false), leaveOpen: true))
+            using (Utf8JsonWriter writer = new(content))
             {
-                this.jsonSerializer.Serialize(writer, newTenant);
+                JsonSerializer.Serialize(writer, newTenant, this.serializerOptions);
             }
 
             content.Position = 0;

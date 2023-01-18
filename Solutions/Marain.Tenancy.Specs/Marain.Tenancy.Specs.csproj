@@ -2,7 +2,7 @@
   <Import Project="$(EndjinProjectPropsPath)" Condition="$(EndjinProjectPropsPath) != ''" />
 
   <PropertyGroup>
-    <TargetFramework>net6.0</TargetFramework>
+    <TargetFramework>net7.0</TargetFramework>
     <LangVersion>latest</LangVersion>
     <IsPackable>false</IsPackable>
     <RootNamespace>Marain.Tenancy.Specs</RootNamespace>
@@ -41,12 +41,13 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <PackageReference Include="Corvus.Extensions.Newtonsoft.Json" Version="3.0.0" />
     <PackageReference Include="Corvus.Testing.AzureFunctions.SpecFlow.NUnit" Version="2.0.0" />
     <PackageReference Include="Endjin.RecommendedPractices.GitHub" Version="2.1.4">
       <PrivateAssets>all</PrivateAssets>
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
     </PackageReference>
-    <PackageReference Include="Menes.Testing.AspNetCoreSelfHosting" Version="4.0.0" />
+    <PackageReference Include="Menes.Testing.AspNetCoreSelfHosting" Version="5.0.0-system-text-json.23" />
     <PackageReference Include="Microsoft.Extensions.Configuration" Version="[6.0.*,)" />
     <PackageReference Include="Microsoft.Extensions.Configuration.EnvironmentVariables" Version="[6.0.*,)" />
     <PackageReference Include="Microsoft.Extensions.Configuration.Json" Version="[6.0.*,)" />

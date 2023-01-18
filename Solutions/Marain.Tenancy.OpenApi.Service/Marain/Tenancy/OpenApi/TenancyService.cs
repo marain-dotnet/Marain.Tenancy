@@ -6,10 +6,17 @@ namespace Marain.Tenancy.OpenApi
 {
     using System;
     using System.Collections.Generic;
+    using System.Diagnostics;
+    using System.Diagnostics.CodeAnalysis;
     using System.Net;
+    using System.Text;
+    using System.Text.Json;
+    using System.Text.Json.Nodes;
     using System.Threading.Tasks;
 
     using Corvus.Json;
+    using Corvus.Json.Patch.Model;
+    using Corvus.Json.Serialization;
     using Corvus.Tenancy;
     using Corvus.Tenancy.Exceptions;
 
@@ -21,9 +28,9 @@ namespace Marain.Tenancy.OpenApi
     using Menes.Hal;
     using Menes.Links;
 
-    using Microsoft.AspNetCore.JsonPatch;
-    using Microsoft.AspNetCore.JsonPatch.Operations;
     using Microsoft.Extensions.Logging;
+
+    using Tavis.UriTemplates;
 
     /// <summary>
     ///     Implements the tenancy web API.
@@ -282,7 +289,7 @@ namespace Marain.Tenancy.OpenApi
         [OperationId(UpdateTenantOperationId)]
         public async Task<OpenApiResult> UpdateTenantAsync(
             string tenantId,
-            JsonPatchDocument body,
+            string body,
             IOpenApiContext context)
         {
             if (context is null)
@@ -317,14 +324,16 @@ namespace Marain.Tenancy.OpenApi
                 Dictionary<string, object>? propertiesToSet = null;
                 List<string>? propertiesToRemove = null;
 
-                foreach (Operation operation in body.Operations)
+                using var bodyDoc = JsonDocument.Parse(body);
+                JsonPatchDocument patch = new(bodyDoc.RootElement);
+                foreach (JsonPatchDocument.PatchOperation operation in patch.EnumerateArray())
                 {
-                    if (operation.path == "/name")
+                    if (operation.Path.EqualsUtf8Bytes("/name"u8))
                     {
-                        if (operation.OperationType == OperationType.Replace &&
-                            operation.value is string newTenantName)
+                        if (operation.TryGetAsReplaceEntity(out JsonPatchDocument.ReplaceEntity replace) &&
+                            replace.Value.ValueKind == JsonValueKind.String)
                         {
-                            name = newTenantName;
+                            name = replace.Value;
                         }
                         else
                         {
@@ -333,19 +342,46 @@ namespace Marain.Tenancy.OpenApi
                     }
                     else
                     {
-                        if (operation.path.StartsWith("/properties/"))
-                        {
-                            string propertyName = operation.path[12..];
-                            switch (operation.OperationType)
-                            {
-                                case OperationType.Add:
-                                case OperationType.Replace:
-                                    (propertiesToSet ??= new Dictionary<string, object>()).Add(propertyName, operation.value);
-                                    break;
+                        if (operation.Path.AsJsonElement.TryGetValue(
+                                static (ReadOnlySpan<byte> span, in object? _, [NotNullWhen(true)] out string? result) =>
+                                {
+                                    if (!span.StartsWith("/properties/"u8))
+                                    {
+                                        result = null;
+                                        return false;
+                                    }
 
-                                case OperationType.Remove:
-                                    (propertiesToRemove ??= new List<string>()).Add(propertyName);
-                                    break;
+                                    result = Encoding.UTF8.GetString(span[12..]);
+                                    return true;
+                                },
+                                null,
+                                out string? propertyName))
+                        {
+                            static JsonNode? MakeSerializableJsonAny(in JsonAny any)
+                            {
+                                return any.ValueKind switch
+                                {
+                                    JsonValueKind.Object => System.Text.Json.Nodes.JsonObject.Create(any.AsJsonElement),
+                                    JsonValueKind.Array => System.Text.Json.Nodes.JsonArray.Create(any.AsJsonElement),
+                                    _ => JsonValue.Create(any.AsJsonElement),
+                                };
+                            }
+
+                            if (operation.TryGetAsAddEntity(out JsonPatchDocument.AddEntity add))
+                            {
+                                (propertiesToSet ??= new Dictionary<string, object>()).Add(
+                                    propertyName,
+                                    MakeSerializableJsonAny(add.Value)!);
+                            }
+                            else if (operation.TryGetAsReplaceEntity(out JsonPatchDocument.ReplaceEntity replace))
+                            {
+                                (propertiesToSet ??= new Dictionary<string, object>()).Add(
+                                    propertyName,
+                                    MakeSerializableJsonAny(replace.Value)!);
+                            }
+                            else if (operation.TryGetAsRemoveEntity(out JsonPatchDocument.RemoveEntity remove))
+                            {
+                                (propertiesToRemove ??= new List<string>()).Add(propertyName);
                             }
                         }
                     }
@@ -363,11 +399,6 @@ namespace Marain.Tenancy.OpenApi
                         .MapAsync(result)
                         .ConfigureAwait(false),
                     "application/json");
-            }
-            catch (InvalidOperationException)
-            {
-                // You are not allowed to update the Root Tenant
-                return this.ForbiddenResult();
             }
             catch (TenantNotFoundException)
             {

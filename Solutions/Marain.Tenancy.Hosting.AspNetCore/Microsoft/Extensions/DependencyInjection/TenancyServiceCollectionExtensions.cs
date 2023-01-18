@@ -6,18 +6,19 @@ namespace Microsoft.Extensions.DependencyInjection
 {
     using System;
     using System.Linq;
+    using System.Text.Json;
+    using System.Text.Json.Serialization;
+
     using Corvus.Tenancy;
     using Marain.Tenancy.OpenApi;
     using Marain.Tenancy.OpenApi.Configuration;
     using Marain.Tenancy.OpenApi.Mappers;
     using Menes;
     using Microsoft.Extensions.Configuration;
-    using Newtonsoft.Json;
-    using Newtonsoft.Json.Converters;
-    using Newtonsoft.Json.Serialization;
 
     /// <summary>
-    /// Extension methods for configuring DI for the Operations Open API services.
+    /// Extension methods for configuring DI for the Marain Open API services in hosting environments
+    /// using ASP.NET Core types (including the in-process Azure Functions model).
     /// </summary>
     public static class TenancyServiceCollectionExtensions
     {
@@ -100,11 +101,11 @@ namespace Microsoft.Extensions.DependencyInjection
 
             // v2.0+ of Menes no longer registers all of the JsonConverters from Corvus.Extensions.Newtonsoft.Json. To
             // avoid the risk of breaking existing serialized data, we need to manually add them.
-            services.AddJsonNetSerializerSettingsProvider();
-            services.AddJsonNetPropertyBag();
-            services.AddJsonNetCultureInfoConverter();
-            services.AddJsonNetDateTimeOffsetToIso8601AndUnixTimeConverter();
-            services.AddSingleton<JsonConverter>(new StringEnumConverter(new CamelCaseNamingStrategy()));
+            services.AddJsonSerializerOptionsProvider();
+            services.AddJsonPropertyBagFactory();
+            services.AddJsonCultureInfoConverter();
+            services.AddJsonDateTimeOffsetToIso8601AndUnixTimeConverter();
+            services.AddSingleton<JsonConverter>(new JsonStringEnumConverter(JsonNamingPolicy.CamelCase));
 
             // Add caching config.
             services.AddSingleton(

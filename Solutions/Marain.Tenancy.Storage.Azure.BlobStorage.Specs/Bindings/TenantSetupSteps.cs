@@ -8,8 +8,8 @@ namespace Marain.Tenancy.Storage.Azure.BlobStorage.Specs.Bindings
     using System.Linq;
     using System.Threading.Tasks;
 
-    using Corvus.Extensions.Json;
     using Corvus.Json;
+    using Corvus.Json.Serialization;
     using Corvus.Storage.Azure.BlobStorage;
     using Corvus.Tenancy;
 
@@ -36,7 +36,7 @@ namespace Marain.Tenancy.Storage.Azure.BlobStorage.Specs.Bindings
                 SetupModes.DirectToStoragePropagateRootConfigAsV2 or SetupModes.DirectToStoragePropagateRootConfigAsV3 => new TenancyContainerSetupDirectToStorage(
                     this.DiContainer.RootBlobStorageConfiguration,
                     this.DiContainer.ServiceProvider.GetRequiredService<IBlobContainerSourceFromDynamicConfiguration>(),
-                    this.DiContainer.ServiceProvider.GetRequiredService<IJsonSerializerSettingsProvider>(),
+                    this.DiContainer.ServiceProvider.GetRequiredService<IJsonSerializerOptionsProvider>(),
                     this.DiContainer.ServiceProvider.GetRequiredService<IPropertyBagFactory>()),
                 _ => throw new InvalidOperationException($"Unknown setup mode: {this.SetupMode}"),
             };

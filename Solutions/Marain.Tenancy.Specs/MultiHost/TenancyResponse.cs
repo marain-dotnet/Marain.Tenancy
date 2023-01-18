@@ -5,8 +5,7 @@
 namespace Marain.Tenancy.Specs.MultiHost
 {
     using System.Net;
-
-    using Newtonsoft.Json.Linq;
+    using System.Text.Json.Nodes;
 
     public class TenancyResponse
     {
@@ -20,6 +19,6 @@ namespace Marain.Tenancy.Specs.MultiHost
 
         public string? CacheControlHeader { get; set; }
 
-        public JObject? BodyJson { get; set; }
+        public JsonObject? BodyJson { get; set; }
     }
 }
