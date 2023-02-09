@@ -48,7 +48,10 @@
       },
       "dependsOn": [],
       "tags": "[variables('tags')]",
-      "kind": "Storage"
+      "kind": "Storage",
+      "properties": {
+        "supportsHttpsTrafficOnly": true
+      }
     },
 
     {
