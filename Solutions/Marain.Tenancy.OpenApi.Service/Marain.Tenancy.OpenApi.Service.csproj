@@ -30,7 +30,7 @@
       <PrivateAssets>all</PrivateAssets>
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
     </PackageReference>
-    <PackageReference Include="Menes.Abstractions" Version="4.0.0" />
+    <PackageReference Include="Menes.Abstractions" Version="5.0.0" />
     <PackageReference Include="Microsoft.ApplicationInsights" Version="2.21.0" />
     <PackageReference Include="Microsoft.AspNetCore.JsonPatch" Version="[6.0.*,)" />
     <PackageReference Include="Microsoft.Extensions.Configuration.Abstractions" Version="[6.0.*,)" />
