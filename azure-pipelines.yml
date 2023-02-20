@@ -112,4 +112,6 @@ jobs:
           SourceFolder: '$(Build.SourcesDirectory)/Solutions/Marain.Tenancy.Host.Functions/bin/$(BuildConfiguration)/publish/'
           Contents: '*.zip'
           TargetFolder: '$(Build.ArtifactStagingDirectory)/Release/Marain.Deployment.Functions'
-    netSdkVersion: '6.x'
+    netSdkVersion: '7.0.103' # Until https://github.com/endjin/Endjin.RecommendedPractices.Build/issues/69 is fixed, we have to use an old SDK
+    additionalNetSdkVersions:
+    - '6.x'
