@@ -1,4 +1,4 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
+<Project Sdk="Microsoft.NET.Sdk">
   <Import Project="$(EndjinProjectPropsPath)" Condition="$(EndjinProjectPropsPath) != ''" />
 
   <PropertyGroup>
@@ -24,7 +24,7 @@
   <ItemGroup>
     <PackageReference Include="CacheCow.Client" Version="2.11.3" />
     <PackageReference Include="Corvus.ContentHandling.Json" Version="3.0.0" />
-    <PackageReference Include="Corvus.Extensions" Version="1.1.10" />
+    <PackageReference Include="Corvus.Extensions" Version="1.1.11" />
     <PackageReference Include="Corvus.Identity.MicrosoftRest" Version="3.2.1" />
     <PackageReference Include="Endjin.RecommendedPractices.GitHub" Version="2.1.4">
       <PrivateAssets>all</PrivateAssets>
