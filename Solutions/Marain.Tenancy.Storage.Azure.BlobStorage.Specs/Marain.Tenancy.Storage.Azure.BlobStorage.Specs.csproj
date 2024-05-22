@@ -11,7 +11,7 @@
     <!--
     CS1591 and SA1600: XML doc warnings. This is a test project. We don't really need XML docs on everything.
     -->
-    <NoWarn>$(NoWarn);CS1591;SA1600</NoWarn>
+    <NoWarn>$(NoWarn);CS1591;SA1600;SA1642</NoWarn>
   </PropertyGroup>
 
   <PropertyGroup>
@@ -39,7 +39,7 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="Corvus.Testing.AzureFunctions.SpecFlow.NUnit" Version="2.0.1" />
+    <PackageReference Include="Corvus.Testing.AzureFunctions.SpecFlow.NUnit" Version="3.0.3-253-multi-os-test.18-local.1" />
     <PackageReference Include="Endjin.RecommendedPractices.GitHub" Version="2.1.5">
       <PrivateAssets>all</PrivateAssets>
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
