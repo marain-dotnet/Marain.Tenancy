@@ -112,12 +112,18 @@ namespace Marain.Tenancy.Specs.Integration.Bindings
         /// Tear down the running functions instances for the feature.
         /// </summary>
         /// <param name="featureContext">The current scenario context.</param>
+        /// <returns>A <see cref="Task"/> representing the asynchronous operation.</returns>
         [AfterFeature(Order = 100)]
-        public static void TeardownFunctionsAfterScenario(FeatureContext featureContext)
+        public static async Task TeardownFunctionsAfterScenarioAsync(FeatureContext featureContext)
         {
             if (featureContext.TryGetValue(out FunctionsController functionsController))
             {
                 featureContext.RunAndStoreExceptions(functionsController.TeardownFunctions);
+            }
+
+            if (featureContext.TryGetValue(out OpenApiWebHostManager openApiWebHostManager))
+            {
+                await openApiWebHostManager.StopAllHostsAsync();
             }
         }
     }
