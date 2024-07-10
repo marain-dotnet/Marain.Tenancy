@@ -4,11 +4,11 @@
     "net6.0": {
       "Corvus.Testing.AzureFunctions.SpecFlow.NUnit": {
         "type": "Direct",
-        "requested": "[3.0.3-253-multi-os-test.18-local.1, )",
-        "resolved": "3.0.3-253-multi-os-test.18-local.1",
-        "contentHash": "ofJMye4H8S06pNNh+gb7tqhU+G66T+UauiilbxxGWcS3pUyXcwRjSQrAa25jNoCrSbviJDuBq0QhmDoE+ZzUXQ==",
+        "requested": "[3.0.3-253-multi-os-test.18, )",
+        "resolved": "3.0.3-253-multi-os-test.18",
+        "contentHash": "3oHkxcIeBdJSfXdsjgnKTtG6JGuRkgHYAZRxEQuWpoK8srM8qJZCw0qioeddOoTmZQ5rc1/FOETThDAC3HZHWg==",
         "dependencies": {
-          "Corvus.Testing.AzureFunctions.SpecFlow": "3.0.3-253-multi-os-test.18-local.1",
+          "Corvus.Testing.AzureFunctions.SpecFlow": "3.0.3-253-multi-os-test.18",
           "Microsoft.NET.Test.Sdk": "17.8.0",
           "SpecFlow.NUnit.Runners": "3.9.74",
           "System.Text.RegularExpressions": "4.3.1",
@@ -293,8 +293,8 @@
       },
       "Corvus.Testing.AzureFunctions": {
         "type": "Transitive",
-        "resolved": "3.0.3-253-multi-os-test.18-local.1",
-        "contentHash": "yZNiYZMo+7/8kd3aARg9ItIWb0JsriTWY8CtjdWTwASZ7UMV2IIfqEGzFWJ2ntySlqwTKA1R0C5gKjD5Z17kEA==",
+        "resolved": "3.0.3-253-multi-os-test.18",
+        "contentHash": "cXZsxWuroYMhwFCu0Sa2tnedGTH9HLo4n6v5+PQhdkeFZomjaDRnivTGYNmaBz0WdybsFXe1TCs8PTknSEribw==",
         "dependencies": {
           "Microsoft.Extensions.Logging.Abstractions": "6.0.4",
           "System.Management": "4.7.0"
@@ -302,11 +302,11 @@
       },
       "Corvus.Testing.AzureFunctions.SpecFlow": {
         "type": "Transitive",
-        "resolved": "3.0.3-253-multi-os-test.18-local.1",
-        "contentHash": "flnXjJZeLF3fvqCkedf8fw+dLRgFLL/haGqgEv//pPZnU51LMU6HlZX+EehWlvHAxCuVP2qS/LT5PA/TPUPuLg==",
+        "resolved": "3.0.3-253-multi-os-test.18",
+        "contentHash": "06HsLYmUTCPCTTQhWPnGLmHBqsErqEhh04jsqLLCnuvj/dFbZ9Qko/XUAAp+6oMEaj17Ik2cQ0xg+NYSCe1xWw==",
         "dependencies": {
-          "Corvus.Testing.AzureFunctions": "3.0.3-253-multi-os-test.18-local.1",
-          "Corvus.Testing.SpecFlow": "3.0.3-253-multi-os-test.18-local.1",
+          "Corvus.Testing.AzureFunctions": "3.0.3-253-multi-os-test.18",
+          "Corvus.Testing.SpecFlow": "3.0.3-253-multi-os-test.18",
           "Microsoft.Extensions.Logging.Console": "6.0.0",
           "NUnit": "3.14.0",
           "SpecFlow": "3.9.74"
@@ -314,8 +314,8 @@
       },
       "Corvus.Testing.SpecFlow": {
         "type": "Transitive",
-        "resolved": "3.0.3-253-multi-os-test.18-local.1",
-        "contentHash": "0BqDtT+vLsNmMvJUeCkkJBbFUXnMTSlYPmUvP+ZC37sqt5zLBah1oW3TtT3Q/aXmB2w30/8zw88DVJd0GgK0dQ==",
+        "resolved": "3.0.3-253-multi-os-test.18",
+        "contentHash": "foISTKKdote5DITQbGPBJhVelNfZaA9DteXUuS7Vry3W0QhEDuAu5i6HHmBqoWIZTz4HWQH5gKrvFOloZ/1vKQ==",
         "dependencies": {
           "Microsoft.Extensions.Configuration.Abstractions": "6.0.0",
           "Microsoft.Extensions.DependencyInjection": "6.0.1",
@@ -589,8 +589,8 @@
       },
       "Microsoft.AspNetCore.JsonPatch": {
         "type": "Transitive",
-        "resolved": "6.0.30",
-        "contentHash": "cntd2pwQKG3r5t4mjwlaeQ9NtLdakdvvjuCIjWLfhIMrN36d7VlsL9CN31Vn/Gfcj5xypoBIj+PiL2qNNrdfKQ==",
+        "resolved": "6.0.31",
+        "contentHash": "1KVExlJdwNs7oVKec5B09wcwmpZWwj2SdsKETSXEHwNvaUIkFnNYUv/dCn3Q2fntMfjl+8m69j3EpXiLN/4kgg==",
         "dependencies": {
           "Microsoft.CSharp": "4.7.0",
           "Newtonsoft.Json": "13.0.1"

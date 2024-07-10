@@ -246,8 +246,8 @@
       },
       "Microsoft.AspNetCore.JsonPatch": {
         "type": "Transitive",
-        "resolved": "6.0.30",
-        "contentHash": "cntd2pwQKG3r5t4mjwlaeQ9NtLdakdvvjuCIjWLfhIMrN36d7VlsL9CN31Vn/Gfcj5xypoBIj+PiL2qNNrdfKQ==",
+        "resolved": "6.0.31",
+        "contentHash": "1KVExlJdwNs7oVKec5B09wcwmpZWwj2SdsKETSXEHwNvaUIkFnNYUv/dCn3Q2fntMfjl+8m69j3EpXiLN/4kgg==",
         "dependencies": {
           "Microsoft.CSharp": "4.7.0",
           "Newtonsoft.Json": "13.0.1"
