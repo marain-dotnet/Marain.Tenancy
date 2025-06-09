@@ -43,6 +43,24 @@ $ExcludeAssembliesInCodeCoverage = ""
 
 
 # Customise the build process
+task installAzureFunctionsSDK {
+    
+    $existingVersion = ""
+    if ((Get-Command func -ErrorAction Ignore)) {
+        $existingVersion = exec { & func --version }
+    }
+
+    if (!$existingVersion -or $existingVersion -notlike "4.*") {
+        Write-Build White "Installing/updating Azure Functions Core Tools..."
+        if ($IsWindows) {
+            exec { & npm install -g azure-functions-core-tools@ --unsafe-perm true }
+        }
+        else {
+            Write-Build Yellow "NOTE: May require 'sudo' on Linux/MacOS"
+            exec { & sudo npm install -g azure-functions-core-tools@ --unsafe-perm true }
+        }
+    } 
+}
 
 task . FullBuild
 
@@ -58,7 +76,7 @@ task . FullBuild
 # task PostVersion {}
 # task PreBuild {}
 # task PostBuild {}
-# task PreTest {}
+task PreTest Init,installAzureFunctionsSDK
 # task PostTest {}
 # task PreTestReport {}
 # task PostTestReport {}
