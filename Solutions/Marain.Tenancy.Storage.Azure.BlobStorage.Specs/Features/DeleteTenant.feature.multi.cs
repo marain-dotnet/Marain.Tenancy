@@ -2,25 +2,24 @@
 // Copyright (c) Endjin Limited. All rights reserved.
 // </copyright>
 
-namespace Marain.Tenancy.Storage.Azure.BlobStorage.Specs.Features
-{
-    using Marain.Tenancy.Storage.Azure.BlobStorage.Specs.MultiMode;
+namespace Marain.Tenancy.Storage.Azure.BlobStorage.Specs.Features;
 
+using Marain.Tenancy.Storage.Azure.BlobStorage.Specs.MultiMode;
+
+/// <summary>
+/// Adds in multi-host-mode execution.
+/// </summary>
+[MultiSetupTest]
+public partial class DeleteTenantFeature : MultiSetupTestBase
+{
     /// <summary>
-    /// Adds in multi-host-mode execution.
+    /// Creates a <see cref="DeleteTenantFeature"/>.
     /// </summary>
-    [MultiSetupTest]
-    public partial class DeleteTenantFeature : MultiSetupTestBase
+    /// <param name="hostMode">
+    /// Hosting style to test for.
+    /// </param>
+    public DeleteTenantFeature(SetupModes hostMode)
+        : base(hostMode)
     {
-        /// <summary>
-        /// Creates a <see cref="DeleteTenantFeature"/>.
-        /// </summary>
-        /// <param name="hostMode">
-        /// Hosting style to test for.
-        /// </param>
-        public DeleteTenantFeature(SetupModes hostMode)
-            : base(hostMode)
-        {
-        }
     }
 }

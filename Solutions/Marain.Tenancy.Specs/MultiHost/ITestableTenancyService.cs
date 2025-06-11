@@ -2,18 +2,17 @@
 // Copyright (c) Endjin Limited. All rights reserved.
 // </copyright>
 
-namespace Marain.Tenancy.Specs.MultiHost
+namespace Marain.Tenancy.Specs.MultiHost;
+
+using System.Threading.Tasks;
+
+public interface ITestableTenancyService
 {
-    using System.Threading.Tasks;
+    Task<TenancyResponse> GetTenantAsync(string tenantId, string? etag = null);
 
-    public interface ITestableTenancyService
-    {
-        Task<TenancyResponse> GetTenantAsync(string tenantId, string? etag = null);
+    Task<TenancyResponse> CreateTenantAsync(string parentId, string name);
 
-        Task<TenancyResponse> CreateTenantAsync(string parentId, string name);
+    Task<TenancyResponse> GetSwaggerAsync();
 
-        Task<TenancyResponse> GetSwaggerAsync();
-
-        Task<TenancyResponse> GetTenantByLocationAsync(string location);
-    }
+    Task<TenancyResponse> GetTenantByLocationAsync(string location);
 }
