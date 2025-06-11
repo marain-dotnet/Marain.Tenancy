@@ -2,20 +2,19 @@
 // Copyright (c) Endjin Limited. All rights reserved.
 // </copyright>
 
-namespace Marain.Tenancy.Specs.Integration.Features
+namespace Marain.Tenancy.Specs.Integration.Features;
+
+using Marain.Tenancy.Specs.MultiHost;
+
+/// <summary>
+/// Add multi-host testing to SpecFlow-generated class.
+/// </summary>
+[MultiHostTest]
+
+public partial class TenancyApiFeature : MultiTestHostBase
 {
-    using Marain.Tenancy.Specs.MultiHost;
-
-    /// <summary>
-    /// Add multi-host testing to SpecFlow-generated class.
-    /// </summary>
-    [MultiHostTest]
-
-    public partial class TenancyApiFeature : MultiTestHostBase
+    public TenancyApiFeature(TestHostModes hostMode)
+        : base(hostMode)
     {
-        public TenancyApiFeature(TestHostModes hostMode)
-            : base(hostMode)
-        {
-        }
     }
 }

@@ -2,17 +2,16 @@
 // Copyright (c) Endjin Limited. All rights reserved.
 // </copyright>
 
-namespace Marain.Tenancy.Storage.Azure.BlobStorage.Specs.MultiMode
+namespace Marain.Tenancy.Storage.Azure.BlobStorage.Specs.MultiMode;
+
+/// <summary>
+/// Supports executing the same test fixture multiple times in different modes.
+/// </summary>
+/// <typeparam name="T">The type used to indicate the mode.</typeparam>
+internal interface IMultiModeTest<T>
 {
     /// <summary>
-    /// Supports executing the same test fixture multiple times in different modes.
+    /// Gets the mode in which the test is executing.
     /// </summary>
-    /// <typeparam name="T">The type used to indicate the mode.</typeparam>
-    internal interface IMultiModeTest<T>
-    {
-        /// <summary>
-        /// Gets the mode in which the test is executing.
-        /// </summary>
-        T TestType { get; }
-    }
+    T TestType { get; }
 }

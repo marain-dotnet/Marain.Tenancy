@@ -2,81 +2,80 @@
 // Copyright (c) Endjin Limited. All rights reserved.
 // </copyright>
 
-namespace Marain.Tenancy
-{
-    using System;
-    using System.Net;
-    using System.Threading.Tasks;
-    using Corvus.Tenancy;
-    using Corvus.Tenancy.Exceptions;
-    using Marain.Tenancy.Client;
-    using Marain.Tenancy.Mappers;
-    using Microsoft.Rest;
+namespace Marain.Tenancy;
 
-    // Note that we do not add a using statment for Marain.Client.Models as this is the "mapping" namespace and could
-    // cause collisions with the types in Marain.Tenancy.
+using System;
+using System.Net;
+using System.Threading.Tasks;
+using Corvus.Tenancy;
+using Corvus.Tenancy.Exceptions;
+using Marain.Tenancy.Client;
+using Marain.Tenancy.Mappers;
+using Microsoft.Rest;
+
+// Note that we do not add a using statment for Marain.Client.Models as this is the "mapping" namespace and could
+// cause collisions with the types in Marain.Tenancy.
+
+/// <summary>
+/// An <see cref="ITenantProvider"/> built over a Marain tenancy instance.
+/// </summary>
+public class ClientTenantProvider : ITenantProvider
+{
+    /// <summary>
+    /// Initializes a new instance of the <see cref="ClientTenantProvider"/> class.
+    /// </summary>
+    /// <param name="root">The Root tenant.</param>
+    /// <param name="tenantService">The tenant service.</param>
+    /// <param name="tenantMapper">The tenant mapper to use.</param>
+    public ClientTenantProvider(RootTenant root, ITenancyService tenantService, ITenantMapper tenantMapper)
+    {
+        this.Root = root ?? throw new ArgumentNullException(nameof(root));
+        this.TenantService = tenantService ?? throw new ArgumentNullException(nameof(tenantService));
+        this.TenantMapper = tenantMapper ?? throw new ArgumentNullException(nameof(tenantMapper));
+    }
+
+    /// <inheritdoc/>
+    public RootTenant Root { get; }
 
     /// <summary>
-    /// An <see cref="ITenantProvider"/> built over a Marain tenancy instance.
+    /// Gets the tenancy service.
     /// </summary>
-    public class ClientTenantProvider : ITenantProvider
+    protected ITenancyService TenantService { get; }
+
+    /// <summary>
+    /// Gets the tenant mapper.
+    /// </summary>
+    protected ITenantMapper TenantMapper { get; }
+
+    /// <inheritdoc/>
+    public async Task<ITenant> GetTenantAsync(string tenantId, string? eTag = null)
     {
-        /// <summary>
-        /// Initializes a new instance of the <see cref="ClientTenantProvider"/> class.
-        /// </summary>
-        /// <param name="root">The Root tenant.</param>
-        /// <param name="tenantService">The tenant service.</param>
-        /// <param name="tenantMapper">The tenant mapper to use.</param>
-        public ClientTenantProvider(RootTenant root, ITenancyService tenantService, ITenantMapper tenantMapper)
+        // The root tenant is a special case - it lives just in memory. This is because
+        // services use it to configure service-specific defaults.
+        if (tenantId == this.Root.Id)
         {
-            this.Root = root ?? throw new ArgumentNullException(nameof(root));
-            this.TenantService = tenantService ?? throw new ArgumentNullException(nameof(tenantService));
-            this.TenantMapper = tenantMapper ?? throw new ArgumentNullException(nameof(tenantMapper));
+            return this.Root;
         }
 
-        /// <inheritdoc/>
-        public RootTenant Root { get; }
+        HttpOperationResponse<object, Client.Models.GetTenantHeaders> tenant = await this.TenantService.GetTenantWithHttpMessagesAsync(tenantId, eTag).ConfigureAwait(false);
 
-        /// <summary>
-        /// Gets the tenancy service.
-        /// </summary>
-        protected ITenancyService TenantService { get; }
-
-        /// <summary>
-        /// Gets the tenant mapper.
-        /// </summary>
-        protected ITenantMapper TenantMapper { get; }
-
-        /// <inheritdoc/>
-        public async Task<ITenant> GetTenantAsync(string tenantId, string? eTag = null)
+        if (tenant.Response.StatusCode == HttpStatusCode.NotFound)
         {
-            // The root tenant is a special case - it lives just in memory. This is because
-            // services use it to configure service-specific defaults.
-            if (tenantId == this.Root.Id)
-            {
-                return this.Root;
-            }
-
-            HttpOperationResponse<object, Client.Models.GetTenantHeaders> tenant = await this.TenantService.GetTenantWithHttpMessagesAsync(tenantId, eTag).ConfigureAwait(false);
-
-            if (tenant.Response.StatusCode == HttpStatusCode.NotFound)
-            {
-                throw new TenantNotFoundException();
-            }
-
-            if (tenant.Response.StatusCode == HttpStatusCode.NotModified)
-            {
-                throw new TenantNotModifiedException();
-            }
-
-            // It's possible that if caching is enabled, we'll have a response containing the same etag as specified in
-            // the parameters. In this case, for the sake of consistency, we'll throw the TenantNotModifiedException.
-            if (tenant.Response.StatusCode == HttpStatusCode.OK && !string.IsNullOrEmpty(eTag) && eTag == tenant.Headers.ETag)
-            {
-                throw new TenantNotModifiedException();
-            }
-
-            return this.TenantMapper.MapTenant(tenant.Body);
+            throw new TenantNotFoundException();
         }
+
+        if (tenant.Response.StatusCode == HttpStatusCode.NotModified)
+        {
+            throw new TenantNotModifiedException();
+        }
+
+        // It's possible that if caching is enabled, we'll have a response containing the same etag as specified in
+        // the parameters. In this case, for the sake of consistency, we'll throw the TenantNotModifiedException.
+        if (tenant.Response.StatusCode == HttpStatusCode.OK && !string.IsNullOrEmpty(eTag) && eTag == tenant.Headers.ETag)
+        {
+            throw new TenantNotModifiedException();
+        }
+
+        return this.TenantMapper.MapTenant(tenant.Body);
     }
 }
