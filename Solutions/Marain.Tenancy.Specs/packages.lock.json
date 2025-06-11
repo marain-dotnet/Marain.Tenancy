@@ -2,6 +2,17 @@
   "version": 1,
   "dependencies": {
     "net8.0": {
+      "Corvus.Testing.AzureFunctions.ReqnRoll": {
+        "type": "Direct",
+        "requested": "[5.0.0, )",
+        "resolved": "5.0.0",
+        "contentHash": "lVZ6FXt4P7Ua0ZUCqtk5kM2lnoStMysVorvZK2ySyG7vLdNkC7UlVnSPsPAmJJeNKOMjkRGw6qnZmwyaA30nug==",
+        "dependencies": {
+          "Corvus.Testing.AzureFunctions": "5.0.0",
+          "Corvus.Testing.ReqnRoll": "4.0.5",
+          "Microsoft.Extensions.Logging.Console": "8.0.1"
+        }
+      },
       "Corvus.Testing.AzureFunctions.ReqnRoll.NUnit": {
         "type": "Direct",
         "requested": "[5.0.0, )",
@@ -306,16 +317,6 @@
         "contentHash": "0NqZTMlfRiUqElB6EOUfnhbF50pNV4WRHrCcENzp/0OuFexxD/cZ1GlTyy5PJgQTl/G58qmrjTaJy/Mza/xGuA==",
         "dependencies": {
           "Microsoft.Extensions.Logging.Abstractions": "8.0.3"
-        }
-      },
-      "Corvus.Testing.AzureFunctions.ReqnRoll": {
-        "type": "Transitive",
-        "resolved": "5.0.0",
-        "contentHash": "lVZ6FXt4P7Ua0ZUCqtk5kM2lnoStMysVorvZK2ySyG7vLdNkC7UlVnSPsPAmJJeNKOMjkRGw6qnZmwyaA30nug==",
-        "dependencies": {
-          "Corvus.Testing.AzureFunctions": "5.0.0",
-          "Corvus.Testing.ReqnRoll": "4.0.5",
-          "Microsoft.Extensions.Logging.Console": "8.0.1"
         }
       },
       "Corvus.Testing.ReqnRoll": {
