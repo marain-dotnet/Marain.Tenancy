@@ -95,7 +95,7 @@ public class ScenarioDiContainer
                 .GetSection("RootBlobStorageConfiguration")
                 .Get<BlobContainerConfiguration>();
             services.AddTenantStoreOnAzureBlobStorage(
-                this.rootBlobStorageConfiguration,
+                this.RootBlobStorageConfiguration,
                 this.PropagateRootTenancyStorageConfigAsV2);
         });
     }

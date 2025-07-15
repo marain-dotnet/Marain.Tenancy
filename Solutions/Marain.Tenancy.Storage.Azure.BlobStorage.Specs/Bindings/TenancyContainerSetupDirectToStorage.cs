@@ -10,6 +10,7 @@ using System.IO;
 using System.Linq;
 using System.Security.Cryptography;
 using System.Text;
+using System.Text.Json;
 using System.Threading.Tasks;
 
 using Corvus.Json;
@@ -23,26 +24,13 @@ using global::Azure.Storage.Blobs;
 using global::Azure.Storage.Blobs.Models;
 using global::Azure.Storage.Blobs.Specialized;
 
-internal class TenancyContainerSetupDirectToStorage : ITenancyContainerSetup
+internal class TenancyContainerSetupDirectToStorage(
+    BlobContainerConfiguration configuration,
+    IBlobContainerSourceFromDynamicConfiguration blobContainerSource,
+    IJsonSerializerOptionsProvider serializerSettingsProvider,
+    IPropertyBagFactory propertyBagFactory) : ITenancyContainerSetup
 {
     private static readonly Lazy<SHA1> Sha1 = new(() => SHA1.Create());
-    private readonly BlobContainerConfiguration configuration;
-    private readonly IBlobContainerSourceFromDynamicConfiguration blobContainerSource;
-    private readonly IPropertyBagFactory propertyBagFactory;
-    private readonly JsonSerializer jsonSerializer;
-
-    public TenancyContainerSetupDirectToStorage(
-        BlobContainerConfiguration configuration,
-        IBlobContainerSourceFromDynamicConfiguration blobContainerSource,
-        IJsonSerializerOptionsProvider serializerSettingsProvider,
-        IPropertyBagFactory propertyBagFactory)
-    {
-        this.configuration = configuration;
-        this.blobContainerSource = blobContainerSource;
-        this.propertyBagFactory = propertyBagFactory;
-
-        this.jsonSerializer = JsonSerializer.Create(serializerSettingsProvider.Instance);
-    }
 
     public async Task<ITenant> EnsureWellKnownChildTenantExistsAsync(
         string parentId,
@@ -71,23 +59,19 @@ internal class TenancyContainerSetupDirectToStorage : ITenancyContainerSetup
                 "StorageConfiguration__corvustenancy",
                 new LegacyV2BlobStorageConfiguration
                 {
-                    AccountName = this.configuration.ConnectionStringPlainText ?? this.configuration.AccountName,
-                    KeyVaultName = this.configuration.AccessKeyInKeyVault?.VaultName,
-                    AccountKeySecretName = this.configuration.AccessKeyInKeyVault?.SecretName,
+                    AccountName = configuration.ConnectionStringPlainText ?? configuration.AccountName,
+                    KeyVaultName = configuration.AccessKeyInKeyVault?.VaultName,
+                    AccountKeySecretName = configuration.AccessKeyInKeyVault?.SecretName,
                 })
-            : new KeyValuePair<string, object>("StorageConfigurationV3__corvustenancy", this.configuration);
+            : new KeyValuePair<string, object>("StorageConfigurationV3__corvustenancy", configuration);
 
-        IPropertyBag tenantProperties = this.propertyBagFactory.Create(PropertyBagValues.Build(values =>
+        IPropertyBag tenantProperties = propertyBagFactory.Create(PropertyBagValues.Build(values =>
             values
                 .Concat(properties ?? [])
                 .Append(storageConfig)));
         Tenant newTenant = new(newTenantId, name, tenantProperties);
-        var content = new MemoryStream();
-        using (var sw = new StreamWriter(content, new UTF8Encoding(false), leaveOpen: true))
-        using (JsonWriter writer = new JsonTextWriter(sw))
-        {
-            this.jsonSerializer.Serialize(writer, newTenant);
-        }
+        await using MemoryStream content = new();
+        JsonSerializer.Serialize(content, newTenant, serializerSettingsProvider.Instance);
 
         content.Position = 0;
         Response<BlobContentInfo> blobUploadResponse = await tenantBlobInParentContainer.UploadAsync(content).ConfigureAwait(false);
@@ -134,8 +118,8 @@ internal class TenancyContainerSetupDirectToStorage : ITenancyContainerSetup
         // from it is a BlobServiceClient, because for this test mode, we want to work
         // directly with the storage API to validate that it works when the storage account
         // wasn't previously populated by the current Corvus and Marain APIs.
-        BlobContainerClient rootTenantContainerFromConfig = await this.blobContainerSource.GetStorageContextAsync(
-            this.configuration with { Container = "dummy" });
+        BlobContainerClient rootTenantContainerFromConfig = await blobContainerSource.GetStorageContextAsync(
+            configuration with { Container = "dummy" });
         return rootTenantContainerFromConfig.GetParentBlobServiceClient();
     }
 }

@@ -15,7 +15,6 @@ using FluentAssertions;
 using Marain.Tenancy.Storage.Azure.BlobStorage.Specs.Bindings;
 using Reqnroll;
 
-
 [Binding]
 public class EnumerateChildTenantsSteps : TenantStepsBase
 {
