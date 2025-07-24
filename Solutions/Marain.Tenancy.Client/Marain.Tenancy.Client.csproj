@@ -3,6 +3,7 @@
 
   <PropertyGroup>
     <TargetFramework>net8.0</TargetFramework>
+    <Nullable>enable</Nullable>
   </PropertyGroup>
 
   <PropertyGroup>
@@ -32,6 +33,7 @@
     <PackageReference Include="CacheCow.Client" Version="2.13.1" />
     <PackageReference Include="Corvus.ContentHandling.Json" Version="4.0.0" />
     <PackageReference Include="Corvus.Extensions" Version="1.1.13" />
+    <PackageReference Include="Corvus.Identity.Abstractions" Version="4.0.2" />
     <PackageReference Include="Corvus.Identity.Azure" Version="4.0.2" />
     <PackageReference Include="Endjin.RecommendedPractices.GitHub" Version="2.1.18">
       <PrivateAssets>all</PrivateAssets>

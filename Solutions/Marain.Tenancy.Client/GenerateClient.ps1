@@ -1,15 +1,6 @@
-﻿
-# This requires the Tenancy function to be running locally on its default port of 7071
-$tmp = (New-TemporaryFile).FullName
+﻿$InputFile = (Join-Path $PSScriptRoot "..\Marain.Tenancy.OpenApi.Service\Marain\Tenancy\OpenApi\TenancyServices.yaml")
+$OutputFolder = (Join-Path $PSScriptRoot "Marain\Tenancy\Client\Internal").Replace("\", "/")    # because apparently they don't test autorest on Windows these days
 
-Write-Output "Downloading Swagger from local API instance to " $tmp
-
-Invoke-WebRequest http://localhost:7071/api/swagger -o $tmp
-
-$OutputFolder = (Join-Path $PSScriptRoot "Marain\Tenancy\Client\").Replace("\", "/")    # because apparently they don't test autorest on Windows these days
-
-# If you do not have autorest, install it with:
-#   npm install -g autorest
-# Ensure it is up to date with
-#   autorest --latest
-autorest --input-file=$tmp --csharp --output-folder=$OutputFolder --namespace=Marain.Tenancy.Client --add-credentials
+# If you do not have Kiota, install it with:
+#   dotnet tool install --global Microsoft.OpenApi.Kiota
+kiota generate -l CSharp -c MarainTenancyClient -n Marain.Tenancy.Client.Internal -d $InputFile -o $OutputFolder
