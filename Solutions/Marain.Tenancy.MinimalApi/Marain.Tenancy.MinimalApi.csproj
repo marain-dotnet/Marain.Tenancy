@@ -37,7 +37,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <!-- TODO: Add project references once dependencies are resolved in Phase 2 -->
+    <ProjectReference Include="..\Marain.Tenancy.Storage.Azure.BlobStorage\Marain.Tenancy.Storage.Azure.BlobStorage.csproj" />
   </ItemGroup>
 
 </Project>

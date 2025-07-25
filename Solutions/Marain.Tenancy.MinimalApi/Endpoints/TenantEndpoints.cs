@@ -4,12 +4,19 @@
 
 namespace Marain.Tenancy.MinimalApi.Endpoints;
 
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading.Tasks;
+using Corvus.Tenancy;
+using Corvus.Tenancy.Exceptions;
 using FluentValidation;
+using FluentValidation.Results;
 using Marain.Tenancy.MinimalApi.ErrorHandling;
 using Marain.Tenancy.MinimalApi.Models;
-using Marain.Tenancy.MinimalApi.Services;
 using Marain.Tenancy.MinimalApi.Validation;
 using Microsoft.AspNetCore.Http.HttpResults;
+using Microsoft.AspNetCore.JsonPatch;
 using Microsoft.AspNetCore.Mvc;
 
 /// <summary>
@@ -54,13 +61,12 @@ public static class TenantEndpoints
             .WithDescription("Updates tenant properties using JSON Patch operations.")
             .Produces<TenantResponse>()
             .ProducesProblem(StatusCodes.Status400BadRequest)
-            .ProducesProblem(StatusCodes.Status404NotFound)
-            .ProducesProblem(StatusCodes.Status415UnsupportedMediaType);
+            .ProducesProblem(StatusCodes.Status404NotFound);
 
         group.MapDelete("/children/{childTenantId}", DeleteChildTenant)
             .WithName("DeleteChildTenant")
             .WithSummary("Delete a child tenant")
-            .WithDescription("Deletes the specified child tenant.")
+            .WithDescription("Deletes a child tenant and all its resources.")
             .Produces(StatusCodes.Status204NoContent)
             .ProducesProblem(StatusCodes.Status400BadRequest)
             .ProducesProblem(StatusCodes.Status404NotFound);
@@ -68,246 +74,262 @@ public static class TenantEndpoints
         return group;
     }
 
-    /// <summary>
-    /// Gets a tenant by its identifier.
-    /// </summary>
-    /// <param name="tenantId">The tenant identifier.</param>
-    /// <param name="validator">The parameter validator.</param>
-    /// <param name="tenantService">The tenant service.</param>
-    /// <param name="context">The HTTP context.</param>
-    /// <returns>The tenant response or problem details.</returns>
     private static async Task<Results<Ok<TenantResponse>, StatusCodeHttpResult, ProblemHttpResult>> GetTenant(
         string tenantId,
         IValidator<GetTenantParameters> validator,
-        ITenantService tenantService,
+        ITenantStore tenantStore,
         HttpContext context)
     {
         var parameters = new GetTenantParameters { TenantId = tenantId };
-        var validationResult = await validator.ValidateAsync(parameters);
-
+        var validationResult = await validator.ValidateAsync(parameters, context.RequestAborted);
         if (!validationResult.IsValid)
         {
-            var errors = string.Join("; ", validationResult.Errors.Select(e => e.ErrorMessage));
-            return ErrorHandlingExtensions.BadRequestProblem(errors);
+            return CreateValidationProblem(validationResult.Errors);
         }
 
-        var etag = context.Request.Headers.IfNoneMatch.FirstOrDefault();
-        var result = await tenantService.GetTenantAsync(tenantId, etag, context.RequestAborted);
-
-        return result.ErrorType switch
+        try
         {
-            TenantServiceErrorType.NotFound => ErrorHandlingExtensions.NotFoundProblem(result.ErrorMessage!),
-            TenantServiceErrorType.NotModified => TypedResults.StatusCode(StatusCodes.Status304NotModified),
-            null when result.IsSuccess => CreateOkWithETag(result.Data!, result.ETag, context),
-            _ => ErrorHandlingExtensions.InternalServerErrorProblem("An unexpected error occurred")
-        };
+            var etag = context.Request.Headers.IfNoneMatch.FirstOrDefault();
+            ITenant tenant = await tenantStore.GetTenantAsync(tenantId, etag);
+            
+            var response = MapTenantToResponse(tenant);
+            
+            // Set ETag header
+            if (!string.IsNullOrEmpty(tenant.ETag))
+            {
+                context.Response.Headers.ETag = tenant.ETag;
+            }
+            
+            return TypedResults.Ok(response);
+        }
+        catch (TenantNotFoundException)
+        {
+            return ErrorHandlingExtensions.NotFoundProblem($"Tenant with ID '{tenantId}' not found");
+        }
+        catch (TenantNotModifiedException)
+        {
+            return TypedResults.StatusCode(StatusCodes.Status304NotModified);
+        }
     }
 
-    /// <summary>
-    /// Creates a new child tenant.
-    /// </summary>
-    /// <param name="tenantId">The parent tenant identifier.</param>
-    /// <param name="tenantName">The name for the new child tenant.</param>
-    /// <param name="wellKnownChildTenantGuid">Optional well-known GUID for the child tenant.</param>
-    /// <param name="validator">The parameter validator.</param>
-    /// <param name="tenantService">The tenant service.</param>
-    /// <param name="context">The HTTP context.</param>
-    /// <returns>The created tenant response or problem details.</returns>
     private static async Task<Results<Created<TenantResponse>, ProblemHttpResult>> CreateChildTenant(
         string tenantId,
-        [FromQuery] string tenantName,
-        [FromQuery] string? wellKnownChildTenantGuid,
+        CreateChildTenantRequest request,
         IValidator<CreateChildTenantParameters> validator,
-        ITenantService tenantService,
+        ITenantStore tenantStore,
         HttpContext context)
     {
-        var parameters = new CreateChildTenantParameters
-        {
-            TenantId = tenantId,
-            TenantName = tenantName,
-            WellKnownChildTenantGuid = wellKnownChildTenantGuid
+        var parameters = new CreateChildTenantParameters 
+        { 
+            TenantId = tenantId, 
+            TenantName = request.TenantName,
+            WellKnownChildTenantGuid = request.WellKnownChildTenantGuid
         };
 
-        var validationResult = await validator.ValidateAsync(parameters);
-
+        var validationResult = await validator.ValidateAsync(parameters, context.RequestAborted);
         if (!validationResult.IsValid)
         {
-            var errors = string.Join("; ", validationResult.Errors.Select(e => e.ErrorMessage));
-            return ErrorHandlingExtensions.BadRequestProblem(errors);
+            return CreateValidationProblem(validationResult.Errors);
         }
 
-        var result = await tenantService.CreateChildTenantAsync(tenantId, tenantName, wellKnownChildTenantGuid, context.RequestAborted);
-
-        return result.ErrorType switch
+        try
         {
-            TenantServiceErrorType.NotFound => ErrorHandlingExtensions.NotFoundProblem(result.ErrorMessage!),
-            TenantServiceErrorType.Conflict => ErrorHandlingExtensions.ConflictProblem(result.ErrorMessage!),
-            null when result.IsSuccess => CreateCreatedWithETag(result.Data!, result.ETag, context),
-            _ => ErrorHandlingExtensions.InternalServerErrorProblem("An unexpected error occurred")
-        };
+            ITenant childTenant;
+            
+            if (!string.IsNullOrEmpty(request.WellKnownChildTenantGuid) && 
+                Guid.TryParse(request.WellKnownChildTenantGuid, out Guid guid))
+            {
+                childTenant = await tenantStore.CreateWellKnownChildTenantAsync(
+                    tenantId, 
+                    guid, 
+                    request.TenantName);
+            }
+            else
+            {
+                childTenant = await tenantStore.CreateChildTenantAsync(
+                    tenantId, 
+                    request.TenantName);
+            }
+
+            var response = MapTenantToResponse(childTenant);
+            return TypedResults.Created($"/{childTenant.Id}/marain/tenant", response);
+        }
+        catch (TenantNotFoundException)
+        {
+            return ErrorHandlingExtensions.NotFoundProblem($"Parent tenant with ID '{tenantId}' not found");
+        }
+        catch (ArgumentException ex) when (ex.Message.Contains("already exists"))
+        {
+            return ErrorHandlingExtensions.ConflictProblem(ex.Message);
+        }
     }
 
-    /// <summary>
-    /// Gets child tenants for the specified parent tenant.
-    /// </summary>
-    /// <param name="tenantId">The parent tenant identifier.</param>
-    /// <param name="continuationToken">Optional continuation token for pagination.</param>
-    /// <param name="maxItems">Maximum number of items to return.</param>
-    /// <param name="validator">The parameter validator.</param>
-    /// <param name="tenantService">The tenant service.</param>
-    /// <param name="context">The HTTP context.</param>
-    /// <returns>The child tenants response or problem details.</returns>
     private static async Task<Results<Ok<ChildTenantsResponse>, ProblemHttpResult>> GetChildTenants(
         string tenantId,
-        [FromQuery] string? continuationToken,
-        [FromQuery] int? maxItems,
+        int? maxItems,
+        string? continuationToken,
         IValidator<GetChildrenParameters> validator,
-        ITenantService tenantService,
+        ITenantStore tenantStore,
         HttpContext context)
     {
-        var parameters = new GetChildrenParameters
-        {
-            TenantId = tenantId,
-            ContinuationToken = continuationToken,
-            MaxItems = maxItems
+        var parameters = new GetChildrenParameters 
+        { 
+            TenantId = tenantId, 
+            MaxItems = maxItems,
+            ContinuationToken = continuationToken
         };
 
-        var validationResult = await validator.ValidateAsync(parameters);
-
+        var validationResult = await validator.ValidateAsync(parameters, context.RequestAborted);
         if (!validationResult.IsValid)
         {
-            var errors = string.Join("; ", validationResult.Errors.Select(e => e.ErrorMessage));
-            return ErrorHandlingExtensions.BadRequestProblem(errors);
+            return CreateValidationProblem(validationResult.Errors);
         }
 
-        var result = await tenantService.GetChildTenantsAsync(tenantId, maxItems, continuationToken, context.RequestAborted);
-
-        return result.ErrorType switch
+        try
         {
-            TenantServiceErrorType.NotFound => ErrorHandlingExtensions.NotFoundProblem(result.ErrorMessage!),
-            null when result.IsSuccess => TypedResults.Ok(result.Data!),
-            _ => ErrorHandlingExtensions.InternalServerErrorProblem("An unexpected error occurred")
-        };
+            int limit = maxItems ?? 10;
+            TenantCollectionResult children = await tenantStore.GetChildrenAsync(
+                tenantId, 
+                limit, 
+                continuationToken);
+
+            var childTenants = new List<TenantResponse>();
+            foreach (string childId in children.Tenants)
+            {
+                ITenant childTenant = await tenantStore.GetTenantAsync(childId, null);
+                childTenants.Add(MapTenantToResponse(childTenant));
+            }
+
+            var response = new ChildTenantsResponse
+            {
+                Embedded = new ChildTenantsEmbedded { Tenants = childTenants },
+                ContinuationToken = children.ContinuationToken
+            };
+
+            return TypedResults.Ok(response);
+        }
+        catch (TenantNotFoundException)
+        {
+            return ErrorHandlingExtensions.NotFoundProblem($"Tenant with ID '{tenantId}' not found");
+        }
     }
 
-    /// <summary>
-    /// Updates a tenant using JSON Patch operations.
-    /// </summary>
-    /// <param name="tenantId">The tenant identifier.</param>
-    /// <param name="context">The HTTP context.</param>
-    /// <param name="validator">The parameter validator.</param>
-    /// <param name="tenantService">The tenant service.</param>
-    /// <returns>The updated tenant response or problem details.</returns>
     private static async Task<Results<Ok<TenantResponse>, ProblemHttpResult>> UpdateTenant(
         string tenantId,
-        HttpContext context,
+        JsonPatchDocument<UpdateTenantRequest> patchDocument,
         IValidator<UpdateTenantParameters> validator,
-        ITenantService tenantService)
+        ITenantStore tenantStore,
+        HttpContext context)
     {
-        var contentTypeValidation = context.ValidateContentType();
-        if (contentTypeValidation.Result is BadRequest<string>)
-        {
-            return ErrorHandlingExtensions.UnsupportedMediaTypeProblem("Invalid content type for PATCH request");
-        }
+        var parameters = new UpdateTenantParameters 
+        { 
+            TenantId = tenantId
+        };
 
-        var jsonPatchValidation = await context.ValidateJsonPatchAsync();
-        if (jsonPatchValidation.Result is BadRequest<string> badRequest)
-        {
-            return ErrorHandlingExtensions.BadRequestProblem(badRequest.Value!);
-        }
-
-        var parameters = new UpdateTenantParameters { TenantId = tenantId };
-        var validationResult = await validator.ValidateAsync(parameters);
-
+        var validationResult = await validator.ValidateAsync(parameters, context.RequestAborted);
         if (!validationResult.IsValid)
         {
-            var errors = string.Join("; ", validationResult.Errors.Select(e => e.ErrorMessage));
-            return ErrorHandlingExtensions.BadRequestProblem(errors);
+            return CreateValidationProblem(validationResult.Errors);
         }
 
-        var jsonPatch = ((Ok<string>)jsonPatchValidation.Result).Value!;
-        var result = await tenantService.UpdateTenantAsync(tenantId, jsonPatch, context.RequestAborted);
-
-        return result.ErrorType switch
+        try
         {
-            TenantServiceErrorType.NotFound => ErrorHandlingExtensions.NotFoundProblem(result.ErrorMessage!),
-            TenantServiceErrorType.ValidationError => ErrorHandlingExtensions.BadRequestProblem(result.ErrorMessage!),
-            null when result.IsSuccess => CreateOkWithETag(result.Data!, result.ETag, context),
-            _ => ErrorHandlingExtensions.InternalServerErrorProblem("An unexpected error occurred")
-        };
+            // Apply patch to a temporary object to extract changes
+            var tempTenant = new UpdateTenantRequest();
+            patchDocument.ApplyTo(tempTenant);
+
+            // Extract properties to update
+            var propertiesToUpdate = new List<KeyValuePair<string, object>>();
+            if (!string.IsNullOrEmpty(tempTenant.Description))
+            {
+                propertiesToUpdate.Add(new KeyValuePair<string, object>("description", tempTenant.Description));
+            }
+
+            ITenant updatedTenant = await tenantStore.UpdateTenantAsync(
+                tenantId,
+                tempTenant.Name,
+                propertiesToUpdate,
+                null);
+
+            var response = MapTenantToResponse(updatedTenant);
+            return TypedResults.Ok(response);
+        }
+        catch (TenantNotFoundException)
+        {
+            return ErrorHandlingExtensions.NotFoundProblem($"Tenant with ID '{tenantId}' not found");
+        }
+        catch (InvalidOperationException ex) when (ex.Message.Contains("Concurrent modifications"))
+        {
+            return ErrorHandlingExtensions.ConflictProblem("The tenant was modified by another request. Please retry.");
+        }
     }
 
-    /// <summary>
-    /// Deletes a child tenant.
-    /// </summary>
-    /// <param name="tenantId">The parent tenant identifier.</param>
-    /// <param name="childTenantId">The child tenant identifier to delete.</param>
-    /// <param name="validator">The parameter validator.</param>
-    /// <param name="tenantService">The tenant service.</param>
-    /// <param name="context">The HTTP context.</param>
-    /// <returns>No content response or problem details.</returns>
     private static async Task<Results<NoContent, ProblemHttpResult>> DeleteChildTenant(
         string tenantId,
         string childTenantId,
         IValidator<DeleteChildTenantParameters> validator,
-        ITenantService tenantService,
+        ITenantStore tenantStore,
         HttpContext context)
     {
-        var parameters = new DeleteChildTenantParameters
-        {
-            TenantId = tenantId,
-            ChildTenantId = childTenantId
+        var parameters = new DeleteChildTenantParameters 
+        { 
+            TenantId = tenantId, 
+            ChildTenantId = childTenantId 
         };
 
-        var validationResult = await validator.ValidateAsync(parameters);
-
+        var validationResult = await validator.ValidateAsync(parameters, context.RequestAborted);
         if (!validationResult.IsValid)
         {
-            var errors = string.Join("; ", validationResult.Errors.Select(e => e.ErrorMessage));
-            return ErrorHandlingExtensions.BadRequestProblem(errors);
+            return CreateValidationProblem(validationResult.Errors);
         }
 
-        var result = await tenantService.DeleteChildTenantAsync(tenantId, childTenantId, context.RequestAborted);
-
-        return result.ErrorType switch
+        try
         {
-            TenantServiceErrorType.NotFound => ErrorHandlingExtensions.NotFoundProblem(result.ErrorMessage!),
-            null when result.IsSuccess => TypedResults.NoContent(),
-            _ => ErrorHandlingExtensions.InternalServerErrorProblem("An unexpected error occurred")
+            await tenantStore.DeleteTenantAsync(childTenantId);
+            return TypedResults.NoContent();
+        }
+        catch (TenantNotFoundException)
+        {
+            return ErrorHandlingExtensions.NotFoundProblem($"Child tenant with ID '{childTenantId}' not found under parent '{tenantId}'");
+        }
+        catch (ArgumentException ex) when (ex.Message.Contains("has children"))
+        {
+            return ErrorHandlingExtensions.ConflictProblem("Cannot delete tenant because it has child tenants");
+        }
+    }
+
+    private static TenantResponse MapTenantToResponse(ITenant tenant)
+    {
+        var properties = new Dictionary<string, object>();
+        
+        // Convert IPropertyBag to Dictionary<string, object>
+        // We'll iterate over known property names since IPropertyBag doesn't expose Keys
+        foreach (string key in new[] { "description", "parent", "created", "modified" })
+        {
+            if (tenant.Properties.TryGet<object>(key, out object? value) && value != null)
+            {
+                properties[key] = value;
+            }
+        }
+
+        return new TenantResponse
+        {
+            Id = tenant.Id,
+            Name = tenant.Name,
+            ContentType = "application/vnd.marain.tenant",
+            Properties = properties
         };
     }
 
-    /// <summary>
-    /// Creates an OK response with ETag header.
-    /// </summary>
-    /// <param name="tenant">The tenant response data.</param>
-    /// <param name="etag">The ETag value.</param>
-    /// <param name="context">The HTTP context.</param>
-    /// <returns>An OK response with ETag header.</returns>
-    private static Ok<TenantResponse> CreateOkWithETag(TenantResponse tenant, string? etag, HttpContext context)
+    private static ProblemHttpResult CreateValidationProblem(IEnumerable<ValidationFailure> errors)
     {
-        var response = TypedResults.Ok(tenant);
-        if (!string.IsNullOrEmpty(etag))
-        {
-            context.Response.Headers.ETag = etag;
-        }
-        return response;
-    }
-
-    /// <summary>
-    /// Creates a Created response with ETag header.
-    /// </summary>
-    /// <param name="tenant">The tenant response data.</param>
-    /// <param name="etag">The ETag value.</param>
-    /// <param name="context">The HTTP context.</param>
-    /// <returns>A Created response with ETag header.</returns>
-    private static Created<TenantResponse> CreateCreatedWithETag(TenantResponse tenant, string? etag, HttpContext context)
-    {
-        var response = TypedResults.Created($"/{tenant.Id}/marain/tenant", tenant);
-        if (!string.IsNullOrEmpty(etag))
-        {
-            context.Response.Headers.ETag = etag;
-        }
-        return response;
+        var errorDict = errors.GroupBy(x => x.PropertyName)
+                               .ToDictionary(g => g.Key, g => g.Select(x => x.ErrorMessage).ToArray());
+        
+        return TypedResults.Problem(
+            statusCode: StatusCodes.Status400BadRequest,
+            title: "Validation Error",
+            type: "https://tools.ietf.org/html/rfc7231#section-6.5.1",
+            extensions: new Dictionary<string, object?> { ["errors"] = errorDict });
     }
 }

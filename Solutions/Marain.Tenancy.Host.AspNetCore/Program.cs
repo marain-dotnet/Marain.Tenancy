@@ -2,21 +2,41 @@
 // Copyright (c) Endjin Limited. All rights reserved.
 // </copyright>
 
-namespace Marain.Tenancy.Host.AspNetCore;
+using Corvus.Storage.Azure.BlobStorage;
+using Marain.Tenancy.MinimalApi.Extensions;
+using Microsoft.Extensions.DependencyInjection;
 
-using Microsoft.AspNetCore.Hosting;
-using Microsoft.Extensions.Configuration;
-using Microsoft.Extensions.Hosting;
+var builder = WebApplication.CreateBuilder(args);
 
-internal static class Program
+// Add environment variables configuration
+builder.Configuration.AddEnvironmentVariables();
+
+// Add tenancy minimal API services
+builder.AddTenancyMinimalApi();
+
+// Configure blob storage for tenant persistence
+var rootStorageConfiguration = builder.Configuration
+    .GetSection("RootBlobStorageConfiguration")
+    .Get<BlobContainerConfiguration>();
+
+if (rootStorageConfiguration is not null)
 {
-    public static void Main(string[] args)
-    {
-        CreateHostBuilder(args).Build().Run();
-    }
-
-    public static IHostBuilder CreateHostBuilder(string[] args) =>
-        Host.CreateDefaultBuilder(args)
-            .ConfigureAppConfiguration((_, config) => config.AddEnvironmentVariables())
-            .ConfigureWebHostDefaults(webBuilder => webBuilder.UseStartup<Startup>());
+    builder.Services.AddTenantStoreOnAzureBlobStorage(rootStorageConfiguration);
 }
+
+var app = builder.Build();
+
+// Configure pipeline
+if (app.Environment.IsDevelopment())
+{
+    app.UseSwagger();
+    app.UseSwaggerUI();
+    app.UseDeveloperExceptionPage();
+}
+
+app.UseExceptionHandler();
+
+// Map tenancy endpoints
+app.MapTenancyEndpoints();
+
+app.Run();

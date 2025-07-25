@@ -1,0 +1,21 @@
+// <copyright file="CreateChildTenantRequest.cs" company="Endjin Limited">
+// Copyright (c) Endjin Limited. All rights reserved.
+// </copyright>
+
+namespace Marain.Tenancy.MinimalApi.Models;
+
+/// <summary>
+/// Represents a request to create a child tenant.
+/// </summary>
+public sealed record CreateChildTenantRequest
+{
+    /// <summary>
+    /// Gets the name for the new child tenant.
+    /// </summary>
+    required public string TenantName { get; init; }
+    
+    /// <summary>
+    /// Gets the well-known GUID for the new child tenant.
+    /// </summary>
+    public string? WellKnownChildTenantGuid { get; init; }
+}

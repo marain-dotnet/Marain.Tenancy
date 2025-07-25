@@ -2,6 +2,7 @@
 // Copyright (c) Endjin Limited. All rights reserved.
 // </copyright>
 
+using Corvus.Storage.Azure.BlobStorage;
 using Marain.Tenancy.MinimalApi.Extensions;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -16,6 +17,16 @@ builder.Logging.AddDebug();
 
 // Add tenancy minimal API services
 builder.AddTenancyMinimalApi();
+
+// Configure blob storage for tenant persistence
+var rootStorageConfiguration = builder.Configuration
+    .GetSection("RootBlobStorageConfiguration")
+    .Get<BlobContainerConfiguration>();
+
+if (rootStorageConfiguration is not null)
+{
+    builder.Services.AddTenantStoreOnAzureBlobStorage(rootStorageConfiguration);
+}
 
 // Configure HTTPS redirection and HSTS in production
 if (!builder.Environment.IsDevelopment())
@@ -59,3 +70,10 @@ app.MapHealthChecks("/health");
 app.MapTenancyEndpoints();
 
 app.Run();
+
+/// <summary>
+/// Program class made available to tests.
+/// </summary>
+public partial class Program
+{
+}
