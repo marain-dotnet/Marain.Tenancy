@@ -7,6 +7,7 @@ namespace Marain.Tenancy.MinimalApi.Extensions;
 using FluentValidation;
 using Marain.Tenancy.MinimalApi.Endpoints;
 using Marain.Tenancy.MinimalApi.ErrorHandling;
+using Marain.Tenancy.MinimalApi.Services;
 using Marain.Tenancy.MinimalApi.Validation;
 
 /// <summary>
@@ -37,6 +38,9 @@ public static class MinimalApiExtensions
         builder.Services.AddValidatorsFromAssemblyContaining<CreateChildTenantParametersValidator>();
         builder.Services.AddExceptionHandler<GlobalExceptionHandler>();
         builder.Services.AddProblemDetails();
+        
+        // Register tenant service (using mock implementation for now)
+        builder.Services.AddSingleton<ITenantService, MockTenantService>();
         
         return builder;
     }
