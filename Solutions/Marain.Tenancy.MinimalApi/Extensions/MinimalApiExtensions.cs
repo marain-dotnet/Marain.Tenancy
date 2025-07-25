@@ -4,8 +4,8 @@
 
 namespace Marain.Tenancy.MinimalApi.Extensions;
 
-using System.Collections.Frozen;
 using FluentValidation;
+using Marain.Tenancy.MinimalApi.ErrorHandling;
 using Marain.Tenancy.MinimalApi.Validation;
 
 /// <summary>
@@ -13,17 +13,6 @@ using Marain.Tenancy.MinimalApi.Validation;
 /// </summary>
 public static class MinimalApiExtensions
 {
-    /// <summary>
-    /// Content types allowed for different HTTP methods.
-    /// </summary>
-    private static readonly FrozenDictionary<string, string[]> AllowedContentTypes = 
-        new Dictionary<string, string[]>
-        {
-            ["PATCH"] = ["application/json-patch+json"],
-            ["POST"] = ["application/json"],
-            ["PUT"] = ["application/json"]
-        }.ToFrozenDictionary();
-
     /// <summary>
     /// Adds tenancy Minimal API services to the application builder.
     /// </summary>
@@ -44,7 +33,9 @@ public static class MinimalApiExtensions
             });
         });
         
-        builder.Services.AddValidatorsFromAssemblyContaining<TenantParametersValidator>();
+        builder.Services.AddValidatorsFromAssemblyContaining<CreateChildTenantParametersValidator>();
+        builder.Services.AddExceptionHandler<GlobalExceptionHandler>();
+        builder.Services.AddProblemDetails();
         
         return builder;
     }
@@ -59,10 +50,9 @@ public static class MinimalApiExtensions
         ArgumentNullException.ThrowIfNull(app);
         
         var tenants = app.MapGroup("/{tenantId}/marain/tenant")
-            .WithTags("Tenancy")
-            .WithOpenApi();
+            .WithTags("Tenancy");
             
-        tenants.RegisterTenantEndpoints();
+        // TODO: Implement RegisterTenantEndpoints in Phase 2
         
         return app;
     }

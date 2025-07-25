@@ -6,7 +6,6 @@ namespace Marain.Tenancy.MinimalApi.Models;
 
 using System.Collections.Frozen;
 using System.Text.Json.Serialization;
-using Corvus.Tenancy;
 
 /// <summary>
 /// Represents a tenant in API responses.
@@ -35,7 +34,7 @@ public sealed record TenantResponse
     /// Gets the properties of the tenant.
     /// </summary>
     [JsonPropertyName("properties")]
-    public IPropertyBag? Properties { get; init; }
+    public Dictionary<string, object>? Properties { get; init; }
     
     /// <summary>
     /// Gets the HAL-style links for the tenant.
