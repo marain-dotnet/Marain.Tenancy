@@ -5,6 +5,7 @@
 namespace Marain.Tenancy.MinimalApi.Extensions;
 
 using FluentValidation;
+using Marain.Tenancy.MinimalApi.Endpoints;
 using Marain.Tenancy.MinimalApi.ErrorHandling;
 using Marain.Tenancy.MinimalApi.Validation;
 
@@ -52,7 +53,7 @@ public static class MinimalApiExtensions
         var tenants = app.MapGroup("/{tenantId}/marain/tenant")
             .WithTags("Tenancy");
             
-        // TODO: Implement RegisterTenantEndpoints in Phase 2
+        tenants.RegisterTenantEndpoints();
         
         return app;
     }

@@ -23,4 +23,10 @@ public sealed record ChildTenantsResponse
     /// </summary>
     [JsonPropertyName("_embedded")]
     public ChildTenantsEmbedded? Embedded { get; init; }
+    
+    /// <summary>
+    /// Gets the continuation token for pagination.
+    /// </summary>
+    [JsonPropertyName("continuationToken")]
+    public string? ContinuationToken { get; init; }
 }
