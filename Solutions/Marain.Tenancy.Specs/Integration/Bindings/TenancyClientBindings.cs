@@ -6,7 +6,7 @@ namespace Marain.Tenancy.Specs.Integration.Bindings;
 
 using System.Collections.Generic;
 using System.Linq;
-using Corvus.Testing.SpecFlow;
+using Corvus.Testing.ReqnRoll;
 using Marain.Tenancy.Client;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -14,7 +14,7 @@ using Newtonsoft.Json;
 using Newtonsoft.Json.Converters;
 using Newtonsoft.Json.Serialization;
 
-using TechTalk.SpecFlow;
+using Reqnroll;
 
 /// <summary>
 /// Bindings for the integration tests for <see cref="TenancyService"/>.

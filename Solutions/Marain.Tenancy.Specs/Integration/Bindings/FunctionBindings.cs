@@ -12,8 +12,8 @@ using BoDi;
 
 using Corvus.Extensions.Json;
 using Corvus.Testing.AzureFunctions;
-using Corvus.Testing.AzureFunctions.SpecFlow;
-using Corvus.Testing.SpecFlow;
+using Corvus.Testing.AzureFunctions.ReqnRoll;
+using Corvus.Testing.ReqnRoll;
 
 using Marain.Tenancy.OpenApi;
 using Marain.Tenancy.Specs.MultiHost;
@@ -28,7 +28,8 @@ using Microsoft.Extensions.DependencyInjection;
 
 using NUnit.Framework.Internal;
 
-using TechTalk.SpecFlow;
+using Reqnroll;
+using Reqnroll.BoDi;
 
 /// <summary>
 /// Provides function initialisation for tests that require endpoints to be available.
@@ -82,7 +83,7 @@ public static class FunctionBindings
                 functionsConfig.CopyToEnvironmentVariables(config.AsEnumerable());
                 functionsConfig.EnvironmentVariables.Add("TenantCacheConfiguration__GetTenantResponseCacheControlHeaderValue", "max-age=300");
 
-                await functionsController.StartFunctionsInstance(
+                await functionsController.StartFunctionsInstanceAsync(
                     "Marain.Tenancy.Host.Functions",
                     TenancyApiPort,
                     "net6.0",
@@ -117,7 +118,7 @@ public static class FunctionBindings
     {
         if (featureContext.TryGetValue(out FunctionsController functionsController))
         {
-            featureContext.RunAndStoreExceptions(functionsController.TeardownFunctions);
+            featureContext.RunAndStoreExceptionsAsync(() => functionsController.TeardownFunctionsAsync());
         }
     }
 }

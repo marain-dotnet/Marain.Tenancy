@@ -24,8 +24,5 @@
     </PackageReference>
     <PackageReference Include="Microsoft.AspNetCore.WebUtilities" Version="2.2.0" />
   </ItemGroup>
-  <ItemGroup>
-    <ProjectReference Include="..\Marain.Tenancy.Client\Marain.Tenancy.Client.csproj" />
-  </ItemGroup>
 </Project>
 

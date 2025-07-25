@@ -54,7 +54,6 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\Marain.Tenancy.ClientTenantProvider\Marain.Tenancy.ClientTenantProvider.csproj" />
     <ProjectReference Include="..\Marain.Tenancy.Host.Functions\Marain.Tenancy.Host.Functions.csproj" />
     <ProjectReference Include="..\Marain.Tenancy.Hosting.AspNetCore\Marain.Tenancy.Hosting.AspNetCore.csproj" />
     <ProjectReference Include="..\Marain.Tenancy.OpenApi.Service\Marain.Tenancy.OpenApi.Service.csproj" />
