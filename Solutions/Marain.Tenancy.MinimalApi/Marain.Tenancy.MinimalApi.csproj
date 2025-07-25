@@ -1,0 +1,39 @@
+<Project Sdk="Microsoft.NET.Sdk.Web" ToolsVersion="Current">
+  <Import Project="$(EndjinProjectPropsPath)" Condition="$(EndjinProjectPropsPath) != ''" />
+
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+  </PropertyGroup>
+
+  <PropertyGroup>
+    <PackageLicenseExpression>AGPL-3.0-or-later</PackageLicenseExpression>
+    <PackageDescription>
+      Minimal API implementation for Marain Tenancy service
+    </PackageDescription>
+    <PackageTags>
+      Marain, Tenancy, MinimalAPI, ASP.NET Core
+    </PackageTags>
+    <PackageReleaseNotes>
+      Migration from Menes framework to ASP.NET Core Minimal APIs
+    </PackageReleaseNotes>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="FluentValidation" Version="11.9.0" />
+    <PackageReference Include="FluentValidation.DependencyInjectionExtensions" Version="11.9.0" />
+    <PackageReference Include="Microsoft.AspNetCore.JsonPatch" Version="8.0.0" />
+    <PackageReference Include="Swashbuckle.AspNetCore" Version="6.5.0" />
+    <PackageReference Include="Endjin.RecommendedPractices.GitHub" Version="2.1.18">
+      <PrivateAssets>all</PrivateAssets>
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+    </PackageReference>
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Marain.Tenancy.Storage.Azure.BlobStorage\Marain.Tenancy.Storage.Azure.BlobStorage.csproj" />
+    <ProjectReference Include="..\Marain.Tenancy.ClientTenantProvider\Marain.Tenancy.ClientTenantProvider.csproj" />
+  </ItemGroup>
+
+</Project>
