@@ -10,7 +10,8 @@
       "Bash(true)",
       "Bash(rm:*)",
       "Bash(sed:*)",
-      "Bash(git add:*)"
+      "Bash(git add:*)",
+      "Bash(git commit:*)"
     ],
     "deny": []
   }
