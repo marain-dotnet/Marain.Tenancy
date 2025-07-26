@@ -11,7 +11,8 @@ using FluentValidation;
 /// </summary>
 /// <typeparam name="T">The type of model to validate.</typeparam>
 /// <param name="validator">The validator for the model type.</param>
-public sealed class ValidationFilter<T>(IValidator<T> validator) : IEndpointFilter where T : class
+public sealed class ValidationFilter<T>(IValidator<T> validator) : IEndpointFilter
+    where T : class
 {
     /// <summary>
     /// Validates the request model and continues the pipeline if valid.
@@ -30,7 +31,7 @@ public sealed class ValidationFilter<T>(IValidator<T> validator) : IEndpointFilt
         FluentValidation.Results.ValidationResult validationResult = await validator.ValidateAsync(argument, context.HttpContext.RequestAborted);
         if (!validationResult.IsValid)
         {
-            Dictionary<string, string[]> errorDict = validationResult.Errors
+            var errorDict = validationResult.Errors
                 .GroupBy(x => x.PropertyName)
                 .ToDictionary(g => g.Key, g => g.Select(x => x.ErrorMessage).ToArray());
 

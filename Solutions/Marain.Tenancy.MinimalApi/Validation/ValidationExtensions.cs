@@ -4,7 +4,6 @@
 
 namespace Marain.Tenancy.MinimalApi.Validation;
 
-
 /// <summary>
 /// Extension methods for validation in minimal APIs.
 /// </summary>
@@ -21,5 +20,4 @@ public static class ValidationExtensions
     {
         return builder.AddEndpointFilter<ValidationFilter<T>>();
     }
-
 }

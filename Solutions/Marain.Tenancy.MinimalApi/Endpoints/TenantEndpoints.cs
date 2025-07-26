@@ -45,12 +45,14 @@ public static class TenantEndpoints
                 string tenantId,
                 CreateChildTenantRequest request,
                 ITenantStore tenantStore) =>
-                CreateChildTenant(new CreateChildTenantParameters
-                {
-                    TenantId = tenantId,
-                    TenantName = request.TenantName,
-                    WellKnownChildTenantGuid = request.WellKnownChildTenantGuid,
-                }, tenantStore))
+                CreateChildTenant(
+                    new()
+                    {
+                        TenantId = tenantId,
+                        TenantName = request.TenantName,
+                        WellKnownChildTenantGuid = request.WellKnownChildTenantGuid,
+                    },
+                    tenantStore))
             .WithName("CreateChildTenant")
             .WithSummary("Create a child tenant")
             .WithDescription("Creates a new child tenant under the specified parent tenant.")
@@ -64,12 +66,14 @@ public static class TenantEndpoints
                 int? maxItems,
                 string? continuationToken,
                 ITenantStore tenantStore) =>
-                GetChildTenants(new GetChildrenParameters
-                {
-                    TenantId = tenantId,
-                    MaxItems = maxItems,
-                    ContinuationToken = continuationToken,
-                }, tenantStore))
+                GetChildTenants(
+                    new()
+                    {
+                        TenantId = tenantId,
+                        MaxItems = maxItems,
+                        ContinuationToken = continuationToken,
+                    },
+                    tenantStore))
             .WithName("GetChildTenants")
             .WithSummary("Get child tenants")
             .WithDescription("Retrieves a paginated list of child tenants.")
@@ -95,11 +99,13 @@ public static class TenantEndpoints
                 string tenantId,
                 string childTenantId,
                 ITenantStore tenantStore) =>
-                DeleteChildTenant(new DeleteChildTenantParameters
-                {
-                    TenantId = tenantId,
-                    ChildTenantId = childTenantId,
-                }, tenantStore))
+                DeleteChildTenant(
+                    new()
+                    {
+                        TenantId = tenantId,
+                        ChildTenantId = childTenantId,
+                    },
+                    tenantStore))
             .WithName("DeleteChildTenant")
             .WithSummary("Delete a child tenant")
             .WithDescription("Deletes a child tenant and all its resources.")
