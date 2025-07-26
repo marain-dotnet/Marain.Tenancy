@@ -27,7 +27,7 @@ public sealed class ValidationFilter<T>(IValidator<T> validator) : IEndpointFilt
             return Results.BadRequest($"Request of type {typeof(T).Name} is required");
         }
 
-        ValidationResult validationResult = await validator.ValidateAsync(argument, context.HttpContext.RequestAborted);
+        FluentValidation.Results.ValidationResult validationResult = await validator.ValidateAsync(argument, context.HttpContext.RequestAborted);
         if (!validationResult.IsValid)
         {
             Dictionary<string, string[]> errorDict = validationResult.Errors
