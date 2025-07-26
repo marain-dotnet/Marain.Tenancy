@@ -5,7 +5,12 @@
       "Bash(ls:*)",
       "Bash(find:*)",
       "Bash(cd:*)",
-      "Bash(grep:*)"
+      "Bash(grep:*)",
+      "mcp__ide__getDiagnostics",
+      "Bash(true)",
+      "Bash(rm:*)",
+      "Bash(sed:*)",
+      "Bash(git add:*)"
     ],
     "deny": []
   }
