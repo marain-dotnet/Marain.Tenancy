@@ -9,8 +9,6 @@ using System.Linq;
 using System.Threading.Tasks;
 using Corvus.Tenancy;
 using Corvus.Tenancy.Exceptions;
-using FluentValidation;
-using FluentValidation.Results;
 using Marain.Tenancy.MinimalApi.ErrorHandling;
 using Marain.Tenancy.MinimalApi.Models;
 using Marain.Tenancy.MinimalApi.Validation;
@@ -30,66 +28,82 @@ public static class TenantEndpoints
     /// <returns>The route group builder for chaining.</returns>
     public static RouteGroupBuilder RegisterTenantEndpoints(this RouteGroupBuilder group)
     {
-        group.MapGet("/", GetTenant)
+        group.MapGet("/", (string tenantId, ITenantStore tenantStore, HttpContext context) =>
+                GetTenant(new GetTenantParameters { TenantId = tenantId }, tenantStore, context))
             .WithName("GetTenant")
             .WithSummary("Get a tenant by ID")
             .WithDescription("Retrieves detailed information about a specific tenant.")
             .Produces<TenantResponse>()
             .ProducesProblem(StatusCodes.Status404NotFound)
-            .ProducesProblem(StatusCodes.Status400BadRequest);
+            .ProducesValidationProblem()
+            .AddValidation<GetTenantParameters>();
 
-        group.MapPost("/", CreateChildTenant)
+        group.MapPost("/", (string tenantId, CreateChildTenantRequest request, ITenantStore tenantStore) =>
+                CreateChildTenant(new CreateChildTenantParameters 
+                { 
+                    TenantId = tenantId, 
+                    TenantName = request.TenantName, 
+                    WellKnownChildTenantGuid = request.WellKnownChildTenantGuid 
+                }, tenantStore))
             .WithName("CreateChildTenant")
             .WithSummary("Create a child tenant")
             .WithDescription("Creates a new child tenant under the specified parent tenant.")
             .Produces<TenantResponse>(StatusCodes.Status201Created)
-            .ProducesProblem(StatusCodes.Status400BadRequest)
-            .ProducesProblem(StatusCodes.Status409Conflict);
+            .ProducesValidationProblem()
+            .ProducesProblem(StatusCodes.Status409Conflict)
+            .AddValidation<CreateChildTenantParameters>();
 
-        group.MapGet("/children", GetChildTenants)
+        group.MapGet("/children", (string tenantId, int? maxItems, string? continuationToken, ITenantStore tenantStore) =>
+                GetChildTenants(new GetChildrenParameters 
+                { 
+                    TenantId = tenantId, 
+                    MaxItems = maxItems, 
+                    ContinuationToken = continuationToken 
+                }, tenantStore))
             .WithName("GetChildTenants")
             .WithSummary("Get child tenants")
             .WithDescription("Retrieves a paginated list of child tenants.")
             .Produces<ChildTenantsResponse>()
-            .ProducesProblem(StatusCodes.Status400BadRequest)
-            .ProducesProblem(StatusCodes.Status404NotFound);
+            .ProducesValidationProblem()
+            .ProducesProblem(StatusCodes.Status404NotFound)
+            .AddValidation<GetChildrenParameters>();
 
-        group.MapPatch("/", UpdateTenant)
+        group.MapPatch("/", (string tenantId, JsonPatchDocument<UpdateTenantRequest> patchDocument, ITenantStore tenantStore) =>
+                UpdateTenant(new UpdateTenantParameters { TenantId = tenantId }, patchDocument, tenantStore))
             .WithName("UpdateTenant")
             .WithSummary("Update a tenant")
             .WithDescription("Updates tenant properties using JSON Patch operations.")
             .Produces<TenantResponse>()
-            .ProducesProblem(StatusCodes.Status400BadRequest)
-            .ProducesProblem(StatusCodes.Status404NotFound);
+            .ProducesValidationProblem()
+            .ProducesProblem(StatusCodes.Status404NotFound)
+            .AddValidation<UpdateTenantParameters>();
 
-        group.MapDelete("/children/{childTenantId}", DeleteChildTenant)
+        group.MapDelete("/children/{childTenantId}", (string tenantId, string childTenantId, ITenantStore tenantStore) =>
+                DeleteChildTenant(new DeleteChildTenantParameters 
+                { 
+                    TenantId = tenantId, 
+                    ChildTenantId = childTenantId 
+                }, tenantStore))
             .WithName("DeleteChildTenant")
             .WithSummary("Delete a child tenant")
             .WithDescription("Deletes a child tenant and all its resources.")
             .Produces(StatusCodes.Status204NoContent)
-            .ProducesProblem(StatusCodes.Status400BadRequest)
-            .ProducesProblem(StatusCodes.Status404NotFound);
+            .ProducesValidationProblem()
+            .ProducesProblem(StatusCodes.Status404NotFound)
+            .AddValidation<DeleteChildTenantParameters>();
 
         return group;
     }
 
     private static async Task<Results<Ok<TenantResponse>, StatusCodeHttpResult, ProblemHttpResult>> GetTenant(
-        string tenantId,
-        IValidator<GetTenantParameters> validator,
+        GetTenantParameters parameters,
         ITenantStore tenantStore,
         HttpContext context)
     {
-        GetTenantParameters parameters = new() { TenantId = tenantId };
-        FluentValidation.Results.ValidationResult validationResult = await validator.ValidateAsync(parameters, context.RequestAborted);
-        if (!validationResult.IsValid)
-        {
-            return CreateValidationProblem(validationResult.Errors);
-        }
-
         try
         {
             string? etag = context.Request.Headers.IfNoneMatch.FirstOrDefault();
-            ITenant tenant = await tenantStore.GetTenantAsync(tenantId, etag);
+            ITenant tenant = await tenantStore.GetTenantAsync(parameters.TenantId, etag);
 
             TenantResponse response = MapTenantToResponse(tenant);
 
@@ -103,7 +117,7 @@ public static class TenantEndpoints
         }
         catch (TenantNotFoundException)
         {
-            return ErrorHandlingExtensions.NotFoundProblem($"Tenant with ID '{tenantId}' not found");
+            return ErrorHandlingExtensions.NotFoundProblem($"Tenant with ID '{parameters.TenantId}' not found");
         }
         catch (TenantNotModifiedException)
         {
@@ -112,42 +126,26 @@ public static class TenantEndpoints
     }
 
     private static async Task<Results<Created<TenantResponse>, ProblemHttpResult>> CreateChildTenant(
-        string tenantId,
-        CreateChildTenantRequest request,
-        IValidator<CreateChildTenantParameters> validator,
-        ITenantStore tenantStore,
-        HttpContext context)
+        CreateChildTenantParameters parameters,
+        ITenantStore tenantStore)
     {
-        CreateChildTenantParameters parameters = new()
-        {
-            TenantId = tenantId,
-            TenantName = request.TenantName,
-            WellKnownChildTenantGuid = request.WellKnownChildTenantGuid,
-        };
-
-        FluentValidation.Results.ValidationResult validationResult = await validator.ValidateAsync(parameters, context.RequestAborted);
-        if (!validationResult.IsValid)
-        {
-            return CreateValidationProblem(validationResult.Errors);
-        }
-
         try
         {
             ITenant childTenant;
 
-            if (!string.IsNullOrEmpty(request.WellKnownChildTenantGuid) &&
-                Guid.TryParse(request.WellKnownChildTenantGuid, out Guid guid))
+            if (!string.IsNullOrEmpty(parameters.WellKnownChildTenantGuid) &&
+                Guid.TryParse(parameters.WellKnownChildTenantGuid, out Guid guid))
             {
                 childTenant = await tenantStore.CreateWellKnownChildTenantAsync(
-                    tenantId,
+                    parameters.TenantId,
                     guid,
-                    request.TenantName);
+                    parameters.TenantName);
             }
             else
             {
                 childTenant = await tenantStore.CreateChildTenantAsync(
-                    tenantId,
-                    request.TenantName);
+                    parameters.TenantId,
+                    parameters.TenantName);
             }
 
             TenantResponse response = MapTenantToResponse(childTenant);
@@ -155,7 +153,7 @@ public static class TenantEndpoints
         }
         catch (TenantNotFoundException)
         {
-            return ErrorHandlingExtensions.NotFoundProblem($"Parent tenant with ID '{tenantId}' not found");
+            return ErrorHandlingExtensions.NotFoundProblem($"Parent tenant with ID '{parameters.TenantId}' not found");
         }
         catch (ArgumentException ex) when (ex.Message.Contains("already exists"))
         {
@@ -164,33 +162,16 @@ public static class TenantEndpoints
     }
 
     private static async Task<Results<Ok<ChildTenantsResponse>, ProblemHttpResult>> GetChildTenants(
-        string tenantId,
-        int? maxItems,
-        string? continuationToken,
-        IValidator<GetChildrenParameters> validator,
-        ITenantStore tenantStore,
-        HttpContext context)
+        GetChildrenParameters parameters,
+        ITenantStore tenantStore)
     {
-        GetChildrenParameters parameters = new()
-        {
-            TenantId = tenantId,
-            MaxItems = maxItems,
-            ContinuationToken = continuationToken,
-        };
-
-        FluentValidation.Results.ValidationResult validationResult = await validator.ValidateAsync(parameters, context.RequestAborted);
-        if (!validationResult.IsValid)
-        {
-            return CreateValidationProblem(validationResult.Errors);
-        }
-
         try
         {
-            int limit = maxItems ?? 10;
+            int limit = parameters.MaxItems ?? 10;
             TenantCollectionResult children = await tenantStore.GetChildrenAsync(
-                tenantId,
+                parameters.TenantId,
                 limit,
-                continuationToken);
+                parameters.ContinuationToken);
 
             List<TenantResponse> childTenants = [];
             foreach (string childId in children.Tenants)
@@ -209,28 +190,15 @@ public static class TenantEndpoints
         }
         catch (TenantNotFoundException)
         {
-            return ErrorHandlingExtensions.NotFoundProblem($"Tenant with ID '{tenantId}' not found");
+            return ErrorHandlingExtensions.NotFoundProblem($"Tenant with ID '{parameters.TenantId}' not found");
         }
     }
 
     private static async Task<Results<Ok<TenantResponse>, ProblemHttpResult>> UpdateTenant(
-        string tenantId,
+        UpdateTenantParameters parameters,
         JsonPatchDocument<UpdateTenantRequest> patchDocument,
-        IValidator<UpdateTenantParameters> validator,
-        ITenantStore tenantStore,
-        HttpContext context)
+        ITenantStore tenantStore)
     {
-        UpdateTenantParameters parameters = new()
-        {
-            TenantId = tenantId,
-        };
-
-        FluentValidation.Results.ValidationResult validationResult = await validator.ValidateAsync(parameters, context.RequestAborted);
-        if (!validationResult.IsValid)
-        {
-            return CreateValidationProblem(validationResult.Errors);
-        }
-
         try
         {
             // Apply patch to a temporary object to extract changes
@@ -245,7 +213,7 @@ public static class TenantEndpoints
             }
 
             ITenant updatedTenant = await tenantStore.UpdateTenantAsync(
-                tenantId,
+                parameters.TenantId,
                 tempTenant.Name,
                 propertiesToUpdate,
                 null);
@@ -255,7 +223,7 @@ public static class TenantEndpoints
         }
         catch (TenantNotFoundException)
         {
-            return ErrorHandlingExtensions.NotFoundProblem($"Tenant with ID '{tenantId}' not found");
+            return ErrorHandlingExtensions.NotFoundProblem($"Tenant with ID '{parameters.TenantId}' not found");
         }
         catch (InvalidOperationException ex) when (ex.Message.Contains("Concurrent modifications"))
         {
@@ -264,32 +232,17 @@ public static class TenantEndpoints
     }
 
     private static async Task<Results<NoContent, ProblemHttpResult>> DeleteChildTenant(
-        string tenantId,
-        string childTenantId,
-        IValidator<DeleteChildTenantParameters> validator,
-        ITenantStore tenantStore,
-        HttpContext context)
+        DeleteChildTenantParameters parameters,
+        ITenantStore tenantStore)
     {
-        DeleteChildTenantParameters parameters = new()
-        {
-            TenantId = tenantId,
-            ChildTenantId = childTenantId,
-        };
-
-        FluentValidation.Results.ValidationResult validationResult = await validator.ValidateAsync(parameters, context.RequestAborted);
-        if (!validationResult.IsValid)
-        {
-            return CreateValidationProblem(validationResult.Errors);
-        }
-
         try
         {
-            await tenantStore.DeleteTenantAsync(childTenantId);
+            await tenantStore.DeleteTenantAsync(parameters.ChildTenantId);
             return TypedResults.NoContent();
         }
         catch (TenantNotFoundException)
         {
-            return ErrorHandlingExtensions.NotFoundProblem($"Child tenant with ID '{childTenantId}' not found under parent '{tenantId}'");
+            return ErrorHandlingExtensions.NotFoundProblem($"Child tenant with ID '{parameters.ChildTenantId}' not found under parent '{parameters.TenantId}'");
         }
         catch (ArgumentException ex) when (ex.Message.Contains("has children"))
         {
@@ -320,14 +273,4 @@ public static class TenantEndpoints
         };
     }
 
-    private static ProblemHttpResult CreateValidationProblem(IEnumerable<ValidationFailure> errors)
-    {
-        var errorDict = errors.GroupBy(x => x.PropertyName).ToDictionary(g => g.Key, g => g.Select(x => x.ErrorMessage).ToArray());
-
-        return TypedResults.Problem(
-            statusCode: StatusCodes.Status400BadRequest,
-            title: "Validation Error",
-            type: "https://tools.ietf.org/html/rfc7231#section-6.5.1",
-            extensions: new Dictionary<string, object?> { ["errors"] = errorDict, });
-    }
 }
