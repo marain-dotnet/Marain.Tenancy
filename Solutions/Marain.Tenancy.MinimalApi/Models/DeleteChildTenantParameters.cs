@@ -12,10 +12,10 @@ public sealed record DeleteChildTenantParameters
     /// <summary>
     /// Gets the parent tenant identifier.
     /// </summary>
-    required public string TenantId { get; init; }
-    
+    public required string TenantId { get; init; }
+
     /// <summary>
     /// Gets the child tenant identifier to delete.
     /// </summary>
-    required public string ChildTenantId { get; init; }
+    public required string ChildTenantId { get; init; }
 }

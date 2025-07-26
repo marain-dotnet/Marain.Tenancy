@@ -17,7 +17,7 @@ public sealed class UpdateTenantParametersValidator : AbstractValidator<UpdateTe
     /// </summary>
     public UpdateTenantParametersValidator()
     {
-        RuleFor(x => x.TenantId)
+        this.RuleFor(x => x.TenantId)
             .NotEmpty()
             .WithMessage("TenantId is required");
     }

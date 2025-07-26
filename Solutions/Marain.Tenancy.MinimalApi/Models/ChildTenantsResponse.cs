@@ -17,13 +17,13 @@ public sealed record ChildTenantsResponse
     /// </summary>
     [JsonPropertyName("_links")]
     public FrozenDictionary<string, LinkResponse>? Links { get; init; }
-    
+
     /// <summary>
     /// Gets the embedded child tenants data.
     /// </summary>
     [JsonPropertyName("_embedded")]
     public ChildTenantsEmbedded? Embedded { get; init; }
-    
+
     /// <summary>
     /// Gets the continuation token for pagination.
     /// </summary>

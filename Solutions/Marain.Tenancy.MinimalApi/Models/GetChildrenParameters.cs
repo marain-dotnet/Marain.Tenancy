@@ -14,14 +14,14 @@ public sealed record GetChildrenParameters
     /// <summary>
     /// Gets the parent tenant identifier.
     /// </summary>
-    required public string TenantId { get; init; }
-    
+    public required string TenantId { get; init; }
+
     /// <summary>
     /// Gets the continuation token for paginated requests.
     /// </summary>
     [FromQuery]
     public string? ContinuationToken { get; init; }
-    
+
     /// <summary>
     /// Gets the maximum number of items to return.
     /// </summary>

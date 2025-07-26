@@ -4,7 +4,6 @@
 
 namespace Marain.Tenancy.MinimalApi.Endpoints;
 
-using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
@@ -80,8 +79,8 @@ public static class TenantEndpoints
         ITenantStore tenantStore,
         HttpContext context)
     {
-        var parameters = new GetTenantParameters { TenantId = tenantId };
-        var validationResult = await validator.ValidateAsync(parameters, context.RequestAborted);
+        GetTenantParameters parameters = new() { TenantId = tenantId };
+        FluentValidation.Results.ValidationResult validationResult = await validator.ValidateAsync(parameters, context.RequestAborted);
         if (!validationResult.IsValid)
         {
             return CreateValidationProblem(validationResult.Errors);
@@ -89,17 +88,17 @@ public static class TenantEndpoints
 
         try
         {
-            var etag = context.Request.Headers.IfNoneMatch.FirstOrDefault();
+            string? etag = context.Request.Headers.IfNoneMatch.FirstOrDefault();
             ITenant tenant = await tenantStore.GetTenantAsync(tenantId, etag);
-            
-            var response = MapTenantToResponse(tenant);
-            
+
+            TenantResponse response = MapTenantToResponse(tenant);
+
             // Set ETag header
             if (!string.IsNullOrEmpty(tenant.ETag))
             {
                 context.Response.Headers.ETag = tenant.ETag;
             }
-            
+
             return TypedResults.Ok(response);
         }
         catch (TenantNotFoundException)
@@ -119,14 +118,14 @@ public static class TenantEndpoints
         ITenantStore tenantStore,
         HttpContext context)
     {
-        var parameters = new CreateChildTenantParameters 
-        { 
-            TenantId = tenantId, 
+        CreateChildTenantParameters parameters = new()
+        {
+            TenantId = tenantId,
             TenantName = request.TenantName,
-            WellKnownChildTenantGuid = request.WellKnownChildTenantGuid
+            WellKnownChildTenantGuid = request.WellKnownChildTenantGuid,
         };
 
-        var validationResult = await validator.ValidateAsync(parameters, context.RequestAborted);
+        FluentValidation.Results.ValidationResult validationResult = await validator.ValidateAsync(parameters, context.RequestAborted);
         if (!validationResult.IsValid)
         {
             return CreateValidationProblem(validationResult.Errors);
@@ -135,23 +134,23 @@ public static class TenantEndpoints
         try
         {
             ITenant childTenant;
-            
-            if (!string.IsNullOrEmpty(request.WellKnownChildTenantGuid) && 
+
+            if (!string.IsNullOrEmpty(request.WellKnownChildTenantGuid) &&
                 Guid.TryParse(request.WellKnownChildTenantGuid, out Guid guid))
             {
                 childTenant = await tenantStore.CreateWellKnownChildTenantAsync(
-                    tenantId, 
-                    guid, 
+                    tenantId,
+                    guid,
                     request.TenantName);
             }
             else
             {
                 childTenant = await tenantStore.CreateChildTenantAsync(
-                    tenantId, 
+                    tenantId,
                     request.TenantName);
             }
 
-            var response = MapTenantToResponse(childTenant);
+            TenantResponse response = MapTenantToResponse(childTenant);
             return TypedResults.Created($"/{childTenant.Id}/marain/tenant", response);
         }
         catch (TenantNotFoundException)
@@ -172,14 +171,14 @@ public static class TenantEndpoints
         ITenantStore tenantStore,
         HttpContext context)
     {
-        var parameters = new GetChildrenParameters 
-        { 
-            TenantId = tenantId, 
+        GetChildrenParameters parameters = new()
+        {
+            TenantId = tenantId,
             MaxItems = maxItems,
-            ContinuationToken = continuationToken
+            ContinuationToken = continuationToken,
         };
 
-        var validationResult = await validator.ValidateAsync(parameters, context.RequestAborted);
+        FluentValidation.Results.ValidationResult validationResult = await validator.ValidateAsync(parameters, context.RequestAborted);
         if (!validationResult.IsValid)
         {
             return CreateValidationProblem(validationResult.Errors);
@@ -189,21 +188,21 @@ public static class TenantEndpoints
         {
             int limit = maxItems ?? 10;
             TenantCollectionResult children = await tenantStore.GetChildrenAsync(
-                tenantId, 
-                limit, 
+                tenantId,
+                limit,
                 continuationToken);
 
-            var childTenants = new List<TenantResponse>();
+            List<TenantResponse> childTenants = [];
             foreach (string childId in children.Tenants)
             {
                 ITenant childTenant = await tenantStore.GetTenantAsync(childId, null);
                 childTenants.Add(MapTenantToResponse(childTenant));
             }
 
-            var response = new ChildTenantsResponse
+            ChildTenantsResponse response = new()
             {
-                Embedded = new ChildTenantsEmbedded { Tenants = childTenants },
-                ContinuationToken = children.ContinuationToken
+                Embedded = new() { Tenants = childTenants },
+                ContinuationToken = children.ContinuationToken,
             };
 
             return TypedResults.Ok(response);
@@ -221,12 +220,12 @@ public static class TenantEndpoints
         ITenantStore tenantStore,
         HttpContext context)
     {
-        var parameters = new UpdateTenantParameters 
-        { 
-            TenantId = tenantId
+        UpdateTenantParameters parameters = new()
+        {
+            TenantId = tenantId,
         };
 
-        var validationResult = await validator.ValidateAsync(parameters, context.RequestAborted);
+        FluentValidation.Results.ValidationResult validationResult = await validator.ValidateAsync(parameters, context.RequestAborted);
         if (!validationResult.IsValid)
         {
             return CreateValidationProblem(validationResult.Errors);
@@ -235,14 +234,14 @@ public static class TenantEndpoints
         try
         {
             // Apply patch to a temporary object to extract changes
-            var tempTenant = new UpdateTenantRequest();
+            UpdateTenantRequest tempTenant = new();
             patchDocument.ApplyTo(tempTenant);
 
             // Extract properties to update
-            var propertiesToUpdate = new List<KeyValuePair<string, object>>();
+            List<KeyValuePair<string, object>> propertiesToUpdate = [];
             if (!string.IsNullOrEmpty(tempTenant.Description))
             {
-                propertiesToUpdate.Add(new KeyValuePair<string, object>("description", tempTenant.Description));
+                propertiesToUpdate.Add(new("description", tempTenant.Description));
             }
 
             ITenant updatedTenant = await tenantStore.UpdateTenantAsync(
@@ -251,7 +250,7 @@ public static class TenantEndpoints
                 propertiesToUpdate,
                 null);
 
-            var response = MapTenantToResponse(updatedTenant);
+            TenantResponse response = MapTenantToResponse(updatedTenant);
             return TypedResults.Ok(response);
         }
         catch (TenantNotFoundException)
@@ -271,13 +270,13 @@ public static class TenantEndpoints
         ITenantStore tenantStore,
         HttpContext context)
     {
-        var parameters = new DeleteChildTenantParameters 
-        { 
-            TenantId = tenantId, 
-            ChildTenantId = childTenantId 
+        DeleteChildTenantParameters parameters = new()
+        {
+            TenantId = tenantId,
+            ChildTenantId = childTenantId,
         };
 
-        var validationResult = await validator.ValidateAsync(parameters, context.RequestAborted);
+        FluentValidation.Results.ValidationResult validationResult = await validator.ValidateAsync(parameters, context.RequestAborted);
         if (!validationResult.IsValid)
         {
             return CreateValidationProblem(validationResult.Errors);
@@ -300,11 +299,11 @@ public static class TenantEndpoints
 
     private static TenantResponse MapTenantToResponse(ITenant tenant)
     {
-        var properties = new Dictionary<string, object>();
-        
+        Dictionary<string, object> properties = [];
+
         // Convert IPropertyBag to Dictionary<string, object>
         // We'll iterate over known property names since IPropertyBag doesn't expose Keys
-        foreach (string key in new[] { "description", "parent", "created", "modified" })
+        foreach (string key in new[] { "description", "parent", "created", "modified", })
         {
             if (tenant.Properties.TryGet<object>(key, out object? value) && value != null)
             {
@@ -312,24 +311,23 @@ public static class TenantEndpoints
             }
         }
 
-        return new TenantResponse
+        return new()
         {
             Id = tenant.Id,
             Name = tenant.Name,
             ContentType = "application/vnd.marain.tenant",
-            Properties = properties
+            Properties = properties,
         };
     }
 
     private static ProblemHttpResult CreateValidationProblem(IEnumerable<ValidationFailure> errors)
     {
-        var errorDict = errors.GroupBy(x => x.PropertyName)
-                               .ToDictionary(g => g.Key, g => g.Select(x => x.ErrorMessage).ToArray());
-        
+        var errorDict = errors.GroupBy(x => x.PropertyName).ToDictionary(g => g.Key, g => g.Select(x => x.ErrorMessage).ToArray());
+
         return TypedResults.Problem(
             statusCode: StatusCodes.Status400BadRequest,
             title: "Validation Error",
             type: "https://tools.ietf.org/html/rfc7231#section-6.5.1",
-            extensions: new Dictionary<string, object?> { ["errors"] = errorDict });
+            extensions: new Dictionary<string, object?> { ["errors"] = errorDict, });
     }
 }

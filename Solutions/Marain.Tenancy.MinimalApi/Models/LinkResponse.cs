@@ -15,26 +15,26 @@ public sealed record LinkResponse
     /// Gets the URI of the target resource.
     /// </summary>
     [JsonPropertyName("href")]
-    required public string Href { get; init; }
-    
+    public required string Href { get; init; }
+
     /// <summary>
     /// Gets a value indicating whether the href property is a URI Template.
     /// </summary>
     [JsonPropertyName("templated")]
     public bool Templated { get; init; } = false;
-    
+
     /// <summary>
     /// Gets the media type indication of the target resource.
     /// </summary>
     [JsonPropertyName("type")]
     public string? Type { get; init; }
-    
+
     /// <summary>
     /// Gets the secondary key for selecting link objects.
     /// </summary>
     [JsonPropertyName("name")]
     public string? Name { get; init; }
-    
+
     /// <summary>
     /// Gets the human-readable identifier for the link.
     /// </summary>

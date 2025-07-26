@@ -12,8 +12,8 @@ public sealed record CreateChildTenantRequest
     /// <summary>
     /// Gets the name for the new child tenant.
     /// </summary>
-    required public string TenantName { get; init; }
-    
+    public required string TenantName { get; init; }
+
     /// <summary>
     /// Gets the well-known GUID for the new child tenant.
     /// </summary>

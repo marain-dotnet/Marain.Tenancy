@@ -14,14 +14,14 @@ public sealed record CreateChildTenantParameters
     /// <summary>
     /// Gets the parent tenant identifier.
     /// </summary>
-    required public string TenantId { get; init; }
-    
+    public required string TenantId { get; init; }
+
     /// <summary>
     /// Gets the name for the new child tenant.
     /// </summary>
     [FromQuery]
-    required public string TenantName { get; init; }
-    
+    public required string TenantName { get; init; }
+
     /// <summary>
     /// Gets the well-known GUID for the new child tenant.
     /// </summary>

@@ -20,12 +20,12 @@ public static class ValidationExtensions
     /// <param name="validator">The validator to use.</param>
     /// <returns>A validation result with either success or error details.</returns>
     public static async Task<Results<Ok<T>, BadRequest<string>>> ValidateAsync<T>(
-        this T model, 
+        this T model,
         IValidator<T> validator)
         where T : notnull
     {
-        var validationResult = await validator.ValidateAsync(model);
-        
+        FluentValidation.Results.ValidationResult validationResult = await validator.ValidateAsync(model);
+
         return validationResult.IsValid
             ? TypedResults.Ok(model)
             : TypedResults.BadRequest(string.Join("; ", validationResult.Errors.Select(e => e.ErrorMessage)));
@@ -38,11 +38,11 @@ public static class ValidationExtensions
     /// <returns>A validation result indicating success or failure.</returns>
     public static Results<Ok, BadRequest<string>> ValidateContentType(this HttpContext context)
     {
-        var method = context.Request.Method;
-        var contentType = context.Request.ContentType;
-        
-        var validationResult = ContentTypeValidator.ValidateContentType(method, contentType);
-        
+        string method = context.Request.Method;
+        string? contentType = context.Request.ContentType;
+
+        ValidationResult validationResult = ContentTypeValidator.ValidateContentType(method, contentType);
+
         return validationResult.IsValid
             ? TypedResults.Ok()
             : TypedResults.BadRequest(validationResult.ErrorMessage!);
@@ -55,11 +55,11 @@ public static class ValidationExtensions
     /// <returns>A validation result for the JSON Patch document.</returns>
     public static async Task<Results<Ok<string>, BadRequest<string>>> ValidateJsonPatchAsync(this HttpContext context)
     {
-        using var reader = new StreamReader(context.Request.Body);
-        var jsonPatch = await reader.ReadToEndAsync();
-        
-        var validationResult = JsonPatchValidator.ValidateJsonPatch(jsonPatch);
-        
+        using StreamReader reader = new(context.Request.Body);
+        string jsonPatch = await reader.ReadToEndAsync();
+
+        ValidationResult validationResult = JsonPatchValidator.ValidateJsonPatch(jsonPatch);
+
         return validationResult.IsValid
             ? TypedResults.Ok(jsonPatch)
             : TypedResults.BadRequest(validationResult.ErrorMessage!);

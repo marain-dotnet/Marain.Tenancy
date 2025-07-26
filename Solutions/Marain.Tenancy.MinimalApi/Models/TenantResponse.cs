@@ -16,26 +16,26 @@ public sealed record TenantResponse
     /// Gets the unique identifier of the tenant.
     /// </summary>
     [JsonPropertyName("id")]
-    required public string Id { get; init; }
-    
+    public required string Id { get; init; }
+
     /// <summary>
     /// Gets the name of the tenant.
     /// </summary>
     [JsonPropertyName("name")]
-    required public string Name { get; init; }
-    
+    public required string Name { get; init; }
+
     /// <summary>
     /// Gets the content type of the tenant.
     /// </summary>
     [JsonPropertyName("contentType")]
-    required public string ContentType { get; init; }
-    
+    public required string ContentType { get; init; }
+
     /// <summary>
     /// Gets the properties of the tenant.
     /// </summary>
     [JsonPropertyName("properties")]
     public Dictionary<string, object>? Properties { get; init; }
-    
+
     /// <summary>
     /// Gets the HAL-style links for the tenant.
     /// </summary>

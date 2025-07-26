@@ -17,11 +17,11 @@ public sealed class CreateChildTenantParametersValidator : AbstractValidator<Cre
     /// </summary>
     public CreateChildTenantParametersValidator()
     {
-        RuleFor(x => x.TenantId)
+        this.RuleFor(x => x.TenantId)
             .NotEmpty()
             .WithMessage("TenantId is required");
 
-        RuleFor(x => x.TenantName)
+        this.RuleFor(x => x.TenantName)
             .NotEmpty()
             .WithMessage("TenantName is required")
             .MaximumLength(200)
@@ -29,7 +29,7 @@ public sealed class CreateChildTenantParametersValidator : AbstractValidator<Cre
             .Matches("^[a-zA-Z0-9_-]+$")
             .WithMessage("TenantName can only contain alphanumeric characters, hyphens, and underscores");
 
-        RuleFor(x => x.WellKnownChildTenantGuid)
+        this.RuleFor(x => x.WellKnownChildTenantGuid)
             .Must(BeValidGuidOrEmpty)
             .WithMessage("WellKnownChildTenantGuid must be a valid UUID when provided");
     }
@@ -39,6 +39,6 @@ public sealed class CreateChildTenantParametersValidator : AbstractValidator<Cre
     /// </summary>
     /// <param name="guid">The string to validate.</param>
     /// <returns>True if the string is empty/null or a valid GUID; otherwise, false.</returns>
-    private static bool BeValidGuidOrEmpty(string? guid) => 
+    private static bool BeValidGuidOrEmpty(string? guid) =>
         string.IsNullOrEmpty(guid) || Guid.TryParse(guid, out _);
 }

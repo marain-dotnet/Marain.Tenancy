@@ -13,7 +13,7 @@ public sealed record UpdateTenantRequest
     /// Gets the tenant name.
     /// </summary>
     public string? Name { get; init; }
-    
+
     /// <summary>
     /// Gets the tenant description.
     /// </summary>

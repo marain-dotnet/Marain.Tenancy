@@ -22,7 +22,7 @@ public static class MinimalApiExtensions
     public static WebApplicationBuilder AddTenancyMinimalApi(this WebApplicationBuilder builder)
     {
         ArgumentNullException.ThrowIfNull(builder);
-        
+
         builder.Services.AddEndpointsApiExplorer();
         builder.Services.AddSwaggerGen(options =>
         {
@@ -30,20 +30,19 @@ public static class MinimalApiExtensions
             {
                 Title = "Tenancy Service",
                 Version = "1.0.0",
-                Description = "Marain tenant management API"
+                Description = "Marain tenant management API",
             });
         });
-        
+
         builder.Services.AddValidatorsFromAssemblyContaining<CreateChildTenantParametersValidator>();
         builder.Services.AddExceptionHandler<GlobalExceptionHandler>();
         builder.Services.AddProblemDetails();
-        
+
         // Note: ITenantStore should be registered by the hosting application
         // using AddTenantStoreOnAzureBlobStorage() or similar extension method
-        
         return builder;
     }
-    
+
     /// <summary>
     /// Maps tenancy endpoints to the web application.
     /// </summary>
@@ -52,12 +51,12 @@ public static class MinimalApiExtensions
     public static WebApplication MapTenancyEndpoints(this WebApplication app)
     {
         ArgumentNullException.ThrowIfNull(app);
-        
-        var tenants = app.MapGroup("/{tenantId}/marain/tenant")
+
+        RouteGroupBuilder tenants = app.MapGroup("/{tenantId}/marain/tenant")
             .WithTags("Tenancy");
-            
+
         tenants.RegisterTenantEndpoints();
-        
+
         return app;
     }
 }

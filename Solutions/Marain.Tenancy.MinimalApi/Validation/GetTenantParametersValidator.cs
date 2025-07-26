@@ -17,7 +17,7 @@ public sealed class GetTenantParametersValidator : AbstractValidator<GetTenantPa
     /// </summary>
     public GetTenantParametersValidator()
     {
-        RuleFor(x => x.TenantId)
+        this.RuleFor(x => x.TenantId)
             .NotEmpty()
             .WithMessage("TenantId is required");
     }

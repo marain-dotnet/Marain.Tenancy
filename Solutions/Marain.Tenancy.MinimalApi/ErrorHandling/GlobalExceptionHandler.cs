@@ -31,13 +31,13 @@ public sealed class GlobalExceptionHandler : IExceptionHandler
     /// <param name="cancellationToken">The cancellation token.</param>
     /// <returns>True if the exception was handled; otherwise, false.</returns>
     public async ValueTask<bool> TryHandleAsync(
-        HttpContext httpContext, 
-        Exception exception, 
+        HttpContext httpContext,
+        Exception exception,
         CancellationToken cancellationToken)
     {
         this.logger.LogError(exception, "An unhandled exception occurred");
 
-        var problemDetails = exception switch
+        ProblemDetails problemDetails = exception switch
         {
             ArgumentException => new ProblemDetails
             {
@@ -45,7 +45,7 @@ public sealed class GlobalExceptionHandler : IExceptionHandler
                 Title = "Bad Request",
                 Status = StatusCodes.Status400BadRequest,
                 Detail = exception.Message,
-                Instance = httpContext.Request.Path
+                Instance = httpContext.Request.Path,
             },
             InvalidOperationException => new ProblemDetails
             {
@@ -53,7 +53,7 @@ public sealed class GlobalExceptionHandler : IExceptionHandler
                 Title = "Bad Request",
                 Status = StatusCodes.Status400BadRequest,
                 Detail = exception.Message,
-                Instance = httpContext.Request.Path
+                Instance = httpContext.Request.Path,
             },
             _ => new ProblemDetails
             {
@@ -61,8 +61,8 @@ public sealed class GlobalExceptionHandler : IExceptionHandler
                 Title = "Internal Server Error",
                 Status = StatusCodes.Status500InternalServerError,
                 Detail = "An error occurred while processing your request.",
-                Instance = httpContext.Request.Path
-            }
+                Instance = httpContext.Request.Path,
+            },
         };
 
         httpContext.Response.StatusCode = problemDetails.Status ?? StatusCodes.Status500InternalServerError;

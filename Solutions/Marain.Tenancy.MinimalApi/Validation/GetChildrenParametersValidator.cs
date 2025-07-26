@@ -17,17 +17,17 @@ public sealed class GetChildrenParametersValidator : AbstractValidator<GetChildr
     /// </summary>
     public GetChildrenParametersValidator()
     {
-        RuleFor(x => x.TenantId)
+        this.RuleFor(x => x.TenantId)
             .NotEmpty()
             .WithMessage("TenantId is required");
 
-        RuleFor(x => x.MaxItems)
+        this.RuleFor(x => x.MaxItems)
             .GreaterThan(0)
             .LessThanOrEqualTo(1000)
             .When(x => x.MaxItems.HasValue)
             .WithMessage("MaxItems must be between 1 and 1000");
 
-        RuleFor(x => x.ContinuationToken)
+        this.RuleFor(x => x.ContinuationToken)
             .MaximumLength(500)
             .When(x => !string.IsNullOrEmpty(x.ContinuationToken))
             .WithMessage("ContinuationToken cannot exceed 500 characters");

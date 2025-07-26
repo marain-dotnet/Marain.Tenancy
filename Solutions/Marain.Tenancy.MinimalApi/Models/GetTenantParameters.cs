@@ -14,8 +14,8 @@ public sealed record GetTenantParameters
     /// <summary>
     /// Gets the tenant identifier.
     /// </summary>
-    required public string TenantId { get; init; }
-    
+    public required string TenantId { get; init; }
+
     /// <summary>
     /// Gets the If-None-Match header value for conditional requests.
     /// </summary>

@@ -5,7 +5,7 @@
 using Corvus.Storage.Azure.BlobStorage;
 using Marain.Tenancy.MinimalApi.Extensions;
 
-var builder = WebApplication.CreateBuilder(args);
+WebApplicationBuilder builder = WebApplication.CreateBuilder(args);
 
 // Add environment variables configuration
 builder.Configuration.AddEnvironmentVariables();
@@ -19,7 +19,7 @@ builder.Logging.AddDebug();
 builder.AddTenancyMinimalApi();
 
 // Configure blob storage for tenant persistence
-var rootStorageConfiguration = builder.Configuration
+BlobContainerConfiguration? rootStorageConfiguration = builder.Configuration
     .GetSection("RootBlobStorageConfiguration")
     .Get<BlobContainerConfiguration>();
 
@@ -42,7 +42,7 @@ if (!builder.Environment.IsDevelopment())
 // Add health checks
 builder.Services.AddHealthChecks();
 
-var app = builder.Build();
+WebApplication app = builder.Build();
 
 // Configure pipeline
 if (app.Environment.IsDevelopment())

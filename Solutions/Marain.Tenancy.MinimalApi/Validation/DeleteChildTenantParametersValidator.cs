@@ -17,11 +17,11 @@ public sealed class DeleteChildTenantParametersValidator : AbstractValidator<Del
     /// </summary>
     public DeleteChildTenantParametersValidator()
     {
-        RuleFor(x => x.TenantId)
+        this.RuleFor(x => x.TenantId)
             .NotEmpty()
             .WithMessage("TenantId is required");
 
-        RuleFor(x => x.ChildTenantId)
+        this.RuleFor(x => x.ChildTenantId)
             .NotEmpty()
             .WithMessage("ChildTenantId is required");
     }
