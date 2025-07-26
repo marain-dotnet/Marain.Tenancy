@@ -28,7 +28,10 @@ public static class TenantEndpoints
     /// <returns>The route group builder for chaining.</returns>
     public static RouteGroupBuilder RegisterTenantEndpoints(this RouteGroupBuilder group)
     {
-        group.MapGet("/", (string tenantId, ITenantStore tenantStore, HttpContext context) =>
+        group.MapGet("/", (
+                string tenantId,
+                ITenantStore tenantStore,
+                HttpContext context) =>
                 GetTenant(new GetTenantParameters { TenantId = tenantId }, tenantStore, context))
             .WithName("GetTenant")
             .WithSummary("Get a tenant by ID")
@@ -38,12 +41,15 @@ public static class TenantEndpoints
             .ProducesValidationProblem()
             .AddValidation<GetTenantParameters>();
 
-        group.MapPost("/", (string tenantId, CreateChildTenantRequest request, ITenantStore tenantStore) =>
-                CreateChildTenant(new CreateChildTenantParameters 
-                { 
-                    TenantId = tenantId, 
-                    TenantName = request.TenantName, 
-                    WellKnownChildTenantGuid = request.WellKnownChildTenantGuid 
+        group.MapPost("/", (
+                string tenantId,
+                CreateChildTenantRequest request,
+                ITenantStore tenantStore) =>
+                CreateChildTenant(new CreateChildTenantParameters
+                {
+                    TenantId = tenantId,
+                    TenantName = request.TenantName,
+                    WellKnownChildTenantGuid = request.WellKnownChildTenantGuid,
                 }, tenantStore))
             .WithName("CreateChildTenant")
             .WithSummary("Create a child tenant")
@@ -53,12 +59,16 @@ public static class TenantEndpoints
             .ProducesProblem(StatusCodes.Status409Conflict)
             .AddValidation<CreateChildTenantParameters>();
 
-        group.MapGet("/children", (string tenantId, int? maxItems, string? continuationToken, ITenantStore tenantStore) =>
-                GetChildTenants(new GetChildrenParameters 
-                { 
-                    TenantId = tenantId, 
-                    MaxItems = maxItems, 
-                    ContinuationToken = continuationToken 
+        group.MapGet("/children", (
+                string tenantId,
+                int? maxItems,
+                string? continuationToken,
+                ITenantStore tenantStore) =>
+                GetChildTenants(new GetChildrenParameters
+                {
+                    TenantId = tenantId,
+                    MaxItems = maxItems,
+                    ContinuationToken = continuationToken,
                 }, tenantStore))
             .WithName("GetChildTenants")
             .WithSummary("Get child tenants")
@@ -68,7 +78,10 @@ public static class TenantEndpoints
             .ProducesProblem(StatusCodes.Status404NotFound)
             .AddValidation<GetChildrenParameters>();
 
-        group.MapPatch("/", (string tenantId, JsonPatchDocument<UpdateTenantRequest> patchDocument, ITenantStore tenantStore) =>
+        group.MapPatch("/", (
+                string tenantId,
+                JsonPatchDocument<UpdateTenantRequest> patchDocument,
+                ITenantStore tenantStore) =>
                 UpdateTenant(new UpdateTenantParameters { TenantId = tenantId }, patchDocument, tenantStore))
             .WithName("UpdateTenant")
             .WithSummary("Update a tenant")
@@ -78,11 +91,14 @@ public static class TenantEndpoints
             .ProducesProblem(StatusCodes.Status404NotFound)
             .AddValidation<UpdateTenantParameters>();
 
-        group.MapDelete("/children/{childTenantId}", (string tenantId, string childTenantId, ITenantStore tenantStore) =>
-                DeleteChildTenant(new DeleteChildTenantParameters 
-                { 
-                    TenantId = tenantId, 
-                    ChildTenantId = childTenantId 
+        group.MapDelete("/children/{childTenantId}", (
+                string tenantId,
+                string childTenantId,
+                ITenantStore tenantStore) =>
+                DeleteChildTenant(new DeleteChildTenantParameters
+                {
+                    TenantId = tenantId,
+                    ChildTenantId = childTenantId,
                 }, tenantStore))
             .WithName("DeleteChildTenant")
             .WithSummary("Delete a child tenant")
@@ -272,5 +288,4 @@ public static class TenantEndpoints
             Properties = properties,
         };
     }
-
 }
