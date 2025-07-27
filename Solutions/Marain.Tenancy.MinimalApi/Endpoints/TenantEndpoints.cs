@@ -7,6 +7,7 @@ namespace Marain.Tenancy.MinimalApi.Endpoints;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using Corvus.Json;
 using Corvus.Tenancy;
 using Corvus.Tenancy.Exceptions;
 using Marain.Tenancy.MinimalApi.ErrorHandling;
@@ -31,8 +32,9 @@ public static class TenantEndpoints
         group.MapGet("/", (
                 string tenantId,
                 ITenantStore tenantStore,
+                IPropertyBagFactory propertyBagFactory,
                 HttpContext context) =>
-                GetTenant(new GetTenantParameters { TenantId = tenantId }, tenantStore, context))
+                GetTenant(new GetTenantParameters { TenantId = tenantId }, tenantStore, propertyBagFactory, context))
             .WithName("GetTenant")
             .WithSummary("Get a tenant by ID")
             .WithDescription("Retrieves detailed information about a specific tenant.")
@@ -120,12 +122,15 @@ public static class TenantEndpoints
     private static async Task<Results<Ok<TenantResponse>, StatusCodeHttpResult, ProblemHttpResult>> GetTenant(
         GetTenantParameters parameters,
         ITenantStore tenantStore,
+        IPropertyBagFactory propertyBagFactory,
         HttpContext context)
     {
         try
         {
             string? etag = context.Request.Headers.IfNoneMatch.FirstOrDefault();
-            ITenant tenant = await tenantStore.GetTenantAsync(parameters.TenantId, etag);
+            ITenant tenant = parameters.TenantId == RootTenant.RootTenantId
+                ? GetRedactedRootTenant(propertyBagFactory)
+                : await tenantStore.GetTenantAsync(parameters.TenantId, etag);
 
             TenantResponse response = MapTenantToResponse(tenant);
 
@@ -272,6 +277,11 @@ public static class TenantEndpoints
         }
     }
 
+    private static ITenant GetRedactedRootTenant(IPropertyBagFactory propertyBagFactory)
+    {
+        return new RedactedRootTenant(propertyBagFactory);
+    }
+
     private static TenantResponse MapTenantToResponse(ITenant tenant)
     {
         Dictionary<string, object> properties = [];
@@ -293,5 +303,27 @@ public static class TenantEndpoints
             ContentType = "application/vnd.marain.tenant",
             Properties = properties,
         };
+    }
+
+    private class RedactedRootTenant : ITenant
+    {
+        public RedactedRootTenant(IPropertyBagFactory propertyBagFactory)
+        {
+            this.Properties = propertyBagFactory.Create(PropertyBagValues.Empty);
+        }
+
+        public string Id => RootTenant.RootTenantId;
+
+        public string Name => RootTenant.RootTenantName;
+
+        public IPropertyBag Properties { get; }
+
+        public string? ETag
+        {
+            get => null;
+            set => throw new NotSupportedException();
+        }
+
+        public string ContentType => Tenant.RegisteredContentType;
     }
 }
