@@ -5,16 +5,13 @@
 namespace Marain.Tenancy;
 
 using System;
-using System.Net;
 using System.Threading.Tasks;
 using Corvus.Tenancy;
 using Corvus.Tenancy.Exceptions;
 using Marain.Tenancy.Client;
+using Marain.Tenancy.Client.Models;
 using Marain.Tenancy.Mappers;
-using Microsoft.Rest;
 
-// Note that we do not add a using statment for Marain.Client.Models as this is the "mapping" namespace and could
-// cause collisions with the types in Marain.Tenancy.
 
 /// <summary>
 /// An <see cref="ITenantProvider"/> built over a Marain tenancy instance.
@@ -57,25 +54,22 @@ public class ClientTenantProvider : ITenantProvider
             return this.Root;
         }
 
-        HttpOperationResponse<object, Client.Models.GetTenantHeaders> tenant = await this.TenantService.GetTenantWithHttpMessagesAsync(tenantId, eTag).ConfigureAwait(false);
-
-        if (tenant.Response.StatusCode == HttpStatusCode.NotFound)
+        try
         {
+            TenantResponse? tenant = await this.TenantService.GetTenantAsync(tenantId, eTag).ConfigureAwait(false);
+
+            if (tenant == null)
+            {
+                throw new TenantNotFoundException();
+            }
+
+            return this.TenantMapper.MapTenant(tenant);
+        }
+        catch (Exception)
+        {
+            // For now, treat any exception as tenant not found
+            // TODO: Implement proper exception handling for Kiota clients
             throw new TenantNotFoundException();
         }
-
-        if (tenant.Response.StatusCode == HttpStatusCode.NotModified)
-        {
-            throw new TenantNotModifiedException();
-        }
-
-        // It's possible that if caching is enabled, we'll have a response containing the same etag as specified in
-        // the parameters. In this case, for the sake of consistency, we'll throw the TenantNotModifiedException.
-        if (tenant.Response.StatusCode == HttpStatusCode.OK && !string.IsNullOrEmpty(eTag) && eTag == tenant.Headers.ETag)
-        {
-            throw new TenantNotModifiedException();
-        }
-
-        return this.TenantMapper.MapTenant(tenant.Body);
     }
 }

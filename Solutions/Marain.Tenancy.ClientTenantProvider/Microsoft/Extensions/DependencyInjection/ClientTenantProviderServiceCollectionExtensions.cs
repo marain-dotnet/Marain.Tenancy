@@ -39,7 +39,7 @@ public static class ClientTenantProviderServiceCollectionExtensions
             ITenancyService tenancyService = s.GetRequiredService<ITenancyService>();
             ITenantMapper tenantMapper = s.GetRequiredService<ITenantMapper>();
             IPropertyBagFactory propertyBagFactory = s.GetRequiredService<IPropertyBagFactory>();
-            ITenant fetchedRootTenant = tenantMapper.MapTenant(tenancyService.GetTenant(RootTenant.RootTenantId));
+            ITenant fetchedRootTenant = tenantMapper.MapTenant(tenancyService.GetTenantAsync(RootTenant.RootTenantId).GetAwaiter().GetResult());
             var localRootTenant = new RootTenant(propertyBagFactory);
             IReadOnlyDictionary<string, object> propertiesToSetOrAdd = fetchedRootTenant.Properties.AsDictionary();
             localRootTenant.UpdateProperties(propertiesToSetOrAdd);
@@ -50,33 +50,26 @@ public static class ClientTenantProviderServiceCollectionExtensions
     }
 
     /// <summary>
-    /// Adds services an Azure Blob storage-based implementation of <see cref="ITenantProvider"/>.
+    /// Adds services a Kiota client-based implementation of <see cref="ITenantProvider"/>.
     /// </summary>
     /// <param name="services">The service collection.</param>
-    /// <param name="enableResponseCaching">Flag indicating whether or not response caching should be enabled for
-    /// GET operations.</param>
+    /// <param name="baseUrl">The base URL for the Tenancy API.</param>
     /// <returns>The modified service collection.</returns>
     /// <remarks>
     /// <para>
-    /// Applications using this must also make <see cref="TenancyClientOptions"/> available via DI.
-    /// </para>
-    /// <para>
-    /// If you are intending to use <see cref="ITenantProvider" /> to retrieve tenants, you are advised to set
-    /// <c>enableResponseCaching</c> to true. However, if you are planning to create or update tenants using
-    /// <see cref="ITenantStore" /> to create and update tenants, you should set it to false to ensure that you
-    /// always retrieve the latest version of a tenant.
+    /// This method registers the Kiota-based tenancy client and related services.
     /// </para>
     /// </remarks>
     public static IServiceCollection AddTenantProviderServiceClient(
         this IServiceCollection services,
-        bool enableResponseCaching = true)
+        string baseUrl)
     {
         if (services.Any(s => typeof(ITenantProvider).IsAssignableFrom(s.ServiceType)))
         {
             return services;
         }
 
-        services.AddTenancyClient(enableResponseCaching);
+        services.AddTenancyClient(baseUrl);
         services.AddTenantServiceClientRootTenant();
         services.AddSingleton<ITenantMapper, TenantMapper>();
         services.AddSingleton<ITenantProvider, ClientTenantProvider>();

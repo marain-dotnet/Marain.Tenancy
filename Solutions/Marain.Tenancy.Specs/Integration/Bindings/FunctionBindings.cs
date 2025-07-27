@@ -119,7 +119,7 @@ public static class FunctionBindings
 
     private static ITestableTenancyService CreateMinimalApiTestableTenancyService()
     {
-        var factory = new WebApplicationFactory<Marain.Tenancy.MinimalApi.Program>()
+        WebApplicationFactory<MinimalApi.Program> factory = new WebApplicationFactory<Marain.Tenancy.MinimalApi.Program>()
             .WithWebHostBuilder(builder =>
             {
                 builder.ConfigureAppConfiguration((context, config) =>

@@ -5,7 +5,7 @@ using Microsoft.Kiota.Abstractions.Serialization;
 using System.Collections.Generic;
 using System.IO;
 using System;
-namespace Marain.Tenancy.KiotaClient.Models
+namespace Marain.Tenancy.Client.Models
 {
     [global::System.CodeDom.Compiler.GeneratedCode("Kiota", "1.0.0")]
     #pragma warning disable CS1591
@@ -23,28 +23,28 @@ namespace Marain.Tenancy.KiotaClient.Models
         /// <summary>The _embedded property</summary>
 #if NETSTANDARD2_1_OR_GREATER || NETCOREAPP3_1_OR_GREATER
 #nullable enable
-        public global::Marain.Tenancy.KiotaClient.Models.ChildTenantsEmbedded? Embedded { get; set; }
+        public global::Marain.Tenancy.Client.Models.ChildTenantsEmbedded? Embedded { get; set; }
 #nullable restore
 #else
-        public global::Marain.Tenancy.KiotaClient.Models.ChildTenantsEmbedded Embedded { get; set; }
+        public global::Marain.Tenancy.Client.Models.ChildTenantsEmbedded Embedded { get; set; }
 #endif
         /// <summary>The _links property</summary>
 #if NETSTANDARD2_1_OR_GREATER || NETCOREAPP3_1_OR_GREATER
 #nullable enable
-        public global::Marain.Tenancy.KiotaClient.Models.ChildTenantsResponse__links? Links { get; set; }
+        public global::Marain.Tenancy.Client.Models.ChildTenantsResponse__links? Links { get; set; }
 #nullable restore
 #else
-        public global::Marain.Tenancy.KiotaClient.Models.ChildTenantsResponse__links Links { get; set; }
+        public global::Marain.Tenancy.Client.Models.ChildTenantsResponse__links Links { get; set; }
 #endif
         /// <summary>
         /// Creates a new instance of the appropriate class based on discriminator value
         /// </summary>
-        /// <returns>A <see cref="global::Marain.Tenancy.KiotaClient.Models.ChildTenantsResponse"/></returns>
+        /// <returns>A <see cref="global::Marain.Tenancy.Client.Models.ChildTenantsResponse"/></returns>
         /// <param name="parseNode">The parse node to use to read the discriminator value and create the object</param>
-        public static global::Marain.Tenancy.KiotaClient.Models.ChildTenantsResponse CreateFromDiscriminatorValue(IParseNode parseNode)
+        public static global::Marain.Tenancy.Client.Models.ChildTenantsResponse CreateFromDiscriminatorValue(IParseNode parseNode)
         {
             _ = parseNode ?? throw new ArgumentNullException(nameof(parseNode));
-            return new global::Marain.Tenancy.KiotaClient.Models.ChildTenantsResponse();
+            return new global::Marain.Tenancy.Client.Models.ChildTenantsResponse();
         }
         /// <summary>
         /// The deserialization information for the current model
@@ -55,8 +55,8 @@ namespace Marain.Tenancy.KiotaClient.Models
             return new Dictionary<string, Action<IParseNode>>
             {
                 { "continuationToken", n => { ContinuationToken = n.GetStringValue(); } },
-                { "_embedded", n => { Embedded = n.GetObjectValue<global::Marain.Tenancy.KiotaClient.Models.ChildTenantsEmbedded>(global::Marain.Tenancy.KiotaClient.Models.ChildTenantsEmbedded.CreateFromDiscriminatorValue); } },
-                { "_links", n => { Links = n.GetObjectValue<global::Marain.Tenancy.KiotaClient.Models.ChildTenantsResponse__links>(global::Marain.Tenancy.KiotaClient.Models.ChildTenantsResponse__links.CreateFromDiscriminatorValue); } },
+                { "_embedded", n => { Embedded = n.GetObjectValue<global::Marain.Tenancy.Client.Models.ChildTenantsEmbedded>(global::Marain.Tenancy.Client.Models.ChildTenantsEmbedded.CreateFromDiscriminatorValue); } },
+                { "_links", n => { Links = n.GetObjectValue<global::Marain.Tenancy.Client.Models.ChildTenantsResponse__links>(global::Marain.Tenancy.Client.Models.ChildTenantsResponse__links.CreateFromDiscriminatorValue); } },
             };
         }
         /// <summary>
@@ -67,8 +67,8 @@ namespace Marain.Tenancy.KiotaClient.Models
         {
             _ = writer ?? throw new ArgumentNullException(nameof(writer));
             writer.WriteStringValue("continuationToken", ContinuationToken);
-            writer.WriteObjectValue<global::Marain.Tenancy.KiotaClient.Models.ChildTenantsEmbedded>("_embedded", Embedded);
-            writer.WriteObjectValue<global::Marain.Tenancy.KiotaClient.Models.ChildTenantsResponse__links>("_links", Links);
+            writer.WriteObjectValue<global::Marain.Tenancy.Client.Models.ChildTenantsEmbedded>("_embedded", Embedded);
+            writer.WriteObjectValue<global::Marain.Tenancy.Client.Models.ChildTenantsResponse__links>("_links", Links);
         }
     }
 }

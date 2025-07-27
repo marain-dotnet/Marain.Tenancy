@@ -1,15 +1,33 @@
-﻿
-# This requires the Tenancy function to be running locally on its default port of 7071
-$tmp = (New-TemporaryFile).FullName
+#!/usr/bin/env pwsh
 
-Write-Output "Downloading Swagger from local API instance to " $tmp
+# Generate Kiota client for Marain.Tenancy API
 
-Invoke-WebRequest http://localhost:7071/api/swagger -o $tmp
+param(
+    [string]$ApiUrl = "http://localhost:5000",
+    [string]$OutputPath = "Marain/Tenancy/Client",
+    [string]$Namespace = "Marain.Tenancy.Client"
+)
 
-$OutputFolder = (Join-Path $PSScriptRoot "Marain\Tenancy\Client\").Replace("\", "/")    # because apparently they don't test autorest on Windows these days
+Write-Output "Generating Kiota client from $ApiUrl/swagger/v1/swagger.json"
+Write-Output "Output path: $OutputPath"
+Write-Output "Namespace: $Namespace"
 
-# If you do not have autorest, install it with:
-#   npm install -g autorest
-# Ensure it is up to date with
-#   autorest --latest
-autorest --input-file=$tmp --csharp --output-folder=$OutputFolder --namespace=Marain.Tenancy.Client --add-credentials
+# Ensure output directory exists
+$FullOutputPath = Join-Path $PSScriptRoot $OutputPath
+if (Test-Path $FullOutputPath) {
+    Write-Output "Cleaning existing output directory..."
+    Remove-Item $FullOutputPath -Recurse -Force
+}
+New-Item -ItemType Directory -Path $FullOutputPath -Force | Out-Null
+
+# Generate Kiota client
+kiota generate `
+    --openapi "$ApiUrl/swagger/v1/swagger.json" `
+    --language CSharp `
+    --output $FullOutputPath `
+    --namespace-name $Namespace `
+    --class-name "TenancyApiClient" `
+    --exclude-backward-compatible
+
+Write-Output "Kiota client generation completed successfully!"
+Write-Output "Generated files in: $FullOutputPath"

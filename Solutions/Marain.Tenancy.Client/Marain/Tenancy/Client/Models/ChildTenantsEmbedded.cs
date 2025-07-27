@@ -5,31 +5,30 @@ using Microsoft.Kiota.Abstractions.Serialization;
 using System.Collections.Generic;
 using System.IO;
 using System;
-namespace Marain.Tenancy.KiotaClient.Models
+namespace Marain.Tenancy.Client.Models
 {
     [global::System.CodeDom.Compiler.GeneratedCode("Kiota", "1.0.0")]
     #pragma warning disable CS1591
-    public partial class HttpValidationProblemDetails_errors : IAdditionalDataHolder, IParsable
+    public partial class ChildTenantsEmbedded : IParsable
     #pragma warning restore CS1591
     {
-        /// <summary>Stores additional data not described in the OpenAPI description found when deserializing. Can be used for serialization as well.</summary>
-        public IDictionary<string, object> AdditionalData { get; set; }
-        /// <summary>
-        /// Instantiates a new <see cref="global::Marain.Tenancy.KiotaClient.Models.HttpValidationProblemDetails_errors"/> and sets the default values.
-        /// </summary>
-        public HttpValidationProblemDetails_errors()
-        {
-            AdditionalData = new Dictionary<string, object>();
-        }
+        /// <summary>The tenants property</summary>
+#if NETSTANDARD2_1_OR_GREATER || NETCOREAPP3_1_OR_GREATER
+#nullable enable
+        public List<global::Marain.Tenancy.Client.Models.TenantResponse>? Tenants { get; set; }
+#nullable restore
+#else
+        public List<global::Marain.Tenancy.Client.Models.TenantResponse> Tenants { get; set; }
+#endif
         /// <summary>
         /// Creates a new instance of the appropriate class based on discriminator value
         /// </summary>
-        /// <returns>A <see cref="global::Marain.Tenancy.KiotaClient.Models.HttpValidationProblemDetails_errors"/></returns>
+        /// <returns>A <see cref="global::Marain.Tenancy.Client.Models.ChildTenantsEmbedded"/></returns>
         /// <param name="parseNode">The parse node to use to read the discriminator value and create the object</param>
-        public static global::Marain.Tenancy.KiotaClient.Models.HttpValidationProblemDetails_errors CreateFromDiscriminatorValue(IParseNode parseNode)
+        public static global::Marain.Tenancy.Client.Models.ChildTenantsEmbedded CreateFromDiscriminatorValue(IParseNode parseNode)
         {
             _ = parseNode ?? throw new ArgumentNullException(nameof(parseNode));
-            return new global::Marain.Tenancy.KiotaClient.Models.HttpValidationProblemDetails_errors();
+            return new global::Marain.Tenancy.Client.Models.ChildTenantsEmbedded();
         }
         /// <summary>
         /// The deserialization information for the current model
@@ -39,6 +38,7 @@ namespace Marain.Tenancy.KiotaClient.Models
         {
             return new Dictionary<string, Action<IParseNode>>
             {
+                { "tenants", n => { Tenants = n.GetCollectionOfObjectValues<global::Marain.Tenancy.Client.Models.TenantResponse>(global::Marain.Tenancy.Client.Models.TenantResponse.CreateFromDiscriminatorValue)?.AsList(); } },
             };
         }
         /// <summary>
@@ -48,7 +48,7 @@ namespace Marain.Tenancy.KiotaClient.Models
         public virtual void Serialize(ISerializationWriter writer)
         {
             _ = writer ?? throw new ArgumentNullException(nameof(writer));
-            writer.WriteAdditionalData(AdditionalData);
+            writer.WriteCollectionOfObjectValues<global::Marain.Tenancy.Client.Models.TenantResponse>("tenants", Tenants);
         }
     }
 }

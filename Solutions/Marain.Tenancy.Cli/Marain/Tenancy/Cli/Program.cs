@@ -7,9 +7,8 @@ namespace Marain.Tenancy.Cli;
 using System;
 using System.Threading.Tasks;
 
-using Corvus.Identity.ClientAuthentication.Azure;
+using Corvus.Json;
 
-using Marain.Tenancy.Client;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Newtonsoft.Json;
@@ -38,23 +37,10 @@ public static class Program
             services.AddJsonNetDateTimeOffsetToIso8601AndUnixTimeConverter();
             services.AddSingleton<JsonConverter>(new StringEnumConverter(new CamelCaseNamingStrategy()));
 
-            var msiTokenSourceOptions = new LegacyAzureServiceTokenProviderOptions
-            {
-                AzureServicesAuthConnectionString = ctx.Configuration["AzureServicesAuthConnectionString"],
-            };
+            string tenancyServiceBaseUri = ctx.Configuration["TenancyClient:TenancyServiceBaseUri"] 
+                ?? throw new InvalidOperationException("TenancyClient:TenancyServiceBaseUri configuration is required");
 
-            services.AddServiceIdentityAzureTokenCredentialSourceFromLegacyConnectionString(msiTokenSourceOptions);
-            services.AddMicrosoftRestAdapterForServiceIdentityAccessTokenSource();
-
-            var tenancyClientOptions = new TenancyClientOptions
-            {
-                TenancyServiceBaseUri = new Uri(ctx.Configuration["TenancyClient:TenancyServiceBaseUri"]),
-                ResourceIdForMsiAuthentication = ctx.Configuration["TenancyClient:ResourceIdForMsiAuthentication"],
-            };
-
-            services.AddSingleton(tenancyClientOptions);
-
-            services.AddTenantProviderServiceClient();
+            services.AddTenantProviderServiceClient(tenancyServiceBaseUri);
         });
 
         await builder.RunCommandLineApplicationAsync<TenancyCliCommand>(args).ConfigureAwait(false);

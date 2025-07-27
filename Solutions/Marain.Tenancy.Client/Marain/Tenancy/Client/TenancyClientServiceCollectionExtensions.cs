@@ -1,19 +1,15 @@
-﻿// <copyright file="TenancyClientServiceCollectionExtensions.cs" company="Endjin">
-// Copyright (c) Endjin. All rights reserved.
+// <copyright file="TenancyClientServiceCollectionExtensions.cs" company="Endjin Limited">
+// Copyright (c) Endjin Limited. All rights reserved.
 // </copyright>
 
 namespace Marain.Tenancy.Client;
 
 using System;
-using System.Linq;
-using System.Net.Http;
-using CacheCow.Client;
-using Corvus.Extensions.Json;
-using Corvus.Identity.ClientAuthentication;
-using Corvus.Identity.ClientAuthentication.MicrosoftRest;
+using Azure.Core;
 using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Rest;
-using Newtonsoft.Json;
+using Microsoft.Kiota.Abstractions.Authentication;
+using Microsoft.Kiota.Authentication.Azure;
+using Microsoft.Kiota.Http.HttpClientLibrary;
 
 /// <summary>
 /// DI initialization for clients of the Tenancy service.
@@ -24,80 +20,84 @@ public static class TenancyClientServiceCollectionExtensions
     /// Adds the Tenancy client to a service collection.
     /// </summary>
     /// <param name="services">The service collection.</param>
+    /// <param name="baseUrl">The base URL for the Tenancy API.</param>
+    /// <param name="tokenCredential">Optional token credential for authentication.</param>
     /// <returns>The modified service collection.</returns>
-    /// <remarks>
-    /// This requires the <see cref="TenancyClientOptions"/> to be available from DI in order
-    /// to discover the base URI of the Operations control service, and, if required, to
-    /// specify the resource id to use when obtaining an authentication token representing the
-    /// hosting service's identity.
-    /// </remarks>
-    [Obsolete("Prefer AddTenancyClient(IServiceCollection, bool) to explicitly state whether response caching should be enabled.")]
-    public static IServiceCollection AddTenancyClient(
-        this IServiceCollection services)
-    {
-        return services.AddTenancyClient(false);
-    }
-
-    /// <summary>
-    /// Adds the Tenancy client to a service collection.
-    /// </summary>
-    /// <param name="services">The service collection.</param>
-    /// <param name="enableResponseCaching">Flag indicating whether or not response caching should be enabled for GET operations.</param>
-    /// <returns>The modified service collection.</returns>
-    /// <remarks>
-    /// <para>
-    /// This requires the <see cref="TenancyClientOptions"/> to be available from DI in order
-    /// to discover the base URI of the Operations control service, and, if required, to
-    /// specify the resource id to use when obtaining an authentication token representing the
-    /// hosting service's identity.
-    /// </para>
-    /// <para>
-    /// This also requires an implementation of <see cref="IServiceIdentityAccessTokenSource"/>
-    /// to be available via DI. This is normally achieved through one of the various
-    /// <c>AddServiceIdentityAzureTokenCredentialSource...</c> extension methods available when
-    /// you install the <c>Corvus.Identity.Azure</c> NuGet package, but applications are free
-    /// to supply alternate implementations.
-    /// </para>
-    /// </remarks>
     public static IServiceCollection AddTenancyClient(
         this IServiceCollection services,
-        bool enableResponseCaching)
+        string baseUrl,
+        TokenCredential? tokenCredential = null)
     {
-        if (services.Any(s => s.ServiceType == typeof(ITenancyService)))
+        if (string.IsNullOrWhiteSpace(baseUrl))
         {
-            return services;
+            throw new ArgumentNullException(nameof(baseUrl));
         }
 
-        services.AddContentTypeBasedSerializationSupport();
-        services.AddSingleton((Func<IServiceProvider, ITenancyService>)(sp =>
+        // Register HTTP client for Kiota
+        services.AddHttpClient();
+
+        // Register authentication provider
+        services.AddSingleton<IAuthenticationProvider>(serviceProvider =>
         {
-            TenancyClientOptions options = sp.GetRequiredService<TenancyClientOptions>();
-
-            DelegatingHandler[] handlers = enableResponseCaching
-                ? new DelegatingHandler[] { new CachingHandler() }
-                : Array.Empty<DelegatingHandler>();
-
-            TenancyService service;
-            if (string.IsNullOrWhiteSpace(options.ResourceIdForMsiAuthentication))
+            if (tokenCredential != null)
             {
-                service = new UnauthenticatedTenancyService(options.TenancyServiceBaseUri, handlers);
+                return new AzureIdentityAuthenticationProvider(tokenCredential);
             }
             else
             {
-                var tokenCredentials = new TokenCredentials(
-                    sp.GetRequiredService<IServiceIdentityMicrosoftRestTokenProviderSource>().GetTokenProvider(
-                        $"{options.ResourceIdForMsiAuthentication}/.default"));
-                service = new TenancyService(options.TenancyServiceBaseUri, tokenCredentials, handlers);
+                return new AnonymousAuthenticationProvider();
             }
+        });
 
-            JsonSerializerSettings serializerSettings = sp.GetRequiredService<IJsonSerializerSettingsProvider>().Instance;
-            serializerSettings.Converters.ForEach(service.SerializationSettings.Converters.Add);
-            serializerSettings.Converters.ForEach(service.DeserializationSettings.Converters.Add);
+        // Register request adapter
+        services.AddSingleton(serviceProvider =>
+        {
+            IAuthenticationProvider authProvider = serviceProvider.GetRequiredService<IAuthenticationProvider>();
+            HttpClientRequestAdapter adapter = new(authProvider);
+            adapter.BaseUrl = baseUrl;
+            return adapter;
+        });
 
-            service.DeserializationSettings.DateParseHandling = serializerSettings.DateParseHandling;
+        // Register the Kiota client and service wrapper
+        services.AddSingleton<TenancyApiClient>();
+        services.AddSingleton<ITenancyService, TenancyService>();
 
-            return service;
-        }));
+        return services;
+    }
+
+    /// <summary>
+    /// Adds the Tenancy client to a service collection with unauthenticated access.
+    /// </summary>
+    /// <param name="services">The service collection.</param>
+    /// <param name="baseUrl">The base URL for the Tenancy API.</param>
+    /// <returns>The modified service collection.</returns>
+    public static IServiceCollection AddUnauthenticatedTenancyClient(
+        this IServiceCollection services,
+        string baseUrl)
+    {
+        if (string.IsNullOrWhiteSpace(baseUrl))
+        {
+            throw new ArgumentNullException(nameof(baseUrl));
+        }
+
+        // Register HTTP client for Kiota
+        services.AddHttpClient();
+
+        // Register anonymous authentication provider
+        services.AddSingleton<IAuthenticationProvider, AnonymousAuthenticationProvider>();
+
+        // Register request adapter
+        services.AddSingleton(serviceProvider =>
+        {
+            IAuthenticationProvider authProvider = serviceProvider.GetRequiredService<IAuthenticationProvider>();
+            HttpClientRequestAdapter adapter = new(authProvider);
+            adapter.BaseUrl = baseUrl;
+            return adapter;
+        });
+
+        // Register the Kiota client and service wrapper
+        services.AddSingleton<TenancyApiClient>();
+        services.AddSingleton<ITenancyService, TenancyService>();
 
         return services;
     }

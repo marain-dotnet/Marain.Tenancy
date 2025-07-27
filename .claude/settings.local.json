@@ -15,7 +15,8 @@
       "Bash(sudo chown:*)",
       "Bash(curl:*)",
       "Bash(pwsh:*)",
-      "Bash(kiota info:*)"
+      "Bash(kiota info:*)",
+      "Bash(mv:*)"
     ],
     "deny": []
   }

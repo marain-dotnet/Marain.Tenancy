@@ -8,7 +8,7 @@ using System;
 using Corvus.Tenancy;
 
 /// <summary>
-/// Maps a <see cref="Client.Models.Tenant"/> to an <see cref="ITenant"/>.
+/// Maps a <see cref="Client.Models.TenantResponse"/> to an <see cref="ITenant"/>.
 /// </summary>
 public interface ITenantMapper
 {
@@ -17,15 +17,15 @@ public interface ITenantMapper
     /// </summary>
     /// <param name="source">The source model.</param>
     /// <returns>The <see cref="ITenant"/>.</returns>
-    /// <remarks>It is assumed this is an object which can be cast to a JObject.</remarks>
+    /// <remarks>It is assumed this is an object which can be cast to a TenantResponse.</remarks>
     ITenant MapTenant(object source);
 
     /// <summary>
     /// Map the tenant from SDK to client.
     /// </summary>
     /// <param name="source">The source <see cref="ITenant"/>.</param>
-    /// <returns>The <see cref="Client.Models.Tenant"/>.</returns>
-    Client.Models.Tenant MapTenant(ITenant source);
+    /// <returns>The <see cref="Client.Models.TenantResponse"/>.</returns>
+    Client.Models.TenantResponse MapTenant(ITenant source);
 
     /// <summary>
     /// Extracts a tenant ID from a Marain location.
