@@ -30,4 +30,9 @@ public enum TestHostModes
     /// Host the service out of process using the function host emulator.
     /// </summary>
     UseFunctionHost,
+
+    /// <summary>
+    /// Host the service in-process using ASP.NET Core MinimalApi with TestServer.
+    /// </summary>
+    InProcessMinimalApi,
 }

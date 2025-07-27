@@ -10,7 +10,7 @@ using System.Linq;
 using System.Net.Http;
 using System.Threading.Tasks;
 
-using Corvus.Testing.SpecFlow;
+using Corvus.Testing.ReqnRoll;
 
 using Marain.Tenancy.OpenApi;
 
@@ -18,7 +18,7 @@ using Menes;
 
 using Microsoft.Extensions.DependencyInjection;
 
-using TechTalk.SpecFlow;
+using Reqnroll;
 
 [Binding]
 public class TestTenantCleanup

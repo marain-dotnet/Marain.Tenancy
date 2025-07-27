@@ -20,6 +20,7 @@ using Marain.Tenancy.Specs.MultiHost;
 
 using Menes;
 using Menes.Testing.AspNetCoreSelfHosting;
+using Microsoft.AspNetCore.Mvc.Testing;
 
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
@@ -96,17 +97,39 @@ public static class FunctionBindings
                 // to be registered in Menes.
                 serviceProvider.GetRequiredService<IOpenApiHost<HttpRequest, IActionResult>>();
                 break;
+
+            case TestHostModes.InProcessMinimalApi:
+                // For MinimalApi testing, we'll create the WebApplicationFactory in the service wrapper
+                break;
         }
 
-        ITestableTenancyService serviceWrapper = TestHostMode == TestHostModes.DirectInvocation
-            ? new DirectTestableTenancyService(
+        ITestableTenancyService serviceWrapper = TestHostMode switch
+        {
+            TestHostModes.DirectInvocation => new DirectTestableTenancyService(
                 serviceProvider.GetRequiredService<TenancyService>(),
-                serviceProvider.GetRequiredService<SimpleOpenApiContext>())
-            : new ClientTestableTenancyService(
+                serviceProvider.GetRequiredService<SimpleOpenApiContext>()),
+            TestHostModes.InProcessMinimalApi => CreateMinimalApiTestableTenancyService(),
+            _ => new ClientTestableTenancyService(
                 TenancyApiBaseUriText,
-                serviceProvider.GetRequiredService<IJsonSerializerSettingsProvider>().Instance);
+                serviceProvider.GetRequiredService<IJsonSerializerSettingsProvider>().Instance)
+        };
 
         specFlowDiContainer.RegisterInstanceAs(serviceWrapper);
+    }
+
+    private static ITestableTenancyService CreateMinimalApiTestableTenancyService()
+    {
+        var factory = new WebApplicationFactory<Marain.Tenancy.MinimalApi.Program>()
+            .WithWebHostBuilder(builder =>
+            {
+                builder.ConfigureAppConfiguration((context, config) =>
+                {
+                    config.AddJsonFile("local.settings.json", optional: true);
+                    config.AddEnvironmentVariables();
+                });
+            });
+
+        return new MinimalApiTestableTenancyService(factory);
     }
 
     /// <summary>

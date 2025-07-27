@@ -11,7 +11,11 @@
       "Bash(rm:*)",
       "Bash(sed:*)",
       "Bash(git add:*)",
-      "Bash(git commit:*)"
+      "Bash(git commit:*)",
+      "Bash(sudo chown:*)",
+      "Bash(curl:*)",
+      "Bash(pwsh:*)",
+      "Bash(kiota info:*)"
     ],
     "deny": []
   }

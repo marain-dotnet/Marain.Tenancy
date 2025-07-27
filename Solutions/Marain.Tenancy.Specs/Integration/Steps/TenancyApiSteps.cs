@@ -17,10 +17,10 @@ using Newtonsoft.Json.Linq;
 
 using NUnit.Framework;
 
-using TechTalk.SpecFlow;
+using Reqnroll;
 
 [Binding]
-public class TenancyApiSteps : Steps
+public class TenancyApiSteps
 {
     private static readonly HttpClient HttpClient = new();
     private readonly Dictionary<string, string> namedIds = new();

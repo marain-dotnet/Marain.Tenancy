@@ -12,7 +12,7 @@ using CacheCow.Client.Headers;
 using Corvus.Extensions.Json;
 using Corvus.Tenancy;
 using Corvus.Tenancy.Exceptions;
-using Corvus.Testing.SpecFlow;
+using Corvus.Testing.ReqnRoll;
 using Marain.Tenancy.Client;
 using Marain.Tenancy.Client.Models;
 using Marain.Tenancy.Specs.Integration.Bindings;
@@ -21,7 +21,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Rest;
 using Newtonsoft.Json.Linq;
 using NUnit.Framework;
-using TechTalk.SpecFlow;
+using Reqnroll;
 
 [Binding]
 public class TenancyClientSteps

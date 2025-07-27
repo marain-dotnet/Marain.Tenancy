@@ -7,16 +7,17 @@ namespace Marain.Tenancy.Specs.Integration.Bindings;
 using System;
 
 using Corvus.Storage.Azure.BlobStorage;
-using Corvus.Testing.SpecFlow;
+using Corvus.Testing.ReqnRoll;
 
 using Marain.Tenancy.Client;
+using Marain.Tenancy.MinimalApi.Extensions;
 
 using Menes;
 
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 
-using TechTalk.SpecFlow;
+using Reqnroll;
 
 /// <summary>
 /// Bindings for the integration tests for <see cref="TenancyService"/>.
@@ -27,7 +28,7 @@ public static class TenancyServiceBindings
     /// <summary>
     /// Configures the DI container before tests start.
     /// </summary>
-    /// <param name="featureContext">The SpecFlow test context.</param>
+    /// <param name="featureContext">The Reqnroll test context.</param>
     [BeforeFeature("withTenancyClient", Order = ContainerBeforeFeatureOrder.PopulateServiceCollection)]
     public static void SetupFeature(FeatureContext featureContext)
     {
@@ -53,6 +54,20 @@ public static class TenancyServiceBindings
 
                     serviceCollection.AddSingleton<SimpleOpenApiContext>();
                     serviceCollection.AddTenancyApiWithOpenApiActionResultHosting(ConfigureOpenApiHost);
+                }
+                else if (FunctionBindings.TestHostMode == MultiHost.TestHostModes.InProcessMinimalApi)
+                {
+                    IConfiguration config = new ConfigurationBuilder()
+                        .AddEnvironmentVariables()
+                        .AddJsonFile("local.settings.json", true, true)
+                        .Build();
+                    serviceCollection.AddSingleton(config);
+
+                    BlobContainerConfiguration rootStorageConfiguration = config
+                        .GetSection("RootBlobStorageConfiguration")
+                        .Get<BlobContainerConfiguration>();
+
+                    serviceCollection.AddTenantStoreOnAzureBlobStorage(rootStorageConfiguration);
                 }
             });
     }

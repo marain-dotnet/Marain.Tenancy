@@ -34,7 +34,7 @@ using NUnit.Framework.Internal.Builders;
 /// times, once for each of the host types specified in <see cref="FixtureArgs"/>.
 /// </para>
 /// <para>
-/// When using SpecFlow, bindings can detect the mode by casting the reference in
+/// When using Reqnroll, bindings can detect the mode by casting the reference in
 /// <c>TestExecutionContext.CurrentContext.TestObject</c> to <see cref="IMultiModeTest{TestHostTypes}"/>
 /// and then inspecting the <see cref="IMultiModeTest{TestHostTypes>.TestType"/> property.
 /// </para>
@@ -46,6 +46,7 @@ public class MultiTestHostBase : IMultiModeTest<TestHostModes>
         new object[] { TestHostModes.DirectInvocation },
         new object[] { TestHostModes.InProcessEmulateFunctionWithActionResult },
         new object[] { TestHostModes.UseFunctionHost },
+        new object[] { TestHostModes.InProcessMinimalApi },
     };
 
     /// <summary>
@@ -108,6 +109,11 @@ public class MultiTestHostBase : IMultiModeTest<TestHostModes>
 
                     case TestHostModes.InProcessEmulateFunctionWithActionResult:
                         fixture.Properties["Category"].Add("fast");
+                        break;
+
+                    case TestHostModes.InProcessMinimalApi:
+                        fixture.Properties["Category"].Add("fast");
+                        fixture.Properties["Category"].Add("parallelizable");
                         break;
                 }
 

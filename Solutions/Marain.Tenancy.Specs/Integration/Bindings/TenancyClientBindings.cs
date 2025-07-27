@@ -25,7 +25,7 @@ public static class TenancyClientBindings
     /// <summary>
     /// Configures the DI container before tests start.
     /// </summary>
-    /// <param name="featureContext">The SpecFlow test context.</param>
+    /// <param name="featureContext">The Reqnroll test context.</param>
     [BeforeFeature("@withTenancyClient", Order = ContainerBeforeFeatureOrder.PopulateServiceCollection)]
     public static void SetupFeature(FeatureContext featureContext)
     {

@@ -7,7 +7,7 @@ namespace Marain.Tenancy.Specs.Integration.Features;
 using Marain.Tenancy.Specs.MultiHost;
 
 /// <summary>
-/// Add multi-host testing to SpecFlow-generated class.
+/// Add multi-host testing to Reqnroll-generated class.
 /// </summary>
 [MultiHostTest]
 
