@@ -7,28 +7,20 @@ namespace Marain.Tenancy.Specs.Integration.Bindings;
 using System;
 using System.Linq;
 using System.Threading.Tasks;
-
 using BoDi;
-
 using Corvus.Extensions.Json;
 using Corvus.Testing.AzureFunctions;
 using Corvus.Testing.AzureFunctions.ReqnRoll;
 using Corvus.Testing.ReqnRoll;
-
-using Marain.Tenancy.OpenApi;
 using Marain.Tenancy.Specs.MultiHost;
-
 using Menes;
 using Menes.Testing.AspNetCoreSelfHosting;
-using Microsoft.AspNetCore.Mvc.Testing;
-
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
-
 using NUnit.Framework.Internal;
-
 using Reqnroll;
 using Reqnroll.BoDi;
 
@@ -111,10 +103,23 @@ public static class FunctionBindings
             TestHostModes.InProcessMinimalApi => CreateMinimalApiTestableTenancyService(),
             _ => new ClientTestableTenancyService(
                 TenancyApiBaseUriText,
-                serviceProvider.GetRequiredService<IJsonSerializerSettingsProvider>().Instance)
+                serviceProvider.GetRequiredService<IJsonSerializerSettingsProvider>().Instance),
         };
 
         specFlowDiContainer.RegisterInstanceAs(serviceWrapper);
+    }
+
+    /// <summary>
+    /// Tear down the running functions instances for the feature.
+    /// </summary>
+    /// <param name="featureContext">The current scenario context.</param>
+    [AfterFeature(Order = 100)]
+    public static void TeardownFunctionsAfterScenario(FeatureContext featureContext)
+    {
+        if (featureContext.TryGetValue(out FunctionsController functionsController))
+        {
+            featureContext.RunAndStoreExceptionsAsync(() => functionsController.TeardownFunctionsAsync());
+        }
     }
 
     private static ITestableTenancyService CreateMinimalApiTestableTenancyService()
@@ -130,18 +135,5 @@ public static class FunctionBindings
             });
 
         return new MinimalApiTestableTenancyService(factory);
-    }
-
-    /// <summary>
-    /// Tear down the running functions instances for the feature.
-    /// </summary>
-    /// <param name="featureContext">The current scenario context.</param>
-    [AfterFeature(Order = 100)]
-    public static void TeardownFunctionsAfterScenario(FeatureContext featureContext)
-    {
-        if (featureContext.TryGetValue(out FunctionsController functionsController))
-        {
-            featureContext.RunAndStoreExceptionsAsync(() => functionsController.TeardownFunctionsAsync());
-        }
     }
 }

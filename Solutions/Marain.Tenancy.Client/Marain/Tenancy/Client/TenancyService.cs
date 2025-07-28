@@ -74,7 +74,7 @@ public class TenancyService(TenancyApiClient client) : ITenancyService
     }
 
     /// <inheritdoc/>
-    public Task CreateChildTenantAsync(string tenantId, CreateChildTenantRequest request, CancellationToken cancellationToken = default)
+    public async Task<TenantResponse?> CreateChildTenantAsync(string tenantId, CreateChildTenantRequest request, CancellationToken cancellationToken = default)
     {
         if (string.IsNullOrWhiteSpace(tenantId))
         {
@@ -86,10 +86,8 @@ public class TenancyService(TenancyApiClient client) : ITenancyService
             throw new ArgumentNullException(nameof(request));
         }
 
-        // TODO: The Kiota-generated client doesn't seem to have a PostAsync method for creating child tenants
-        // This might be because the OpenAPI spec needs to be updated or there's an issue with the generation
-        // For now, throw NotImplementedException until we can resolve the Kiota generation issue
-        throw new NotImplementedException("CreateChildTenantAsync is not yet implemented in the Kiota client. The generated client is missing the POST method for child tenant creation.");
+        // Use the PostAsync method from the TenantRequestBuilder which creates child tenants
+        return await client[tenantId].Marain.Tenant.PostAsync(request, cancellationToken: cancellationToken);
     }
 
     /// <inheritdoc/>

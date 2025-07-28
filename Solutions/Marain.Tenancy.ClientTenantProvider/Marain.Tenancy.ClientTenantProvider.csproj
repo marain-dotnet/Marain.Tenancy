@@ -19,7 +19,6 @@
   <ItemGroup>
     <PackageReference Include="Corvus.Tenancy.Abstractions" Version="4.0.1" />
     <PackageReference Include="Corvus.Extensions.Newtonsoft.Json" Version="3.0.2" />
-    <PackageReference Include="Corvus.Json" Version="3.0.2" />
     <PackageReference Include="Endjin.RecommendedPractices.GitHub" Version="2.1.18">
       <PrivateAssets>all</PrivateAssets>
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>

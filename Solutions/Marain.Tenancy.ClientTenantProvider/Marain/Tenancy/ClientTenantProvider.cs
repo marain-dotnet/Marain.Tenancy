@@ -12,7 +12,6 @@ using Marain.Tenancy.Client;
 using Marain.Tenancy.Client.Models;
 using Marain.Tenancy.Mappers;
 
-
 /// <summary>
 /// An <see cref="ITenantProvider"/> built over a Marain tenancy instance.
 /// </summary>
@@ -65,11 +64,13 @@ public class ClientTenantProvider : ITenantProvider
 
             return this.TenantMapper.MapTenant(tenant);
         }
-        catch (Exception)
+        catch (ProblemDetails ex) when (ex.Status == 404)
         {
-            // For now, treat any exception as tenant not found
-            // TODO: Implement proper exception handling for Kiota clients
             throw new TenantNotFoundException();
+        }
+        catch (HttpValidationProblemDetails ex) when (ex.Status == 400)
+        {
+            throw new ArgumentException($"Invalid tenant request: {ex.Detail ?? ex.Title}");
         }
     }
 }

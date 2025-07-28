@@ -4,6 +4,7 @@
 
 namespace Microsoft.Extensions.DependencyInjection;
 
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using Corvus.ContentHandling;
@@ -11,6 +12,7 @@ using Corvus.Json;
 using Corvus.Tenancy;
 using Marain.Tenancy;
 using Marain.Tenancy.Client;
+using Marain.Tenancy.Client.Models;
 using Marain.Tenancy.Mappers;
 
 /// <summary>
@@ -39,7 +41,9 @@ public static class ClientTenantProviderServiceCollectionExtensions
             ITenancyService tenancyService = s.GetRequiredService<ITenancyService>();
             ITenantMapper tenantMapper = s.GetRequiredService<ITenantMapper>();
             IPropertyBagFactory propertyBagFactory = s.GetRequiredService<IPropertyBagFactory>();
-            ITenant fetchedRootTenant = tenantMapper.MapTenant(tenancyService.GetTenantAsync(RootTenant.RootTenantId).GetAwaiter().GetResult());
+            TenantResponse? rootTenantResponse = tenancyService.GetTenantAsync(RootTenant.RootTenantId).GetAwaiter().GetResult();
+            ArgumentNullException.ThrowIfNull(rootTenantResponse, "Unable to retrieve root tenant from service");
+            ITenant fetchedRootTenant = tenantMapper.MapTenant(rootTenantResponse);
             var localRootTenant = new RootTenant(propertyBagFactory);
             IReadOnlyDictionary<string, object> propertiesToSetOrAdd = fetchedRootTenant.Properties.AsDictionary();
             localRootTenant.UpdateProperties(propertiesToSetOrAdd);

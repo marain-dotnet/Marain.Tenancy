@@ -48,8 +48,8 @@ public interface ITenancyService
     /// <param name="tenantId">The parent tenant ID.</param>
     /// <param name="request">The create child tenant request.</param>
     /// <param name="cancellationToken">Cancellation token.</param>
-    /// <returns>A task representing the asynchronous operation.</returns>
-    Task CreateChildTenantAsync(string tenantId, CreateChildTenantRequest request, CancellationToken cancellationToken = default);
+    /// <returns>The created tenant response.</returns>
+    Task<TenantResponse?> CreateChildTenantAsync(string tenantId, CreateChildTenantRequest request, CancellationToken cancellationToken = default);
 
     /// <summary>
     /// Deletes a child tenant.

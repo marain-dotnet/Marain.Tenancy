@@ -37,7 +37,7 @@ public class TenantMapper : ITenantMapper
             return new Tenant(
                 tenantFromService.Id ?? string.Empty,
                 tenantFromService.Name ?? string.Empty,
-                this.propertyBagFactory.Create(ConvertProperties(tenantFromService.Properties)))
+                this.propertyBagFactory.Create(ConvertProperties(tenantFromService.Properties) ?? new Dictionary<string, object>()))
             {
                 ETag = string.Empty, // Kiota TenantResponse doesn't have ETag property exposed
             };
@@ -50,7 +50,7 @@ public class TenantMapper : ITenantMapper
             return new Tenant(
                 tenant.Id ?? string.Empty,
                 tenant.Name ?? string.Empty,
-                this.propertyBagFactory.Create(ConvertProperties(tenant.Properties)))
+                this.propertyBagFactory.Create(ConvertProperties(tenant.Properties) ?? new Dictionary<string, object>()))
             {
                 ETag = string.Empty,
             };
@@ -69,29 +69,6 @@ public class TenantMapper : ITenantMapper
             ContentType = source.ContentType,
             Properties = ConvertToKiotaProperties(((JObject)source.Properties).ToObject<Dictionary<string, object>>()),
         };
-    }
-
-    private static Dictionary<string, object>? ConvertProperties(Client.Models.TenantResponse_properties? properties)
-    {
-        // Kiota generated properties object needs conversion
-        if (properties == null)
-        {
-            return null;
-        }
-
-        // For now, return empty dictionary until we understand Kiota property structure
-        return new Dictionary<string, object>();
-    }
-
-    private static Client.Models.TenantResponse_properties? ConvertToKiotaProperties(Dictionary<string, object>? properties)
-    {
-        if (properties == null)
-        {
-            return null;
-        }
-
-        // Create new Kiota properties object
-        return new Client.Models.TenantResponse_properties();
     }
 
     /// <inheritdoc/>
@@ -134,5 +111,28 @@ public class TenantMapper : ITenantMapper
         }
 
         return query["continuationToken"].FirstOrDefault();
+    }
+
+    private static Dictionary<string, object>? ConvertProperties(Client.Models.TenantResponse_properties? properties)
+    {
+        // Kiota generated properties object needs conversion
+        if (properties == null)
+        {
+            return null;
+        }
+
+        // For now, return empty dictionary until we understand Kiota property structure
+        return new Dictionary<string, object>();
+    }
+
+    private static Client.Models.TenantResponse_properties? ConvertToKiotaProperties(Dictionary<string, object>? properties)
+    {
+        if (properties == null)
+        {
+            return null;
+        }
+
+        // Create new Kiota properties object
+        return new Client.Models.TenantResponse_properties();
     }
 }
