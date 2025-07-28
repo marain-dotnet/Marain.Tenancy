@@ -8,7 +8,7 @@
   "TenantCacheConfiguration:GetTenantResponseCacheControlHeaderValue": "max-age=300",
 
   // This...
-  "RootBlobStorageConfiguration:ConnectionStringPlainText": "UseDevelopmentStorage=true",
+  "RootBlobStorageConfiguration:ConnectionStringPlainText": "UseDevelopmentStorage=true"
   // or this:
   //"RootBlobStorageConfiguration:AccountName": "",
   //"RootBlobStorageConfiguration:AccessKeyInKeyVault:VaultName": "",

@@ -2,14 +2,19 @@
   "version": 1,
   "dependencies": {
     "net8.0": {
-      "Corvus.Testing.AzureFunctions.ReqnRoll.NUnit": {
+      "Corvus.Testing.ReqnRoll.NUnit": {
         "type": "Direct",
-        "requested": "[5.0.0, )",
-        "resolved": "5.0.0",
-        "contentHash": "KHnUN/3CKMS0ppdDdqGNzTIiqo57vJUOYY5+2ONetaBxuAe5a5JzcJdXdxj2G0siCGw7LuW0LvhD98VeMxQjtQ==",
+        "requested": "[4.0.5, )",
+        "resolved": "4.0.5",
+        "contentHash": "3Rf0LULXc/wr26SLZVbkHZxj4dgpm4VvjE8Ti5UrdIds7ya1ZZHkfKcAOczvkFuXsAfBHuNygr4Qrnf0eHJ++w==",
         "dependencies": {
-          "Corvus.Testing.AzureFunctions.ReqnRoll": "5.0.0",
-          "Corvus.Testing.ReqnRoll.NUnit": "4.0.5"
+          "Corvus.Testing.ReqnRoll": "4.0.5",
+          "Microsoft.Extensions.DependencyInjection": "8.0.1",
+          "Microsoft.Extensions.DependencyInjection.Abstractions": "8.0.2",
+          "Microsoft.NET.Test.Sdk": "17.14.1",
+          "NUnit3TestAdapter": "5.0.0",
+          "Reqnroll.NUnit": "2.4.1",
+          "coverlet.msbuild": "6.0.4"
         }
       },
       "Endjin.RecommendedPractices.GitHub": {
@@ -243,24 +248,6 @@
           "Microsoft.Extensions.Primitives": "8.0.0"
         }
       },
-      "Corvus.Testing.AzureFunctions": {
-        "type": "Transitive",
-        "resolved": "5.0.0",
-        "contentHash": "0NqZTMlfRiUqElB6EOUfnhbF50pNV4WRHrCcENzp/0OuFexxD/cZ1GlTyy5PJgQTl/G58qmrjTaJy/Mza/xGuA==",
-        "dependencies": {
-          "Microsoft.Extensions.Logging.Abstractions": "8.0.3"
-        }
-      },
-      "Corvus.Testing.AzureFunctions.ReqnRoll": {
-        "type": "Transitive",
-        "resolved": "5.0.0",
-        "contentHash": "lVZ6FXt4P7Ua0ZUCqtk5kM2lnoStMysVorvZK2ySyG7vLdNkC7UlVnSPsPAmJJeNKOMjkRGw6qnZmwyaA30nug==",
-        "dependencies": {
-          "Corvus.Testing.AzureFunctions": "5.0.0",
-          "Corvus.Testing.ReqnRoll": "4.0.5",
-          "Microsoft.Extensions.Logging.Console": "8.0.1"
-        }
-      },
       "Corvus.Testing.ReqnRoll": {
         "type": "Transitive",
         "resolved": "4.0.5",
@@ -270,20 +257,6 @@
           "Microsoft.Extensions.DependencyInjection": "8.0.1",
           "Microsoft.Extensions.DependencyInjection.Abstractions": "8.0.2",
           "Reqnroll": "2.4.1"
-        }
-      },
-      "Corvus.Testing.ReqnRoll.NUnit": {
-        "type": "Transitive",
-        "resolved": "4.0.5",
-        "contentHash": "3Rf0LULXc/wr26SLZVbkHZxj4dgpm4VvjE8Ti5UrdIds7ya1ZZHkfKcAOczvkFuXsAfBHuNygr4Qrnf0eHJ++w==",
-        "dependencies": {
-          "Corvus.Testing.ReqnRoll": "4.0.5",
-          "Microsoft.Extensions.DependencyInjection": "8.0.1",
-          "Microsoft.Extensions.DependencyInjection.Abstractions": "8.0.2",
-          "Microsoft.NET.Test.Sdk": "17.14.1",
-          "NUnit3TestAdapter": "5.0.0",
-          "Reqnroll.NUnit": "2.4.1",
-          "coverlet.msbuild": "6.0.4"
         }
       },
       "coverlet.msbuild": {
@@ -439,16 +412,6 @@
         "resolved": "8.0.0",
         "contentHash": "OK+670i7esqlQrPjdIKRbsyMCe9g5kSLpRRQGSr4Q58AOYEe/hCnfLZprh7viNisSUUQZmMrbbuDaIrP+V1ebQ=="
       },
-      "Microsoft.Extensions.Logging": {
-        "type": "Transitive",
-        "resolved": "8.0.1",
-        "contentHash": "4x+pzsQEbqxhNf1QYRr5TDkLP9UsLT3A6MdRKDDEgrW7h1ljiEPgTNhKYUhNCCAaVpQECVQ+onA91PTPnIp6Lw==",
-        "dependencies": {
-          "Microsoft.Extensions.DependencyInjection": "8.0.1",
-          "Microsoft.Extensions.Logging.Abstractions": "8.0.2",
-          "Microsoft.Extensions.Options": "8.0.2"
-        }
-      },
       "Microsoft.Extensions.Logging.Abstractions": {
         "type": "Transitive",
         "resolved": "8.0.3",
@@ -457,51 +420,12 @@
           "Microsoft.Extensions.DependencyInjection.Abstractions": "8.0.2"
         }
       },
-      "Microsoft.Extensions.Logging.Configuration": {
-        "type": "Transitive",
-        "resolved": "8.0.1",
-        "contentHash": "QWwTrsgOnJMmn+XUslm8D2H1n3PkP/u/v52FODtyBc/k4W9r3i2vcXXeeX/upnzllJYRRbrzVzT0OclfNJtBJA==",
-        "dependencies": {
-          "Microsoft.Extensions.Configuration": "8.0.0",
-          "Microsoft.Extensions.Configuration.Abstractions": "8.0.0",
-          "Microsoft.Extensions.Configuration.Binder": "8.0.2",
-          "Microsoft.Extensions.DependencyInjection.Abstractions": "8.0.2",
-          "Microsoft.Extensions.Logging": "8.0.1",
-          "Microsoft.Extensions.Logging.Abstractions": "8.0.2",
-          "Microsoft.Extensions.Options": "8.0.2",
-          "Microsoft.Extensions.Options.ConfigurationExtensions": "8.0.0"
-        }
-      },
-      "Microsoft.Extensions.Logging.Console": {
-        "type": "Transitive",
-        "resolved": "8.0.1",
-        "contentHash": "uzcg/5U2eLyn5LIKlERkdSxw6VPC1yydnOSQiRRWGBGN3kphq3iL4emORzrojScDmxRhv49gp5BI8U3Dz7y4iA==",
-        "dependencies": {
-          "Microsoft.Extensions.DependencyInjection.Abstractions": "8.0.2",
-          "Microsoft.Extensions.Logging": "8.0.1",
-          "Microsoft.Extensions.Logging.Abstractions": "8.0.2",
-          "Microsoft.Extensions.Logging.Configuration": "8.0.1",
-          "Microsoft.Extensions.Options": "8.0.2"
-        }
-      },
       "Microsoft.Extensions.Options": {
         "type": "Transitive",
         "resolved": "8.0.2",
         "contentHash": "dWGKvhFybsaZpGmzkGCbNNwBD1rVlWzrZKANLW/CcbFJpCEceMCGzT7zZwHOGBCbwM0SzBuceMj5HN1LKV1QqA==",
         "dependencies": {
           "Microsoft.Extensions.DependencyInjection.Abstractions": "8.0.0",
-          "Microsoft.Extensions.Primitives": "8.0.0"
-        }
-      },
-      "Microsoft.Extensions.Options.ConfigurationExtensions": {
-        "type": "Transitive",
-        "resolved": "8.0.0",
-        "contentHash": "0f4DMRqEd50zQh+UyJc+/HiBsZ3vhAQALgdkcQEalSH1L2isdC7Yj54M3cyo5e+BeO5fcBQ7Dxly8XiBBcvRgw==",
-        "dependencies": {
-          "Microsoft.Extensions.Configuration.Abstractions": "8.0.0",
-          "Microsoft.Extensions.Configuration.Binder": "8.0.0",
-          "Microsoft.Extensions.DependencyInjection.Abstractions": "8.0.0",
-          "Microsoft.Extensions.Options": "8.0.0",
           "Microsoft.Extensions.Primitives": "8.0.0"
         }
       },
