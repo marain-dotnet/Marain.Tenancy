@@ -16,7 +16,8 @@
       "Bash(curl:*)",
       "Bash(pwsh:*)",
       "Bash(kiota info:*)",
-      "Bash(mv:*)"
+      "Bash(mv:*)",
+      "Bash(rg:*)"
     ],
     "deny": []
   }

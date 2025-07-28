@@ -27,6 +27,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Marain.Tenancy.Client", "Ma
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Marain.Tenancy.ClientTenantProvider", "Marain.Tenancy.ClientTenantProvider\Marain.Tenancy.ClientTenantProvider.csproj", "{41874CA2-A390-C921-FDE1-551BDF55E391}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Marain.Tenancy.MinimalApi.Tests", "Marain.Tenancy.MinimalApi.Tests\Marain.Tenancy.MinimalApi.Tests.csproj", "{AAC61CD5-0980-391E-3692-CBA17C31877F}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -129,6 +131,18 @@ Global
 		{41874CA2-A390-C921-FDE1-551BDF55E391}.Release|x64.Build.0 = Release|Any CPU
 		{41874CA2-A390-C921-FDE1-551BDF55E391}.Release|x86.ActiveCfg = Release|Any CPU
 		{41874CA2-A390-C921-FDE1-551BDF55E391}.Release|x86.Build.0 = Release|Any CPU
+		{AAC61CD5-0980-391E-3692-CBA17C31877F}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{AAC61CD5-0980-391E-3692-CBA17C31877F}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{AAC61CD5-0980-391E-3692-CBA17C31877F}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{AAC61CD5-0980-391E-3692-CBA17C31877F}.Debug|x64.Build.0 = Debug|Any CPU
+		{AAC61CD5-0980-391E-3692-CBA17C31877F}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{AAC61CD5-0980-391E-3692-CBA17C31877F}.Debug|x86.Build.0 = Debug|Any CPU
+		{AAC61CD5-0980-391E-3692-CBA17C31877F}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{AAC61CD5-0980-391E-3692-CBA17C31877F}.Release|Any CPU.Build.0 = Release|Any CPU
+		{AAC61CD5-0980-391E-3692-CBA17C31877F}.Release|x64.ActiveCfg = Release|Any CPU
+		{AAC61CD5-0980-391E-3692-CBA17C31877F}.Release|x64.Build.0 = Release|Any CPU
+		{AAC61CD5-0980-391E-3692-CBA17C31877F}.Release|x86.ActiveCfg = Release|Any CPU
+		{AAC61CD5-0980-391E-3692-CBA17C31877F}.Release|x86.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
