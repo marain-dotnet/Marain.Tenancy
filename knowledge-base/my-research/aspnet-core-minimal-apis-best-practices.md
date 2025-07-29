@@ -194,7 +194,7 @@ public class ValidationFilter<T> : IEndpointFilter where T : class
         if (argument is null)
         {
             return Results.BadRequest("Request body is required");
-        }#
+        }
 
         var validationResult = await _validator.ValidateAsync(argument);
         if (!validationResult.IsValid)
