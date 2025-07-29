@@ -8,6 +8,13 @@ services:
     # Keep the container running for development
     command: sleep infinity
     
+    # Expose ports for MinimalApi access from host
+    ports:
+      - "5138:5138"   # HTTP port for MinimalApi
+      - "7124:7124"   # HTTPS port for MinimalApi
+      - "8080:8080"   # Docker HTTP port
+      - "8081:8081"   # Docker HTTPS port
+    
     # Mount the workspace
     volumes:
       - ..:/workspaces/Marain.Tenancy:cached
@@ -16,6 +23,9 @@ services:
     environment:
       - ASPNETCORE_ENVIRONMENT=Development
       - REMOTE_CONTAINERS=true
+      - ASPNETCORE_URLS=http://+:5138;https://+:7124
+      - ASPNETCORE_HTTP_PORTS=5138;8080
+      - ASPNETCORE_HTTPS_PORTS=7124;8081
       - AZURE_STORAGE_CONNECTION_STRING=DefaultEndpointsProtocol=http;AccountName=devstoreaccount1;AccountKey=Eby8vdM02xNOcqFlqUwJPLlmEtlCDXJ1OUzFT50uSRZ6IFsuFq2UVErCz4I6tq/K1SZFPTOtr/KBHBeksoGMGw==;BlobEndpoint=http://azurite:10000/devstoreaccount1;QueueEndpoint=http://azurite:10001/devstoreaccount1;TableEndpoint=http://azurite:10002/devstoreaccount1;
     
     # Ensure azurite starts before the app container

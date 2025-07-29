@@ -5,9 +5,25 @@
 	"workspaceFolder": "/workspaces/Marain.Tenancy",
 	"shutdownAction": "stopCompose",
 
-	// Forward ports for Azurite and development
-	"forwardPorts": [10000, 10001, 10002],
+	// Forward ports for Azurite and MinimalApi development
+	"forwardPorts": [5138, 7124, 8080, 8081, 10000, 10001, 10002],
 	"portsAttributes": {
+		"5138": {
+			"label": "MinimalApi HTTP",
+			"onAutoForward": "openBrowser"
+		},
+		"7124": {
+			"label": "MinimalApi HTTPS",
+			"onAutoForward": "openBrowser"
+		},
+		"8080": {
+			"label": "MinimalApi Docker HTTP",
+			"onAutoForward": "openBrowser"
+		},
+		"8081": {
+			"label": "MinimalApi Docker HTTPS",
+			"onAutoForward": "openBrowser"
+		},
 		"10000": {
 			"label": "Azurite Blob Service",
 			"onAutoForward": "ignore"
