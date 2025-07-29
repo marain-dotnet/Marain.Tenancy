@@ -114,24 +114,4 @@ public class TenantSetupSteps : TenantStepsBase
         this.Tenants.Add(newTenantLabel, newTenant);
         this.AddWellKnownTenantToDelete(newTenant.Id);
     }
-
-    [AfterScenario("@withBlobStorageTenantProvider")]
-    public async Task DeleteTenantsCreatedByTests()
-    {
-        // We delete tenants with longer names first to ensure that we delete child tenants before their
-        // parents, as otherwise, things go wrong.
-        foreach (string tenantId in this.TenantsToDelete.OrderByDescending(id => id.Length))
-        {
-            await this.containerSetup.DeleteTenantAsync(tenantId, leaveContainer: false).ConfigureAwait(false);
-        }
-
-        foreach (string tenantId in this.WellKnownTenantsToDelete.OrderByDescending(id => id.Length))
-        {
-            // We don't delete the container when it's a well-known tenant, because otherwise
-            // we get problems with being unable to recreate a new container with the same name
-            // as one we just deleted when running tests against real storage accounts.
-            // So we just delete the blob.
-            await this.containerSetup.DeleteTenantAsync(tenantId, leaveContainer: true).ConfigureAwait(false);
-        }
-    }
 }

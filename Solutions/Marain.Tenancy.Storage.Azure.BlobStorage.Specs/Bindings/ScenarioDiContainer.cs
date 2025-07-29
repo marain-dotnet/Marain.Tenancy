@@ -46,10 +46,7 @@ public class ScenarioDiContainer
         this.PropagateRootTenancyStorageConfigAsV2 = this.SetupMode is
             SetupModes.ViaApiPropagateRootConfigAsV2 or SetupModes.DirectToStoragePropagateRootConfigAsV2;
 
-        this.Configuration = new ConfigurationBuilder()
-            .AddEnvironmentVariables()
-            .AddJsonFile("local.settings.json", true, true)
-            .Build();
+        this.Configuration = AzuriteConnectionProvider.CreateEnhancedConfiguration();
     }
 
     /// <summary>
@@ -108,5 +105,14 @@ public class ScenarioDiContainer
     {
         this.serviceProvider = ContainerBindings.GetServiceProvider(this.scenarioContext);
         this.tenantStore = this.serviceProvider.GetRequiredService<ITenantStore>();
+    }
+
+    /// <summary>
+    /// Cleans up Testcontainers connection string after scenario completion.
+    /// </summary>
+    [AfterScenario("@withBlobStorageTenantProvider")]
+    public void CleanupConnectionProvider()
+    {
+        AzuriteConnectionProvider.ClearTestcontainersConnectionString();
     }
 }

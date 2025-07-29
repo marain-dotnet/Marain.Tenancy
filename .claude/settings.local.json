@@ -17,7 +17,11 @@
       "Bash(pwsh:*)",
       "Bash(kiota info:*)",
       "Bash(mv:*)",
-      "Bash(rg:*)"
+      "Bash(rg:*)",
+      "Bash(groups)",
+      "Bash(docker inspect:*)",
+      "Bash(ss:*)",
+      "Bash(docker:*)"
     ],
     "deny": []
   }

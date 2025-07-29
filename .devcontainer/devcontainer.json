@@ -1,26 +1,66 @@
 {
-	"name": "Claude Code with C# (.NET), PowerShell and Node",
-	"image": "mcr.microsoft.com/devcontainers/dotnet:1-8.0-bookworm",
+	"name": "Marain Tenancy Development with Claude Code",
+	"dockerComposeFile": "docker-compose.yml",
+	"service": "app",
+	"workspaceFolder": "/workspaces/Marain.Tenancy",
+	"shutdownAction": "stopCompose",
+
+	// Forward ports for Azurite and development
+	"forwardPorts": [10000, 10001, 10002],
+	"portsAttributes": {
+		"10000": {
+			"label": "Azurite Blob Service",
+			"onAutoForward": "ignore"
+		},
+		"10001": {
+			"label": "Azurite Queue Service", 
+			"onAutoForward": "ignore"
+		},
+		"10002": {
+			"label": "Azurite Table Service",
+			"onAutoForward": "ignore"
+		}
+	},
+
 	"features": {
 		"ghcr.io/devcontainers/features/node:1": {},
 		"ghcr.io/devcontainers/features/powershell:1": {},
+		"ghcr.io/devcontainers/features/docker-in-docker:2": {
+			"version": "latest",
+			"enableNonRootDocker": "true"
+		},
 		"ghcr.io/devcontainers/features/common-utils:2": {
 			"installZsh": "true",
 			"username": "vscode",
 			"upgradePackages": "false",
 			"nonFreePackages": "true"
-	}
+		}
 	},
-	"postCreateCommand": "sudo chsh vscode -s \"$(which pwsh)\" && npm install -g @anthropic-ai/claude-code",
+	
+	"postCreateCommand": "sudo chsh vscode -s \"$(which pwsh)\" && npm install -g @anthropic-ai/claude-code && dotnet restore Solutions/Marain.Tenancy.sln",
+	
+	// Mount Docker socket for Testcontainers support  
+	"mounts": [
+		"source=/var/run/docker.sock,target=/var/run/docker.sock,type=bind"
+	],
+	
 	"customizations": {
 		"vscode": {
 			"settings": { 
-			"terminal.integrated.defaultProfile.linux": "pwsh"
+				"terminal.integrated.defaultProfile.linux": "pwsh",
+				"dotnet.defaultSolution": "Solutions/Marain.Tenancy.sln",
+				"files.exclude": {
+					"**/bin": true,
+					"**/obj": true
+				}
 			},
 			"extensions": [
 				"ms-vscode.powershell",
 				"anthropic.claude-code",
-				"ms-dotnettools.csdevkit"
+				"ms-dotnettools.csdevkit",
+				"ms-dotnettools.csharp",
+				"ms-azuretools.vscode-azurestorage",
+				"formulahendry.dotnet-test-explorer"
 			]
 		}
 	}

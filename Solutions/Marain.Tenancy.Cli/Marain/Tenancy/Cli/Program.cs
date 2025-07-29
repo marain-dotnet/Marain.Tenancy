@@ -37,7 +37,7 @@ public static class Program
             services.AddJsonNetDateTimeOffsetToIso8601AndUnixTimeConverter();
             services.AddSingleton<JsonConverter>(new StringEnumConverter(new CamelCaseNamingStrategy()));
 
-            string tenancyServiceBaseUri = ctx.Configuration["TenancyClient:TenancyServiceBaseUri"] 
+            string tenancyServiceBaseUri = ctx.Configuration["TenancyClient:TenancyServiceBaseUri"]
                 ?? throw new InvalidOperationException("TenancyClient:TenancyServiceBaseUri configuration is required");
 
             services.AddTenantProviderServiceClient(tenancyServiceBaseUri);
