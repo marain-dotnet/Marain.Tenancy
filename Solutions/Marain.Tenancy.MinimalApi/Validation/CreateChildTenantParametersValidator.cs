@@ -21,17 +21,23 @@ public sealed class CreateChildTenantParametersValidator : AbstractValidator<Cre
             .NotEmpty()
             .WithMessage("TenantId is required");
 
-        this.RuleFor(x => x.TenantName)
+        this.RuleFor(x => x.Request)
+            .NotNull()
+            .WithMessage("Request body is required");
+
+        this.RuleFor(x => x.Request.TenantName)
             .NotEmpty()
             .WithMessage("TenantName is required")
             .MaximumLength(200)
             .WithMessage("TenantName cannot exceed 200 characters")
             .Matches("^[a-zA-Z0-9_-]+$")
-            .WithMessage("TenantName can only contain alphanumeric characters, hyphens, and underscores");
+            .WithMessage("TenantName can only contain alphanumeric characters, hyphens, and underscores")
+            .When(x => x.Request != null);
 
-        this.RuleFor(x => x.WellKnownChildTenantGuid)
+        this.RuleFor(x => x.Request.WellKnownChildTenantGuid)
             .Must(BeValidGuidOrEmpty)
-            .WithMessage("WellKnownChildTenantGuid must be a valid UUID when provided");
+            .WithMessage("WellKnownChildTenantGuid must be a valid UUID when provided")
+            .When(x => x.Request != null);
     }
 
     /// <summary>

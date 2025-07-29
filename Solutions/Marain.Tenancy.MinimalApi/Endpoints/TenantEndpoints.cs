@@ -12,7 +12,6 @@ using Corvus.Tenancy;
 using Corvus.Tenancy.Exceptions;
 using Marain.Tenancy.MinimalApi.ErrorHandling;
 using Marain.Tenancy.MinimalApi.Models;
-using Marain.Tenancy.MinimalApi.Validation;
 using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.AspNetCore.JsonPatch;
 using Microsoft.AspNetCore.Mvc;
@@ -30,11 +29,11 @@ public static class TenantEndpoints
     public static RouteGroupBuilder RegisterTenantEndpoints(this RouteGroupBuilder group)
     {
         group.MapGet("/", (
-                string tenantId,
+                [AsParameters] GetTenantParameters parameters,
                 ITenantStore tenantStore,
                 IPropertyBagFactory propertyBagFactory,
                 HttpContext context) =>
-                GetTenant(new GetTenantParameters { TenantId = tenantId }, tenantStore, propertyBagFactory, context))
+                GetTenant(parameters, tenantStore, propertyBagFactory, context))
             .WithName("GetTenant")
             .WithSummary("Get a tenant by ID")
             .WithDescription("Retrieves detailed information about a specific tenant.")
@@ -44,17 +43,9 @@ public static class TenantEndpoints
             .AddValidation<GetTenantParameters>();
 
         group.MapPost("/", (
-                string tenantId,
-                CreateChildTenantRequest request,
+                [AsParameters] CreateChildTenantParameters parameters,
                 ITenantStore tenantStore) =>
-                CreateChildTenant(
-                    new()
-                    {
-                        TenantId = tenantId,
-                        TenantName = request.TenantName,
-                        WellKnownChildTenantGuid = request.WellKnownChildTenantGuid,
-                    },
-                    tenantStore))
+                CreateChildTenant(parameters, tenantStore))
             .WithName("CreateChildTenant")
             .WithSummary("Create a child tenant")
             .WithDescription("Creates a new child tenant under the specified parent tenant.")
@@ -64,18 +55,9 @@ public static class TenantEndpoints
             .AddValidation<CreateChildTenantParameters>();
 
         group.MapGet("/children", (
-                string tenantId,
-                int? maxItems,
-                string? continuationToken,
+                [AsParameters] GetChildrenParameters parameters,
                 ITenantStore tenantStore) =>
-                GetChildTenants(
-                    new()
-                    {
-                        TenantId = tenantId,
-                        MaxItems = maxItems,
-                        ContinuationToken = continuationToken,
-                    },
-                    tenantStore))
+                GetChildTenants(parameters, tenantStore))
             .WithName("GetChildTenants")
             .WithSummary("Get child tenants")
             .WithDescription("Retrieves a paginated list of child tenants.")
@@ -85,10 +67,9 @@ public static class TenantEndpoints
             .AddValidation<GetChildrenParameters>();
 
         group.MapPatch("/", (
-                string tenantId,
-                JsonPatchDocument<UpdateTenantRequest> patchDocument,
+                [AsParameters] UpdateTenantParameters parameters,
                 ITenantStore tenantStore) =>
-                UpdateTenant(new UpdateTenantParameters { TenantId = tenantId }, patchDocument, tenantStore))
+                UpdateTenant(parameters, tenantStore))
             .WithName("UpdateTenant")
             .WithSummary("Update a tenant")
             .WithDescription("Updates tenant properties using JSON Patch operations.")
@@ -98,16 +79,9 @@ public static class TenantEndpoints
             .AddValidation<UpdateTenantParameters>();
 
         group.MapDelete("/children/{childTenantId}", (
-                string tenantId,
-                string childTenantId,
+                [AsParameters] DeleteChildTenantParameters parameters,
                 ITenantStore tenantStore) =>
-                DeleteChildTenant(
-                    new()
-                    {
-                        TenantId = tenantId,
-                        ChildTenantId = childTenantId,
-                    },
-                    tenantStore))
+                DeleteChildTenant(parameters, tenantStore))
             .WithName("DeleteChildTenant")
             .WithSummary("Delete a child tenant")
             .WithDescription("Deletes a child tenant and all its resources.")
@@ -223,14 +197,13 @@ public static class TenantEndpoints
 
     private static async Task<Results<Ok<TenantResponse>, ProblemHttpResult>> UpdateTenant(
         UpdateTenantParameters parameters,
-        JsonPatchDocument<UpdateTenantRequest> patchDocument,
         ITenantStore tenantStore)
     {
         try
         {
             // Apply patch to a temporary object to extract changes
             UpdateTenantRequest tempTenant = new();
-            patchDocument.ApplyTo(tempTenant);
+            parameters.PatchDocument.ApplyTo(tempTenant);
 
             // Extract properties to update
             List<KeyValuePair<string, object>> propertiesToUpdate = [];

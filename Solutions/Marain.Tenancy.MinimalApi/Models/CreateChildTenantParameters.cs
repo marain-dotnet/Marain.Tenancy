@@ -14,17 +14,22 @@ public sealed record CreateChildTenantParameters
     /// <summary>
     /// Gets the parent tenant identifier.
     /// </summary>
+    [FromRoute]
     public required string TenantId { get; init; }
+
+    /// <summary>
+    /// Gets the request body containing tenant creation details.
+    /// </summary>
+    [FromBody]
+    public required CreateChildTenantRequest Request { get; init; }
 
     /// <summary>
     /// Gets the name for the new child tenant.
     /// </summary>
-    [FromQuery]
-    public required string TenantName { get; init; }
+    public string TenantName => this.Request.TenantName;
 
     /// <summary>
     /// Gets the well-known GUID for the new child tenant.
     /// </summary>
-    [FromQuery]
-    public string? WellKnownChildTenantGuid { get; init; }
+    public string? WellKnownChildTenantGuid => this.Request.WellKnownChildTenantGuid;
 }

@@ -14,6 +14,7 @@ public sealed record GetChildrenParameters
     /// <summary>
     /// Gets the parent tenant identifier.
     /// </summary>
+    [FromRoute]
     public required string TenantId { get; init; }
 
     /// <summary>

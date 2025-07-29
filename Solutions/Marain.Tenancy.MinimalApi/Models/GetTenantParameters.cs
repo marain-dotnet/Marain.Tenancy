@@ -14,6 +14,7 @@ public sealed record GetTenantParameters
     /// <summary>
     /// Gets the tenant identifier.
     /// </summary>
+    [FromRoute]
     public required string TenantId { get; init; }
 
     /// <summary>
