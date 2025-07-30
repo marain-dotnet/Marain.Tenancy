@@ -21,7 +21,10 @@
       "Bash(groups)",
       "Bash(docker inspect:*)",
       "Bash(ss:*)",
-      "Bash(docker:*)"
+      "Bash(docker:*)",
+      "Bash(pkill:*)",
+      "Bash(chmod:*)",
+      "Bash(./manage-api.sh:*)"
     ],
     "deny": []
   }

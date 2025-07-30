@@ -86,7 +86,8 @@ dotnet run --launch-profile https  # HTTP + HTTPS (ports 5138, 7124)
 **Access Points:**
 - **HTTP**: http://localhost:5138
 - **HTTPS**: https://localhost:7124
-- **Swagger UI**: http://localhost:5138/swagger
+- **Swagger JSON**: http://localhost:5138/swagger
+- **Swagger UI**: http://localhost:5138/swagger-ui
 - **Health Check**: http://localhost:5138/health
 
 **Dev Container Access:**

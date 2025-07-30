@@ -4,6 +4,9 @@
 
 using Corvus.Storage.Azure.BlobStorage;
 using Marain.Tenancy.MinimalApi.Extensions;
+using Microsoft.OpenApi.Models;
+using Microsoft.OpenApi.Writers;
+using Swashbuckle.AspNetCore.Swagger;
 
 WebApplicationBuilder builder = WebApplication.CreateBuilder(args);
 
@@ -50,8 +53,8 @@ if (app.Environment.IsDevelopment())
     app.UseSwagger();
     app.UseSwaggerUI(c =>
     {
-        c.SwaggerEndpoint("/swagger/v1/swagger.json", "Tenancy Service v1");
-        c.RoutePrefix = string.Empty; // Serve Swagger UI at root
+        c.SwaggerEndpoint("/swagger/v1/swagger.json", "Tenancy Service v1");  
+        c.RoutePrefix = "swagger-ui"; // Serve Swagger UI at /swagger-ui
     });
     app.UseDeveloperExceptionPage();
 }
@@ -65,6 +68,23 @@ app.UseExceptionHandler();
 
 // Add health check endpoint
 app.MapHealthChecks("/health");
+
+// Map custom /swagger endpoint to serve JSON directly
+if (app.Environment.IsDevelopment())
+{
+    app.MapGet("/swagger", async (HttpContext context, IServiceProvider serviceProvider) =>
+    {
+        ISwaggerProvider swaggerProvider = serviceProvider.GetRequiredService<ISwaggerProvider>();
+        OpenApiDocument swagger = swaggerProvider.GetSwagger("v1");
+        
+        using var stringWriter = new StringWriter();
+        swagger.SerializeAsV3(new OpenApiJsonWriter(stringWriter));
+        string json = stringWriter.ToString();
+        
+        context.Response.ContentType = "application/json";
+        await context.Response.WriteAsync(json);
+    });
+}
 
 // Map tenancy endpoints
 app.MapTenancyEndpoints();
