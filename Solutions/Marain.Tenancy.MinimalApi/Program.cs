@@ -53,7 +53,7 @@ if (app.Environment.IsDevelopment())
     app.UseSwagger();
     app.UseSwaggerUI(c =>
     {
-        c.SwaggerEndpoint("/swagger/v1/swagger.json", "Tenancy Service v1");  
+        c.SwaggerEndpoint("/swagger/v1/swagger.json", "Tenancy Service v1");
         c.RoutePrefix = "swagger-ui"; // Serve Swagger UI at /swagger-ui
     });
     app.UseDeveloperExceptionPage();
@@ -76,11 +76,11 @@ if (app.Environment.IsDevelopment())
     {
         ISwaggerProvider swaggerProvider = serviceProvider.GetRequiredService<ISwaggerProvider>();
         OpenApiDocument swagger = swaggerProvider.GetSwagger("v1");
-        
+
         using var stringWriter = new StringWriter();
         swagger.SerializeAsV3(new OpenApiJsonWriter(stringWriter));
         string json = stringWriter.ToString();
-        
+
         context.Response.ContentType = "application/json";
         await context.Response.WriteAsync(json);
     });
