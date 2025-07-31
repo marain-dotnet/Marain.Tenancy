@@ -33,7 +33,7 @@ public static class TenancyClientBindings
             featureContext,
             serviceCollection =>
             {
-                if (FunctionBindings.TestHostMode != MultiHost.TestHostModes.DirectInvocation)
+                if (FunctionBindings.TestHostMode == MultiHost.TestHostModes.TenancyClient)
                 {
                     var configData = new Dictionary<string, string>
                     {

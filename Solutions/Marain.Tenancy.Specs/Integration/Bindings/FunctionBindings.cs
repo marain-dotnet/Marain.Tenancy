@@ -7,7 +7,7 @@ namespace Marain.Tenancy.Specs.Integration.Bindings;
 using System;
 using System.Linq;
 using System.Threading.Tasks;
-using BoDi;
+using Reqnroll.BoDi;
 using Corvus.Extensions.Json;
 using Corvus.Testing.AzureFunctions;
 using Corvus.Testing.AzureFunctions.ReqnRoll;
@@ -22,7 +22,6 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using NUnit.Framework.Internal;
 using Reqnroll;
-using Reqnroll.BoDi;
 
 /// <summary>
 /// Provides function initialisation for tests that require endpoints to be available.
@@ -42,7 +41,7 @@ public static class FunctionBindings
     public static TestHostModes TestHostMode => TestExecutionContext.CurrentContext.TestObject switch
     {
         IMultiModeTest<TestHostModes> multiModeTest => multiModeTest.TestType,
-        _ => TestHostModes.UseFunctionHost,
+        _ => TestHostModes.InProcessMinimalApi,
     };
 
     /// <summary>
@@ -61,49 +60,22 @@ public static class FunctionBindings
 
         switch (TestHostMode)
         {
-            case TestHostModes.InProcessEmulateFunctionWithActionResult:
-                var hostManager = new OpenApiWebHostManager();
-                featureContext.Set(hostManager);
-                await hostManager.StartInProcessFunctionsHostAsync<FunctionsStartupWrapper>(
-                    TenancyApiBaseUriText,
-                    config);
-                break;
-
-            case TestHostModes.UseFunctionHost:
-                FunctionsController functionsController = FunctionsBindings.GetFunctionsController(featureContext);
-                FunctionConfiguration functionsConfig = FunctionsBindings.GetFunctionConfiguration(featureContext);
-
-                functionsConfig.CopyToEnvironmentVariables(config.AsEnumerable());
-                functionsConfig.EnvironmentVariables.Add("TenantCacheConfiguration__GetTenantResponseCacheControlHeaderValue", "max-age=300");
-
-                await functionsController.StartFunctionsInstanceAsync(
-                    "Marain.Tenancy.Host.Functions",
-                    TenancyApiPort,
-                    "net6.0",
-                    "csharp",
-                    functionsConfig);
-                break;
-
-            case TestHostModes.DirectInvocation:
-                // Doing this for the side effects only - it causes the OpenApi document
-                // to be registered in Menes.
-                serviceProvider.GetRequiredService<IOpenApiHost<HttpRequest, IActionResult>>();
-                break;
-
             case TestHostModes.InProcessMinimalApi:
                 // For MinimalApi testing, we'll create the WebApplicationFactory in the service wrapper
+                break;
+
+            case TestHostModes.TenancyClient:
+                // For client testing, we need to start a MinimalApi instance
                 break;
         }
 
         ITestableTenancyService serviceWrapper = TestHostMode switch
         {
-            TestHostModes.DirectInvocation => new DirectTestableTenancyService(
-                serviceProvider.GetRequiredService<TenancyService>(),
-                serviceProvider.GetRequiredService<SimpleOpenApiContext>()),
             TestHostModes.InProcessMinimalApi => CreateMinimalApiTestableTenancyService(),
-            _ => new ClientTestableTenancyService(
+            TestHostModes.TenancyClient => new ClientTestableTenancyService(
                 TenancyApiBaseUriText,
                 serviceProvider.GetRequiredService<IJsonSerializerSettingsProvider>().Instance),
+            _ => CreateMinimalApiTestableTenancyService(), // Default to MinimalApi
         };
 
         specFlowDiContainer.RegisterInstanceAs(serviceWrapper);
@@ -124,16 +96,6 @@ public static class FunctionBindings
 
     private static ITestableTenancyService CreateMinimalApiTestableTenancyService()
     {
-        WebApplicationFactory<MinimalApi.Program> factory = new WebApplicationFactory<Marain.Tenancy.MinimalApi.Program>()
-            .WithWebHostBuilder(builder =>
-            {
-                builder.ConfigureAppConfiguration((context, config) =>
-                {
-                    config.AddJsonFile("local.settings.json", optional: true);
-                    config.AddEnvironmentVariables();
-                });
-            });
-
-        return new MinimalApiTestableTenancyService(factory);
+        return new MinimalApiTestableTenancyService();
     }
 }

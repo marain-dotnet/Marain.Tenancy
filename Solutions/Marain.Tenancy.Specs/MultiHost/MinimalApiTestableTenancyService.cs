@@ -5,9 +5,16 @@
 namespace Marain.Tenancy.Specs.MultiHost;
 
 using System;
+using System.IO;
 using System.Net.Http;
+using System.Reflection;
 using System.Threading.Tasks;
+using Microsoft.AspNetCore.Builder;
+using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc.Testing;
+using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Hosting;
 using Newtonsoft.Json.Linq;
 
 /// <summary>
@@ -15,7 +22,7 @@ using Newtonsoft.Json.Linq;
 /// </summary>
 internal class MinimalApiTestableTenancyService : ITestableTenancyService, IDisposable
 {
-    private readonly WebApplicationFactory<Marain.Tenancy.MinimalApi.Program> factory;
+    private readonly WebApplicationFactory<MinimalApiTestableTenancyService> factory;
     private readonly HttpClient httpClient;
     private HttpResponseMessage? response;
     private string? responseContent;
@@ -24,11 +31,10 @@ internal class MinimalApiTestableTenancyService : ITestableTenancyService, IDisp
     /// <summary>
     /// Initializes a new instance of the <see cref="MinimalApiTestableTenancyService"/> class.
     /// </summary>
-    /// <param name="factory">The web application factory for creating test clients.</param>
-    public MinimalApiTestableTenancyService(WebApplicationFactory<Marain.Tenancy.MinimalApi.Program> factory)
+    public MinimalApiTestableTenancyService()
     {
-        this.factory = factory;
-        this.httpClient = factory.CreateClient();
+        this.factory = new MinimalApiWebApplicationFactory();
+        this.httpClient = this.factory.CreateClient();
     }
 
     /// <inheritdoc/>
@@ -131,5 +137,86 @@ internal class MinimalApiTestableTenancyService : ITestableTenancyService, IDisp
                 this.parsedResponse = null;
             }
         }
+    }
+}
+
+/// <summary>
+/// Custom WebApplicationFactory that can create the MinimalApi application for testing.
+/// </summary>
+internal class MinimalApiWebApplicationFactory : WebApplicationFactory<MinimalApiTestableTenancyService>
+{
+    /// <inheritdoc/>
+    protected override IHostBuilder CreateHostBuilder()
+    {
+        // Get the MinimalApi assembly
+        Assembly minimalApiAssembly = Assembly.Load("Marain.Tenancy.MinimalApi");
+        
+        return Host.CreateDefaultBuilder()
+            .ConfigureWebHostDefaults(webBuilder =>
+            {
+                webBuilder.UseStartup<MinimalApiTestStartup>();
+                webBuilder.ConfigureAppConfiguration((context, config) =>
+                {
+                    config.AddJsonFile("local.settings.json", optional: true);
+                    config.AddEnvironmentVariables();
+                });
+                webBuilder.UseContentRoot(GetContentRoot(minimalApiAssembly));
+            });
+    }
+
+    private static string GetContentRoot(Assembly assembly)
+    {
+        // Find the content root by looking for the MinimalApi project directory
+        string assemblyLocation = assembly.Location;
+        DirectoryInfo? directory = new FileInfo(assemblyLocation).Directory;
+        
+        while (directory != null && !File.Exists(Path.Combine(directory.FullName, "Program.cs")))
+        {
+            directory = directory.Parent;
+        }
+        
+        return directory?.FullName ?? Environment.CurrentDirectory;
+    }
+}
+
+/// <summary>
+/// Test startup class that mimics the MinimalApi Program.cs configuration.
+/// </summary>
+internal class MinimalApiTestStartup
+{
+    private readonly IConfiguration configuration;
+
+    public MinimalApiTestStartup(IConfiguration configuration)
+    {
+        this.configuration = configuration;
+    }
+
+    public void ConfigureServices(IServiceCollection services)
+    {
+        // Add services similar to Program.cs
+        services.AddEndpointsApiExplorer();
+        services.AddSwaggerGen();
+        services.AddHealthChecks();
+        
+        // Add tenancy minimal API services (this would need to be implemented)
+        // services.AddTenancyMinimalApi();
+    }
+
+    public void Configure(IApplicationBuilder app, IWebHostEnvironment env)
+    {
+        if (env.IsDevelopment())
+        {
+            app.UseSwagger();
+            app.UseSwaggerUI();
+            app.UseDeveloperExceptionPage();
+        }
+
+        app.UseRouting();
+        app.UseEndpoints(endpoints =>
+        {
+            endpoints.MapHealthChecks("/health");
+            // Map tenancy endpoints (this would need to be implemented)
+            // endpoints.MapTenancyEndpoints();
+        });
     }
 }

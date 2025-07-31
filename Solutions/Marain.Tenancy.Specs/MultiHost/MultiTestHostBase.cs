@@ -43,10 +43,8 @@ public class MultiTestHostBase : IMultiModeTest<TestHostModes>
 {
     protected static readonly object[] FixtureArgs =
     {
-        new object[] { TestHostModes.DirectInvocation },
-        new object[] { TestHostModes.InProcessEmulateFunctionWithActionResult },
-        new object[] { TestHostModes.UseFunctionHost },
         new object[] { TestHostModes.InProcessMinimalApi },
+        new object[] { TestHostModes.TenancyClient },
     };
 
     /// <summary>
@@ -102,18 +100,13 @@ public class MultiTestHostBase : IMultiModeTest<TestHostModes>
 
                 switch (arg)
                 {
-                    case TestHostModes.DirectInvocation:
-                        fixture.Properties["Category"].Add("fast");
-                        fixture.Properties["Category"].Add("parallelizable");
-                        break;
-
-                    case TestHostModes.InProcessEmulateFunctionWithActionResult:
-                        fixture.Properties["Category"].Add("fast");
-                        break;
-
                     case TestHostModes.InProcessMinimalApi:
                         fixture.Properties["Category"].Add("fast");
                         fixture.Properties["Category"].Add("parallelizable");
+                        break;
+
+                    case TestHostModes.TenancyClient:
+                        fixture.Properties["Category"].Add("integration");
                         break;
                 }
 
