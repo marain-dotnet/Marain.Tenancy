@@ -2,31 +2,25 @@
 // Copyright (c) Endjin Limited. All rights reserved.
 // </copyright>
 
-namespace Marain.Tenancy.Specs.MultiHost;
+namespace Marain.Tenancy.Specs.Bindings;
 
 using System;
-using System.IO;
 using System.Net.Http;
-using System.Reflection;
+using System.Text.Json.Nodes;
 using System.Threading.Tasks;
-using Microsoft.AspNetCore.Builder;
-using Microsoft.AspNetCore.Hosting;
+using Marain.Tenancy.Specs.Helpers;
 using Microsoft.AspNetCore.Mvc.Testing;
-using Microsoft.Extensions.Configuration;
-using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Hosting;
-using Newtonsoft.Json.Linq;
 
 /// <summary>
 /// Implementation of ITestableTenancyService that uses WebApplicationFactory to test the MinimalApi.
 /// </summary>
-internal class MinimalApiTestableTenancyService : ITestableTenancyService, IDisposable
+internal class MinimalApiTestableTenancyService : IDisposable
 {
-    private readonly WebApplicationFactory<MinimalApiTestableTenancyService> factory;
+    private readonly WebApplicationFactory<Program> factory;
     private readonly HttpClient httpClient;
     private HttpResponseMessage? response;
     private string? responseContent;
-    private JObject? parsedResponse;
+    private JsonObject? parsedResponse;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="MinimalApiTestableTenancyService"/> class.
@@ -37,7 +31,6 @@ internal class MinimalApiTestableTenancyService : ITestableTenancyService, IDisp
         this.httpClient = this.factory.CreateClient();
     }
 
-    /// <inheritdoc/>
     public async Task<TenancyResponse> CreateTenantAsync(string parentId, string name)
     {
         var requestBody = new { TenantName = name };
@@ -45,28 +38,24 @@ internal class MinimalApiTestableTenancyService : ITestableTenancyService, IDisp
         return this.MakeResponse();
     }
 
-    /// <inheritdoc/>
     public async Task<TenancyResponse> GetSwaggerAsync()
     {
-        await this.SendGetRequest("/swagger/v1/swagger.json");
+        await this.SendGetRequest("/swagger");
         return this.MakeResponse();
     }
 
-    /// <inheritdoc/>
-    public async Task<TenancyResponse> GetTenantAsync(string tenantId, string? etag)
+    public async Task<TenancyResponse> GetTenantAsync(string tenantId, string? etag = null)
     {
         await this.SendGetRequest($"/{tenantId}/marain/tenant", etag);
         return this.MakeResponse();
     }
 
-    /// <inheritdoc/>
     public async Task<TenancyResponse> GetTenantByLocationAsync(string location)
     {
         await this.SendGetRequest(location);
         return this.MakeResponse();
     }
 
-    /// <inheritdoc/>
     public void Dispose()
     {
         this.httpClient?.Dispose();
@@ -102,7 +91,7 @@ internal class MinimalApiTestableTenancyService : ITestableTenancyService, IDisp
         {
             try
             {
-                this.parsedResponse = JObject.Parse(this.responseContent);
+                this.parsedResponse = JsonNode.Parse(this.responseContent)?.AsObject();
             }
             catch
             {
@@ -129,7 +118,7 @@ internal class MinimalApiTestableTenancyService : ITestableTenancyService, IDisp
         {
             try
             {
-                this.parsedResponse = JObject.Parse(this.responseContent);
+                this.parsedResponse = JsonNode.Parse(this.responseContent)?.AsObject();
             }
             catch
             {
@@ -137,86 +126,5 @@ internal class MinimalApiTestableTenancyService : ITestableTenancyService, IDisp
                 this.parsedResponse = null;
             }
         }
-    }
-}
-
-/// <summary>
-/// Custom WebApplicationFactory that can create the MinimalApi application for testing.
-/// </summary>
-internal class MinimalApiWebApplicationFactory : WebApplicationFactory<MinimalApiTestableTenancyService>
-{
-    /// <inheritdoc/>
-    protected override IHostBuilder CreateHostBuilder()
-    {
-        // Get the MinimalApi assembly
-        Assembly minimalApiAssembly = Assembly.Load("Marain.Tenancy.MinimalApi");
-        
-        return Host.CreateDefaultBuilder()
-            .ConfigureWebHostDefaults(webBuilder =>
-            {
-                webBuilder.UseStartup<MinimalApiTestStartup>();
-                webBuilder.ConfigureAppConfiguration((context, config) =>
-                {
-                    config.AddJsonFile("local.settings.json", optional: true);
-                    config.AddEnvironmentVariables();
-                });
-                webBuilder.UseContentRoot(GetContentRoot(minimalApiAssembly));
-            });
-    }
-
-    private static string GetContentRoot(Assembly assembly)
-    {
-        // Find the content root by looking for the MinimalApi project directory
-        string assemblyLocation = assembly.Location;
-        DirectoryInfo? directory = new FileInfo(assemblyLocation).Directory;
-        
-        while (directory != null && !File.Exists(Path.Combine(directory.FullName, "Program.cs")))
-        {
-            directory = directory.Parent;
-        }
-        
-        return directory?.FullName ?? Environment.CurrentDirectory;
-    }
-}
-
-/// <summary>
-/// Test startup class that mimics the MinimalApi Program.cs configuration.
-/// </summary>
-internal class MinimalApiTestStartup
-{
-    private readonly IConfiguration configuration;
-
-    public MinimalApiTestStartup(IConfiguration configuration)
-    {
-        this.configuration = configuration;
-    }
-
-    public void ConfigureServices(IServiceCollection services)
-    {
-        // Add services similar to Program.cs
-        services.AddEndpointsApiExplorer();
-        services.AddSwaggerGen();
-        services.AddHealthChecks();
-        
-        // Add tenancy minimal API services (this would need to be implemented)
-        // services.AddTenancyMinimalApi();
-    }
-
-    public void Configure(IApplicationBuilder app, IWebHostEnvironment env)
-    {
-        if (env.IsDevelopment())
-        {
-            app.UseSwagger();
-            app.UseSwaggerUI();
-            app.UseDeveloperExceptionPage();
-        }
-
-        app.UseRouting();
-        app.UseEndpoints(endpoints =>
-        {
-            endpoints.MapHealthChecks("/health");
-            // Map tenancy endpoints (this would need to be implemented)
-            // endpoints.MapTenancyEndpoints();
-        });
     }
 }

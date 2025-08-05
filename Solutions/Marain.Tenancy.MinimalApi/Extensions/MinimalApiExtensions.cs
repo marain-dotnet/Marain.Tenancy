@@ -7,6 +7,7 @@ namespace Marain.Tenancy.MinimalApi.Extensions;
 using FluentValidation;
 using Marain.Tenancy.MinimalApi.Endpoints;
 using Marain.Tenancy.MinimalApi.ErrorHandling;
+using Marain.Tenancy.MinimalApi.Models;
 using Marain.Tenancy.MinimalApi.Validation;
 
 /// <summary>

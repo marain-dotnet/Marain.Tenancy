@@ -24,7 +24,12 @@
       "Bash(docker:*)",
       "Bash(pkill:*)",
       "Bash(chmod:*)",
-      "Bash(./manage-api.sh:*)"
+      "Bash(./manage-api.sh:*)",
+      "WebFetch(domain:medium.com)",
+      "WebFetch(domain:github.com)",
+      "WebFetch(domain:learn.microsoft.com)",
+      "WebFetch(domain:adolfi.dev)",
+      "WebFetch(domain:cezarypiatek.github.io)"
     ],
     "deny": []
   }

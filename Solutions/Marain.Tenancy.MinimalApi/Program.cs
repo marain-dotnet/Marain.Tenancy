@@ -4,6 +4,7 @@
 
 using Corvus.Storage.Azure.BlobStorage;
 using Marain.Tenancy.MinimalApi.Extensions;
+using Marain.Tenancy.MinimalApi.Models;
 using Microsoft.OpenApi.Models;
 using Microsoft.OpenApi.Writers;
 using Swashbuckle.AspNetCore.Swagger;
@@ -20,6 +21,17 @@ builder.Logging.AddDebug();
 
 // Add tenancy minimal API services
 builder.AddTenancyMinimalApi();
+
+// Get cache settings
+CacheControlConfiguration cacheControlConfiguration = builder.Configuration
+    .GetSection("TenantCacheConfiguration")
+    .Get<CacheControlConfiguration>()
+    ?? new CacheControlConfiguration
+    {
+        GetTenantResponseCacheDurationSeconds = 0,
+    };
+
+builder.Services.AddSingleton(cacheControlConfiguration);
 
 // Configure blob storage for tenant persistence
 BlobContainerConfiguration? rootStorageConfiguration = builder.Configuration

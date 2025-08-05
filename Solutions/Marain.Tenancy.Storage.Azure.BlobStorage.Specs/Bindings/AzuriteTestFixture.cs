@@ -6,7 +6,6 @@ namespace Marain.Tenancy.Storage.Azure.BlobStorage.Specs.Bindings;
 
 using System;
 using System.Threading.Tasks;
-using NUnit.Framework;
 using Testcontainers.Azurite;
 
 /// <summary>

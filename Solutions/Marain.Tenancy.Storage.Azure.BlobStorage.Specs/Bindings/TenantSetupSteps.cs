@@ -5,7 +5,6 @@
 namespace Marain.Tenancy.Storage.Azure.BlobStorage.Specs.Bindings;
 
 using System;
-using System.Linq;
 using System.Threading.Tasks;
 
 using Corvus.Json;

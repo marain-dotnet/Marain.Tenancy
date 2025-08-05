@@ -14,8 +14,6 @@ using Marain.Tenancy.MinimalApi.ErrorHandling;
 using Marain.Tenancy.MinimalApi.Models;
 using Marain.Tenancy.MinimalApi.Validation;
 using Microsoft.AspNetCore.Http.HttpResults;
-using Microsoft.AspNetCore.JsonPatch;
-using Microsoft.AspNetCore.Mvc;
 
 /// <summary>
 /// Contains endpoint implementations for tenant operations.
@@ -41,7 +39,8 @@ public static class TenantEndpoints
             .Produces<TenantResponse>()
             .ProducesProblem(StatusCodes.Status404NotFound)
             .ProducesValidationProblem()
-            .AddValidation<GetTenantParameters>();
+            .AddValidation<GetTenantParameters>()
+            .AddEndpointFilter<CachingEndpointFilter>();
 
         group.MapPost("/", (
                 [AsParameters] CreateChildTenantParameters parameters,

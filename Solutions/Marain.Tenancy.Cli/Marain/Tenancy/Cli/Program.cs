@@ -7,8 +7,6 @@ namespace Marain.Tenancy.Cli;
 using System;
 using System.Threading.Tasks;
 
-using Corvus.Json;
-
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Newtonsoft.Json;
