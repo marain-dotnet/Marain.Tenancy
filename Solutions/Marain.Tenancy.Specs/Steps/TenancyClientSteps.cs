@@ -18,6 +18,7 @@ using Marain.Tenancy.Specs.Bindings;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyModel;
 using Microsoft.Kiota.Abstractions;
+using Microsoft.Kiota.Http.HttpClientLibrary.Middleware;
 using Microsoft.Kiota.Http.HttpClientLibrary.Middleware.Options;
 using NUnit.Framework;
 using Reqnroll;
@@ -64,6 +65,26 @@ public class TenancyClientSteps : Steps
     {
         ApiResponseWithHeaders<TenantResponse> tenant = this.ScenarioContext.Get<ApiResponseWithHeaders<TenantResponse>>(tenantName);
         this.ScenarioContext.Set(tenant.Response?.Id, tenantIdName);
+    }
+
+    [When("I use the Tenancy Client to delete the tenant with the id called {string} that is a child of the tenant with the id called {string}")]
+    public async Task WhenIDeleteTheTenantWithTheIdCalledThatIsAChildOfTheTenantWithTheIdCalled(string childTenantIdName, string parentTenantIdName)
+    {
+        string childTenantId = this.ScenarioContext.Get<string>(childTenantIdName);
+        string parentTenantId = this.ScenarioContext.Get<string>(parentTenantIdName);
+
+        await this.TenancyApiClient[parentTenantId].Marain.Tenant.Children[childTenantId].DeleteAsync().ConfigureAwait(false);
+    }
+
+    [When("I use the Tenancy Client to delete a tenant using the DeleteTenant link at position {int} from the children called {string}")]
+    public async Task WhenIUseTheTenancyClientToDeleteATenantUsingTheDeleteTenantLinkAtPositionFromTheChildrenCalled(int deleteTenantIndex, string resultName)
+    {
+        ApiResponseWithHeaders<ChildTenantsResponse> response = this.ScenarioContext.Get<ApiResponseWithHeaders<ChildTenantsResponse>>(resultName);
+        Assert.IsNotNull(response.Response?.Links?.DeleteTenant, $"Result {resultName} has no DeleteTenant link collection.");
+        Assert.LessOrEqual(deleteTenantIndex + 1, response.Response!.Links!.DeleteTenant!.Count);
+        string link = response.Response!.Links!.DeleteTenant[deleteTenantIndex].Href!;
+
+        await this.TenancyApiClient[string.Empty].Marain.Tenant.Children[string.Empty].WithUrl(link).DeleteAsync().ConfigureAwait(false);
     }
 
     [Given("I get the children of the tenant called {string} using the children link and call them {string}")]
@@ -122,6 +143,7 @@ public class TenancyClientSteps : Steps
         await this.GetTenantByIdAndStoreResponseWithHeadersAsync(tenantId, etag);
     }
 
+    [Given("I use the Tenancy Client to get the children of the tenant with the id called {string} with maxItems {int} and call them {string}")]
     [When("I use the Tenancy Client to get the children of the tenant with the id called {string} with maxItems {int} and call them {string}")]
     public async Task WhenIGetTheChildrenOfTheTenantWithTheIdCalledWithMaxItemsAndCallThem(string tenantIdName, int maxItems, string resultName)
     {
@@ -243,8 +265,8 @@ public class TenancyClientSteps : Steps
         Assert.AreEqual(left.Response!.Id, right.Response!.Id);
     }
 
-    [Then("there should be no ids in the children called {string}")]
-    public void ThenThereShouldBeNoIdsInTheChildrenCalled(string resultName)
+    [Then("there should be no links in the GetTenants link collection of the children called {string}")]
+    public void ThenThereShouldBeNoLinksInTheGetTenantsLinkCollectionOfTheChildrenCalled(string resultName)
     {
         ApiResponseWithHeaders<ChildTenantsResponse> result = this.ScenarioContext.Get<ApiResponseWithHeaders<ChildTenantsResponse>>(resultName);
         Assert.AreEqual(0, result.Response?.Links?.GetTenant?.Count);

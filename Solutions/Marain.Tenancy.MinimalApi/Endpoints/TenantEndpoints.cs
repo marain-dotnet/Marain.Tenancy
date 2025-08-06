@@ -182,16 +182,6 @@ public static class TenantEndpoints
         }
     }
 
-    private static LinkResponse BuildGetChildrenLink(string tenantId, int maxItems, string? continuationToken, LinkGenerator linkGenerator, HttpContext context)
-    {
-        string href = linkGenerator.GetUriByName(
-            context,
-            EndpointNames.GetChildTenants,
-            new { tenantId, maxItems, continuationToken }) ?? throw new InvalidOperationException("Unable to generate self link for GetChildTenants");
-
-        return new() { Href = href };
-    }
-
     private static async Task<Results<Ok<ChildTenantsResponse>, ProblemHttpResult>> GetChildTenants(
         GetChildrenParameters parameters,
         ITenantStore tenantStore,
@@ -213,10 +203,10 @@ public static class TenantEndpoints
                 : BuildGetChildrenLink(parameters.TenantId, limit, children.ContinuationToken, linkGenerator, context);
 
             IReadOnlyList<LinkResponse> getChildTenantLinks = children.Tenants.Select(
-                tenantId => new LinkResponse { Href = BuildTenantLink(tenantId, linkGenerator, context) }).ToList().AsReadOnly();
+                tenantId => BuildTenantLink(tenantId, linkGenerator, context)).ToList().AsReadOnly();
 
             IReadOnlyList<LinkResponse> deleteChildTenantLinks = children.Tenants.Select(
-                tenantId => new LinkResponse { Href = BuildTenantLink(tenantId, linkGenerator, context) }).ToList().AsReadOnly();
+                tenantId => BuildDeleteTenantLink(parameters.TenantId, tenantId, linkGenerator, context)).ToList().AsReadOnly();
 
             ChildTenantsResponse response = new()
             {
@@ -315,10 +305,6 @@ public static class TenantEndpoints
             }
         }
 
-        string selfLink = BuildTenantLink(tenant.Id, linkGenerator, context);
-        string childrenLink = linkGenerator.GetUriByName(context, EndpointNames.GetChildTenants, new { tenantId = tenant.Id })
-            ?? throw new InvalidOperationException($"Unable to generate children link for tenant Id {tenant.Id}");
-
         return new()
         {
             Id = tenant.Id,
@@ -327,16 +313,36 @@ public static class TenantEndpoints
             Properties = properties,
             Links = new()
             {
-                Self = new() { Href = selfLink },
-                Children = new() { Href = childrenLink },
+                Self = BuildTenantLink(tenant.Id, linkGenerator, context),
+                Children = BuildGetChildrenLink(tenant.Id, null, null, linkGenerator, context),
             },
         };
     }
 
-    private static string BuildTenantLink(string tenantId, LinkGenerator linkGenerator, HttpContext context)
+    private static LinkResponse BuildTenantLink(string tenantId, LinkGenerator linkGenerator, HttpContext context)
     {
-        return linkGenerator.GetUriByName(context, EndpointNames.GetTenant, new { tenantId = tenantId })
+        string href = linkGenerator.GetUriByName(context, EndpointNames.GetTenant, new { tenantId = tenantId })
             ?? throw new InvalidOperationException($"Unable to generate self link for tenant Id {tenantId}");
+
+        return new() { Href = href };
+    }
+
+    private static LinkResponse BuildGetChildrenLink(string tenantId, int? maxItems, string? continuationToken, LinkGenerator linkGenerator, HttpContext context)
+    {
+        string href = linkGenerator.GetUriByName(
+            context,
+            EndpointNames.GetChildTenants,
+            new { tenantId, maxItems, continuationToken }) ?? throw new InvalidOperationException("Unable to generate self link for GetChildTenants");
+
+        return new() { Href = href };
+    }
+
+    private static LinkResponse BuildDeleteTenantLink(string parentTenantId, string tenantId, LinkGenerator linkGenerator, HttpContext context)
+    {
+        string href = linkGenerator.GetUriByName(context, EndpointNames.DeleteChildTenant, new { tenantId = parentTenantId, childTenantId = tenantId })
+            ?? throw new InvalidOperationException($"Unable to generate self link for tenant Id {tenantId}");
+
+        return new() { Href = href };
     }
 
     private class RedactedRootTenant : ITenant

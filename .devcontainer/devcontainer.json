@@ -1,12 +1,10 @@
 {
 	"name": "Marain Tenancy Development with Claude Code",
-	"dockerComposeFile": "docker-compose.yml",
-	"service": "app",
+	"image": "mcr.microsoft.com/devcontainers/dotnet:1-8.0-bookworm",
 	"workspaceFolder": "/workspaces/Marain.Tenancy",
-	"shutdownAction": "stopCompose",
 
-	// Forward ports for Azurite and MinimalApi development
-	"forwardPorts": [5138, 7124, 8080, 8081, 10000, 10001, 10002],
+	// Forward ports for MinimalApi development
+	"forwardPorts": [5138, 7124, 8080, 8081],
 	"portsAttributes": {
 		"5138": {
 			"label": "MinimalApi HTTP",
@@ -23,19 +21,15 @@
 		"8081": {
 			"label": "MinimalApi Docker HTTPS",
 			"onAutoForward": "openBrowser"
-		},
-		"10000": {
-			"label": "Azurite Blob Service",
-			"onAutoForward": "ignore"
-		},
-		"10001": {
-			"label": "Azurite Queue Service", 
-			"onAutoForward": "ignore"
-		},
-		"10002": {
-			"label": "Azurite Table Service",
-			"onAutoForward": "ignore"
 		}
+	},
+
+	// Container environment variables
+	"containerEnv": {
+		"ASPNETCORE_ENVIRONMENT": "Development",
+		"ASPNETCORE_URLS": "http://+:5138;https://+:7124",
+		"ASPNETCORE_HTTP_PORTS": "5138;8080",
+		"ASPNETCORE_HTTPS_PORTS": "7124;8081"
 	},
 
 	"features": {

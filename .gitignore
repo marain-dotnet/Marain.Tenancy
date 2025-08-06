@@ -350,3 +350,5 @@ _packages/
 *.sbom.*
 _codeCoverage/
 .zf/extensions/
+
+azurite-data

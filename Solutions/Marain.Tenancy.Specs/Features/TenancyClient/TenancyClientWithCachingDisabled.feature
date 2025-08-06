@@ -89,7 +89,7 @@ Scenario: Get children when no child tenants exist using the parent tenant Id
 Scenario: Get children when no child tenants exist using the parent tenant children link
 	Given I use the Tenancy Client to create a child tenant called "ChildTenant1" for the root tenant
 	And I get the children of the tenant called "ChildTenant1" using the children link and call them "Result"
-	Then there should be no ids in the children called "Result"
+	Then there should be no links in the GetTenants link collection of the children called "Result"
 
 Scenario: Get children
 	Given I use the Tenancy Client to create a child tenant called "ChildTenant1" for the root tenant
@@ -155,7 +155,7 @@ Scenario: Get children with next link
 	| ChildTenant3 |
 	| ChildTenant2 |
 
-Scenario: Delete a child
+Scenario: Delete a child using the parent and child tenant Ids
 	Given I use the Tenancy Client to create a child tenant called "ChildTenant1" for the root tenant
 	And I create a child tenant called "ChildTenant2" for the tenant called "ChildTenant1"
 	And I create a child tenant called "ChildTenant3" for the tenant called "ChildTenant1"
@@ -163,13 +163,22 @@ Scenario: Delete a child
 	And I create a child tenant called "ChildTenant5" for the tenant called "ChildTenant1"
 	When I get the tenant id of the tenant called "ChildTenant1" and call it "ChildTenantId"
 	And I get the tenant id of the tenant called "ChildTenant3" and call it "DeletedChildTenantId"
-	And I delete the tenant with the id called "DeletedChildTenantId"
+	And I use the Tenancy Client to delete the tenant with the id called "DeletedChildTenantId" that is a child of the tenant with the id called "ChildTenantId"
 	And I use the Tenancy Client to get the children of the tenant with the id called "ChildTenantId" with maxItems 20 and call them "Result"
-	Then the ids of the children called "Result" should match the ids of the tenants called
+	Then the links in the GetTenants link collection of the children called "Result" should match the self links of the tenants called
 	| TenantName   |
 	| ChildTenant2 |
 	| ChildTenant4 |
 	| ChildTenant5 |
+
+Scenario: Delete a child using the delete link from getting the children of the parent tenant
+	Given I use the Tenancy Client to create a child tenant called "ChildTenant1" for the root tenant
+	And I create a child tenant called "ChildTenant2" for the tenant called "ChildTenant1"
+	And I get the tenant id of the tenant called "ChildTenant1" and call it "ChildTenant1Id"
+	And I use the Tenancy Client to get the children of the tenant with the id called "ChildTenant1Id" with maxItems 2 and call them "Result"
+	When I use the Tenancy Client to delete a tenant using the DeleteTenant link at position 0 from the children called "Result"
+	And I use the Tenancy Client to get the children of the tenant with the id called "ChildTenant1Id" with maxItems 2 and call them "Result2"
+	Then there should be no links in the GetTenants link collection of the children called "Result2"
 
 Scenario: Root tenant has empty properties
 	When I use the Tenancy Client to get the tenant with id "f26450ab1668784bb327951c8b08f347" and call it "Root"

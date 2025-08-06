@@ -30,7 +30,7 @@ public sealed class CreateChildTenantParametersValidator : AbstractValidator<Cre
             .WithMessage("TenantName is required")
             .MaximumLength(200)
             .WithMessage("TenantName cannot exceed 200 characters")
-            .Matches("^[a-zA-Z0-9_-]+$")
+            .Matches("^[a-zA-Z0-9_ -]+$")
             .WithMessage("TenantName can only contain alphanumeric characters, hyphens, and underscores")
             .When(x => x.Request != null);
 
