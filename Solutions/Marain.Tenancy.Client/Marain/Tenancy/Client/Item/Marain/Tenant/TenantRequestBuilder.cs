@@ -39,6 +39,9 @@ namespace Marain.Tenancy.Client.Item.Marain.Tenant
         public TenantRequestBuilder(string rawUrl, IRequestAdapter requestAdapter) : base(requestAdapter, "{+baseurl}/{tenantId}/marain/tenant", rawUrl)
         {
         }
+        /// <summary>
+        /// Retrieves detailed information about a specific tenant.
+        /// </summary>
         /// <returns>A <see cref="global::Marain.Tenancy.Client.Models.TenantResponse"/></returns>
         /// <param name="cancellationToken">Cancellation token to use when cancelling requests</param>
         /// <param name="requestConfiguration">Configuration for the request such as headers, query parameters, and middleware options.</param>
@@ -61,6 +64,9 @@ namespace Marain.Tenancy.Client.Item.Marain.Tenant
             };
             return await RequestAdapter.SendAsync<global::Marain.Tenancy.Client.Models.TenantResponse>(requestInfo, global::Marain.Tenancy.Client.Models.TenantResponse.CreateFromDiscriminatorValue, errorMapping, cancellationToken).ConfigureAwait(false);
         }
+        /// <summary>
+        /// Updates tenant properties using JSON Patch operations.
+        /// </summary>
         /// <returns>A <see cref="global::Marain.Tenancy.Client.Models.TenantResponse"/></returns>
         /// <param name="body">The request body</param>
         /// <param name="cancellationToken">Cancellation token to use when cancelling requests</param>
@@ -85,6 +91,9 @@ namespace Marain.Tenancy.Client.Item.Marain.Tenant
             };
             return await RequestAdapter.SendAsync<global::Marain.Tenancy.Client.Models.TenantResponse>(requestInfo, global::Marain.Tenancy.Client.Models.TenantResponse.CreateFromDiscriminatorValue, errorMapping, cancellationToken).ConfigureAwait(false);
         }
+        /// <summary>
+        /// Creates a new child tenant under the specified parent tenant.
+        /// </summary>
         /// <returns>A <see cref="global::Marain.Tenancy.Client.Models.TenantResponse"/></returns>
         /// <param name="body">The request body</param>
         /// <param name="cancellationToken">Cancellation token to use when cancelling requests</param>
@@ -109,6 +118,9 @@ namespace Marain.Tenancy.Client.Item.Marain.Tenant
             };
             return await RequestAdapter.SendAsync<global::Marain.Tenancy.Client.Models.TenantResponse>(requestInfo, global::Marain.Tenancy.Client.Models.TenantResponse.CreateFromDiscriminatorValue, errorMapping, cancellationToken).ConfigureAwait(false);
         }
+        /// <summary>
+        /// Retrieves detailed information about a specific tenant.
+        /// </summary>
         /// <returns>A <see cref="RequestInformation"/></returns>
         /// <param name="requestConfiguration">Configuration for the request such as headers, query parameters, and middleware options.</param>
 #if NETSTANDARD2_1_OR_GREATER || NETCOREAPP3_1_OR_GREATER
@@ -125,6 +137,9 @@ namespace Marain.Tenancy.Client.Item.Marain.Tenant
             requestInfo.Headers.TryAdd("Accept", "application/json");
             return requestInfo;
         }
+        /// <summary>
+        /// Updates tenant properties using JSON Patch operations.
+        /// </summary>
         /// <returns>A <see cref="RequestInformation"/></returns>
         /// <param name="body">The request body</param>
         /// <param name="requestConfiguration">Configuration for the request such as headers, query parameters, and middleware options.</param>
@@ -144,6 +159,9 @@ namespace Marain.Tenancy.Client.Item.Marain.Tenant
             requestInfo.SetContentFromParsable(RequestAdapter, "application/json", body);
             return requestInfo;
         }
+        /// <summary>
+        /// Creates a new child tenant under the specified parent tenant.
+        /// </summary>
         /// <returns>A <see cref="RequestInformation"/></returns>
         /// <param name="body">The request body</param>
         /// <param name="requestConfiguration">Configuration for the request such as headers, query parameters, and middleware options.</param>

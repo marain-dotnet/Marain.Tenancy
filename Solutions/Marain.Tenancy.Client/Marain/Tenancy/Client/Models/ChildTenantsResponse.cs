@@ -20,22 +20,16 @@ namespace Marain.Tenancy.Client.Models
 #else
         public string ContinuationToken { get; set; }
 #endif
-        /// <summary>The _embedded property</summary>
-#if NETSTANDARD2_1_OR_GREATER || NETCOREAPP3_1_OR_GREATER
-#nullable enable
-        public global::Marain.Tenancy.Client.Models.ChildTenantsEmbedded? Embedded { get; set; }
-#nullable restore
-#else
-        public global::Marain.Tenancy.Client.Models.ChildTenantsEmbedded Embedded { get; set; }
-#endif
         /// <summary>The _links property</summary>
 #if NETSTANDARD2_1_OR_GREATER || NETCOREAPP3_1_OR_GREATER
 #nullable enable
-        public global::Marain.Tenancy.Client.Models.ChildTenantsResponse__links? Links { get; set; }
+        public global::Marain.Tenancy.Client.Models.ChildTenantLinksResponse? Links { get; set; }
 #nullable restore
 #else
-        public global::Marain.Tenancy.Client.Models.ChildTenantsResponse__links Links { get; set; }
+        public global::Marain.Tenancy.Client.Models.ChildTenantLinksResponse Links { get; set; }
 #endif
+        /// <summary>The maxItems property</summary>
+        public int? MaxItems { get; set; }
         /// <summary>
         /// Creates a new instance of the appropriate class based on discriminator value
         /// </summary>
@@ -55,8 +49,8 @@ namespace Marain.Tenancy.Client.Models
             return new Dictionary<string, Action<IParseNode>>
             {
                 { "continuationToken", n => { ContinuationToken = n.GetStringValue(); } },
-                { "_embedded", n => { Embedded = n.GetObjectValue<global::Marain.Tenancy.Client.Models.ChildTenantsEmbedded>(global::Marain.Tenancy.Client.Models.ChildTenantsEmbedded.CreateFromDiscriminatorValue); } },
-                { "_links", n => { Links = n.GetObjectValue<global::Marain.Tenancy.Client.Models.ChildTenantsResponse__links>(global::Marain.Tenancy.Client.Models.ChildTenantsResponse__links.CreateFromDiscriminatorValue); } },
+                { "_links", n => { Links = n.GetObjectValue<global::Marain.Tenancy.Client.Models.ChildTenantLinksResponse>(global::Marain.Tenancy.Client.Models.ChildTenantLinksResponse.CreateFromDiscriminatorValue); } },
+                { "maxItems", n => { MaxItems = n.GetIntValue(); } },
             };
         }
         /// <summary>
@@ -67,8 +61,8 @@ namespace Marain.Tenancy.Client.Models
         {
             _ = writer ?? throw new ArgumentNullException(nameof(writer));
             writer.WriteStringValue("continuationToken", ContinuationToken);
-            writer.WriteObjectValue<global::Marain.Tenancy.Client.Models.ChildTenantsEmbedded>("_embedded", Embedded);
-            writer.WriteObjectValue<global::Marain.Tenancy.Client.Models.ChildTenantsResponse__links>("_links", Links);
+            writer.WriteObjectValue<global::Marain.Tenancy.Client.Models.ChildTenantLinksResponse>("_links", Links);
+            writer.WriteIntValue("maxItems", MaxItems);
         }
     }
 }

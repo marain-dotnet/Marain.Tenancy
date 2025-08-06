@@ -7,6 +7,7 @@ namespace Microsoft.Extensions.DependencyInjection;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading.Tasks;
 using Corvus.ContentHandling;
 using Corvus.Json;
 using Corvus.Tenancy;
@@ -14,6 +15,7 @@ using Marain.Tenancy;
 using Marain.Tenancy.Client;
 using Marain.Tenancy.Client.Models;
 using Marain.Tenancy.Mappers;
+using Microsoft.Extensions.DependencyInjection;
 
 /// <summary>
 /// Extensions to register the Root tenant with the service collection.
@@ -21,7 +23,7 @@ using Marain.Tenancy.Mappers;
 public static class ClientTenantProviderServiceCollectionExtensions
 {
     /// <summary>
-    /// Adds the root tenant to the collection, using the <see cref="ITenancyService"/>.
+    /// Adds the root tenant to the collection, using the <see cref="TenancyApiClient"/>.
     /// </summary>
     /// <param name="services">The service collection to which to add the root tenant.</param>
     /// <returns>The configured service collection.</returns>
@@ -36,19 +38,20 @@ public static class ClientTenantProviderServiceCollectionExtensions
 
         // Construct a root tenant from the tenant retrieved from the service, using the
         // root tenant ID.
-        services.AddSingleton(s =>
-        {
-            ITenancyService tenancyService = s.GetRequiredService<ITenancyService>();
-            ITenantMapper tenantMapper = s.GetRequiredService<ITenantMapper>();
-            IPropertyBagFactory propertyBagFactory = s.GetRequiredService<IPropertyBagFactory>();
-            TenantResponse? rootTenantResponse = tenancyService.GetTenantAsync(RootTenant.RootTenantId).GetAwaiter().GetResult();
-            ArgumentNullException.ThrowIfNull(rootTenantResponse, "Unable to retrieve root tenant from service");
-            ITenant fetchedRootTenant = tenantMapper.MapTenant(rootTenantResponse);
-            var localRootTenant = new RootTenant(propertyBagFactory);
-            IReadOnlyDictionary<string, object> propertiesToSetOrAdd = fetchedRootTenant.Properties.AsDictionary();
-            localRootTenant.UpdateProperties(propertiesToSetOrAdd);
-            return localRootTenant;
-        });
+        ////services.AddSingleton(s =>
+        ////{
+        ////    throw new NotImplementedException();
+        ////    ITenancyService tenancyService = s.GetRequiredService<ITenancyService>();
+        ////    ITenantMapper tenantMapper = s.GetRequiredService<ITenantMapper>();
+        ////    IPropertyBagFactory propertyBagFactory = s.GetRequiredService<IPropertyBagFactory>();
+        ////    TenantResponse? rootTenantResponse = tenancyService.GetTenantAsync(RootTenant.RootTenantId).GetAwaiter().GetResult();
+        ////    ArgumentNullException.ThrowIfNull(rootTenantResponse, "Unable to retrieve root tenant from service");
+        ////    ITenant fetchedRootTenant = tenantMapper.MapTenant(rootTenantResponse);
+        ////    var localRootTenant = new RootTenant(propertyBagFactory);
+        ////    IReadOnlyDictionary<string, object> propertiesToSetOrAdd = fetchedRootTenant.Properties.AsDictionary();
+        ////    localRootTenant.UpdateProperties(propertiesToSetOrAdd);
+        ////    return localRootTenant;
+        ////});
 
         return services;
     }

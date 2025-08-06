@@ -29,7 +29,8 @@
       "WebFetch(domain:github.com)",
       "WebFetch(domain:learn.microsoft.com)",
       "WebFetch(domain:adolfi.dev)",
-      "WebFetch(domain:cezarypiatek.github.io)"
+      "WebFetch(domain:cezarypiatek.github.io)",
+      "WebFetch(domain:docs.nunit.org)"
     ],
     "deny": []
   }

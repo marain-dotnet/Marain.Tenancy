@@ -5,6 +5,7 @@
 namespace Marain.Tenancy.MinimalApi.Endpoints;
 
 using System.Collections.Generic;
+using System.Collections.ObjectModel;
 using System.Linq;
 using System.Threading.Tasks;
 using Corvus.Json;
@@ -14,6 +15,7 @@ using Marain.Tenancy.MinimalApi.ErrorHandling;
 using Marain.Tenancy.MinimalApi.Models;
 using Marain.Tenancy.MinimalApi.Validation;
 using Microsoft.AspNetCore.Http.HttpResults;
+using Microsoft.CodeAnalysis.CSharp.Syntax;
 
 /// <summary>
 /// Contains endpoint implementations for tenant operations.
@@ -31,12 +33,14 @@ public static class TenantEndpoints
                 [AsParameters] GetTenantParameters parameters,
                 ITenantStore tenantStore,
                 IPropertyBagFactory propertyBagFactory,
+                LinkGenerator linkGenerator,
                 HttpContext context) =>
-                GetTenant(parameters, tenantStore, propertyBagFactory, context))
-            .WithName("GetTenant")
+                GetTenant(parameters, tenantStore, propertyBagFactory, linkGenerator, context))
+            .WithName(EndpointNames.GetTenant)
             .WithSummary("Get a tenant by ID")
             .WithDescription("Retrieves detailed information about a specific tenant.")
             .Produces<TenantResponse>()
+            .Produces(StatusCodes.Status304NotModified)
             .ProducesProblem(StatusCodes.Status404NotFound)
             .ProducesValidationProblem()
             .AddValidation<GetTenantParameters>()
@@ -44,9 +48,11 @@ public static class TenantEndpoints
 
         group.MapPost("/", (
                 [AsParameters] CreateChildTenantParameters parameters,
-                ITenantStore tenantStore) =>
-                CreateChildTenant(parameters, tenantStore))
-            .WithName("CreateChildTenant")
+                ITenantStore tenantStore,
+                LinkGenerator linkGenerator,
+                HttpContext context) =>
+                CreateChildTenant(parameters, tenantStore, linkGenerator, context))
+            .WithName(EndpointNames.CreateChildTenant)
             .WithSummary("Create a child tenant")
             .WithDescription("Creates a new child tenant under the specified parent tenant.")
             .Produces<TenantResponse>(StatusCodes.Status201Created)
@@ -56,9 +62,11 @@ public static class TenantEndpoints
 
         group.MapGet("/children", (
                 [AsParameters] GetChildrenParameters parameters,
-                ITenantStore tenantStore) =>
-                GetChildTenants(parameters, tenantStore))
-            .WithName("GetChildTenants")
+                ITenantStore tenantStore,
+                LinkGenerator linkGenerator,
+                HttpContext context) =>
+                GetChildTenants(parameters, tenantStore, linkGenerator, context))
+            .WithName(EndpointNames.GetChildTenants)
             .WithSummary("Get child tenants")
             .WithDescription("Retrieves a paginated list of child tenants.")
             .Produces<ChildTenantsResponse>()
@@ -68,9 +76,11 @@ public static class TenantEndpoints
 
         group.MapPatch("/", (
                 [AsParameters] UpdateTenantParameters parameters,
-                ITenantStore tenantStore) =>
-                UpdateTenant(parameters, tenantStore))
-            .WithName("UpdateTenant")
+                ITenantStore tenantStore,
+                LinkGenerator linkGenerator,
+                HttpContext context) =>
+                UpdateTenant(parameters, tenantStore, linkGenerator, context))
+            .WithName(EndpointNames.UpdateTenant)
             .WithSummary("Update a tenant")
             .WithDescription("Updates tenant properties using JSON Patch operations.")
             .Produces<TenantResponse>()
@@ -82,7 +92,7 @@ public static class TenantEndpoints
                 [AsParameters] DeleteChildTenantParameters parameters,
                 ITenantStore tenantStore) =>
                 DeleteChildTenant(parameters, tenantStore))
-            .WithName("DeleteChildTenant")
+            .WithName(EndpointNames.DeleteChildTenant)
             .WithSummary("Delete a child tenant")
             .WithDescription("Deletes a child tenant and all its resources.")
             .Produces(StatusCodes.Status204NoContent)
@@ -97,6 +107,7 @@ public static class TenantEndpoints
         GetTenantParameters parameters,
         ITenantStore tenantStore,
         IPropertyBagFactory propertyBagFactory,
+        LinkGenerator linkGenerator,
         HttpContext context)
     {
         try
@@ -106,7 +117,7 @@ public static class TenantEndpoints
                 ? GetRedactedRootTenant(propertyBagFactory)
                 : await tenantStore.GetTenantAsync(parameters.TenantId, etag);
 
-            TenantResponse response = MapTenantToResponse(tenant);
+            TenantResponse response = MapTenantToResponse(tenant, linkGenerator, context);
 
             // Set ETag header
             if (!string.IsNullOrEmpty(tenant.ETag))
@@ -128,7 +139,9 @@ public static class TenantEndpoints
 
     private static async Task<Results<Created<TenantResponse>, ProblemHttpResult>> CreateChildTenant(
         CreateChildTenantParameters parameters,
-        ITenantStore tenantStore)
+        ITenantStore tenantStore,
+        LinkGenerator linkGenerator,
+        HttpContext context)
     {
         try
         {
@@ -149,7 +162,14 @@ public static class TenantEndpoints
                     parameters.TenantName);
             }
 
-            TenantResponse response = MapTenantToResponse(childTenant);
+            TenantResponse response = MapTenantToResponse(childTenant, linkGenerator, context);
+
+            // Set ETag header
+            if (!string.IsNullOrEmpty(childTenant.ETag))
+            {
+                context.Response.Headers.ETag = childTenant.ETag;
+            }
+
             return TypedResults.Created($"/{childTenant.Id}/marain/tenant", response);
         }
         catch (TenantNotFoundException)
@@ -162,9 +182,21 @@ public static class TenantEndpoints
         }
     }
 
+    private static LinkResponse BuildGetChildrenLink(string tenantId, int maxItems, string? continuationToken, LinkGenerator linkGenerator, HttpContext context)
+    {
+        string href = linkGenerator.GetUriByName(
+            context,
+            EndpointNames.GetChildTenants,
+            new { tenantId, maxItems, continuationToken }) ?? throw new InvalidOperationException("Unable to generate self link for GetChildTenants");
+
+        return new() { Href = href };
+    }
+
     private static async Task<Results<Ok<ChildTenantsResponse>, ProblemHttpResult>> GetChildTenants(
         GetChildrenParameters parameters,
-        ITenantStore tenantStore)
+        ITenantStore tenantStore,
+        LinkGenerator linkGenerator,
+        HttpContext context)
     {
         try
         {
@@ -174,17 +206,29 @@ public static class TenantEndpoints
                 limit,
                 parameters.ContinuationToken);
 
-            List<TenantResponse> childTenants = [];
-            foreach (string childId in children.Tenants)
-            {
-                ITenant childTenant = await tenantStore.GetTenantAsync(childId, null);
-                childTenants.Add(MapTenantToResponse(childTenant));
-            }
+            LinkResponse selfLink = BuildGetChildrenLink(parameters.TenantId, limit, parameters.ContinuationToken, linkGenerator, context);
+
+            LinkResponse? nextLink = string.IsNullOrEmpty(children.ContinuationToken)
+                ? null
+                : BuildGetChildrenLink(parameters.TenantId, limit, children.ContinuationToken, linkGenerator, context);
+
+            IReadOnlyList<LinkResponse> getChildTenantLinks = children.Tenants.Select(
+                tenantId => new LinkResponse { Href = BuildTenantLink(tenantId, linkGenerator, context) }).ToList().AsReadOnly();
+
+            IReadOnlyList<LinkResponse> deleteChildTenantLinks = children.Tenants.Select(
+                tenantId => new LinkResponse { Href = BuildTenantLink(tenantId, linkGenerator, context) }).ToList().AsReadOnly();
 
             ChildTenantsResponse response = new()
             {
-                Embedded = new() { Tenants = childTenants },
                 ContinuationToken = children.ContinuationToken,
+                MaxItems = limit,
+                Links = new()
+                {
+                    Self = selfLink,
+                    Next = nextLink,
+                    DeleteTenant = deleteChildTenantLinks,
+                    GetTenant = getChildTenantLinks,
+                },
             };
 
             return TypedResults.Ok(response);
@@ -197,7 +241,9 @@ public static class TenantEndpoints
 
     private static async Task<Results<Ok<TenantResponse>, ProblemHttpResult>> UpdateTenant(
         UpdateTenantParameters parameters,
-        ITenantStore tenantStore)
+        ITenantStore tenantStore,
+        LinkGenerator linkGenerator,
+        HttpContext context)
     {
         try
         {
@@ -218,7 +264,7 @@ public static class TenantEndpoints
                 propertiesToUpdate,
                 null);
 
-            TenantResponse response = MapTenantToResponse(updatedTenant);
+            TenantResponse response = MapTenantToResponse(updatedTenant, linkGenerator, context);
             return TypedResults.Ok(response);
         }
         catch (TenantNotFoundException)
@@ -255,7 +301,7 @@ public static class TenantEndpoints
         return new RedactedRootTenant(propertyBagFactory);
     }
 
-    private static TenantResponse MapTenantToResponse(ITenant tenant)
+    private static TenantResponse MapTenantToResponse(ITenant tenant, LinkGenerator linkGenerator, HttpContext context)
     {
         Dictionary<string, object> properties = [];
 
@@ -269,13 +315,28 @@ public static class TenantEndpoints
             }
         }
 
+        string selfLink = BuildTenantLink(tenant.Id, linkGenerator, context);
+        string childrenLink = linkGenerator.GetUriByName(context, EndpointNames.GetChildTenants, new { tenantId = tenant.Id })
+            ?? throw new InvalidOperationException($"Unable to generate children link for tenant Id {tenant.Id}");
+
         return new()
         {
             Id = tenant.Id,
             Name = tenant.Name,
             ContentType = "application/vnd.marain.tenant",
             Properties = properties,
+            Links = new()
+            {
+                Self = new() { Href = selfLink },
+                Children = new() { Href = childrenLink },
+            },
         };
+    }
+
+    private static string BuildTenantLink(string tenantId, LinkGenerator linkGenerator, HttpContext context)
+    {
+        return linkGenerator.GetUriByName(context, EndpointNames.GetTenant, new { tenantId = tenantId })
+            ?? throw new InvalidOperationException($"Unable to generate self link for tenant Id {tenantId}");
     }
 
     private class RedactedRootTenant : ITenant
@@ -293,7 +354,7 @@ public static class TenantEndpoints
 
         public string? ETag
         {
-            get => null;
+            get => RootTenant.RootTenantId;
             set => throw new NotSupportedException();
         }
 

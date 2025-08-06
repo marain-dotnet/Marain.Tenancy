@@ -3,12 +3,12 @@
 # Generate Kiota client for Marain.Tenancy API
 
 param(
-    [string]$ApiUrl = "http://localhost:5000",
+    [string]$ApiUrl = "http://localhost:5138",
     [string]$OutputPath = "Marain/Tenancy/Client",
     [string]$Namespace = "Marain.Tenancy.Client"
 )
 
-Write-Output "Generating Kiota client from $ApiUrl/swagger/v1/swagger.json"
+Write-Output "Generating Kiota client from $ApiUrl/swagger"
 Write-Output "Output path: $OutputPath"
 Write-Output "Namespace: $Namespace"
 
@@ -22,7 +22,7 @@ New-Item -ItemType Directory -Path $FullOutputPath -Force | Out-Null
 
 # Generate Kiota client
 kiota generate `
-    --openapi "$ApiUrl/swagger/v1/swagger.json" `
+    --openapi "$ApiUrl/swagger" `
     --language CSharp `
     --output $FullOutputPath `
     --namespace-name $Namespace `

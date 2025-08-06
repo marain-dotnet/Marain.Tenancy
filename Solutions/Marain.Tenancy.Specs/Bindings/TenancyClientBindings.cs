@@ -4,9 +4,11 @@
 
 namespace Marain.Tenancy.Specs.Bindings;
 
+using System;
 using System.Collections.Generic;
+using System.Net.Http;
 using Corvus.Testing.ReqnRoll;
-using Marain.Tenancy.Client;
+using Marain.Tenancy.Specs.Helpers;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Reqnroll;
@@ -21,33 +23,16 @@ public static class TenancyClientBindings
     /// Configures the DI container before tests start.
     /// </summary>
     /// <param name="featureContext">The Reqnroll test context.</param>
-    [BeforeFeature("@withTenancyClient", Order = ContainerBeforeFeatureOrder.PopulateServiceCollection)]
+    [BeforeFeature("@useTenancyClient", Order = ContainerBeforeFeatureOrder.PopulateServiceCollection)]
     public static void SetupFeature(FeatureContext featureContext)
     {
-        ////ContainerBindings.ConfigureServices(
-        ////    featureContext,
-        ////    serviceCollection =>
-        ////    {
-        ////        if (FunctionBindings.TestHostMode == MultiHost.TestHostModes.TenancyClient)
-        ////        {
-        ////            var configData = new Dictionary<string, string?>
-        ////            {
-        ////                { "TenancyServiceBaseUri", "http://localhost:7071" },
-        ////            };
-        ////            IConfiguration config = new ConfigurationBuilder()
-        ////                .AddInMemoryCollection(configData)
-        ////                .AddEnvironmentVariables()
-        ////                .AddJsonFile("local.settings.json", true, true)
-        ////                .Build();
-        ////            serviceCollection.AddSingleton(config);
-
-        ////            // Add the Tenancy client services
-        ////            string? baseUri = config["TenancyServiceBaseUri"];
-        ////            if (!string.IsNullOrEmpty(baseUri))
-        ////            {
-        ////                serviceCollection.AddUnauthenticatedTenancyClient(baseUri);
-        ////            }
-        ////        }
-        ////    });
+        ContainerBindings.ConfigureServices(
+            featureContext,
+            serviceCollection =>
+            {
+                serviceCollection.AddUnauthenticatedTenancyClient(
+                    MinimalApiWebApplicationFactory.Current.Server.BaseAddress.ToString(),
+                    MinimalApiWebApplicationFactory.Current.Server.CreateHandler());
+            });
     }
 }

@@ -31,10 +31,10 @@ namespace Marain.Tenancy.Client.Models
         /// <summary>The _links property</summary>
 #if NETSTANDARD2_1_OR_GREATER || NETCOREAPP3_1_OR_GREATER
 #nullable enable
-        public global::Marain.Tenancy.Client.Models.TenantResponse__links? Links { get; set; }
+        public global::Marain.Tenancy.Client.Models.TenantLinksResponse? Links { get; set; }
 #nullable restore
 #else
-        public global::Marain.Tenancy.Client.Models.TenantResponse__links Links { get; set; }
+        public global::Marain.Tenancy.Client.Models.TenantLinksResponse Links { get; set; }
 #endif
         /// <summary>The name property</summary>
 #if NETSTANDARD2_1_OR_GREATER || NETCOREAPP3_1_OR_GREATER
@@ -72,7 +72,7 @@ namespace Marain.Tenancy.Client.Models
             {
                 { "contentType", n => { ContentType = n.GetStringValue(); } },
                 { "id", n => { Id = n.GetStringValue(); } },
-                { "_links", n => { Links = n.GetObjectValue<global::Marain.Tenancy.Client.Models.TenantResponse__links>(global::Marain.Tenancy.Client.Models.TenantResponse__links.CreateFromDiscriminatorValue); } },
+                { "_links", n => { Links = n.GetObjectValue<global::Marain.Tenancy.Client.Models.TenantLinksResponse>(global::Marain.Tenancy.Client.Models.TenantLinksResponse.CreateFromDiscriminatorValue); } },
                 { "name", n => { Name = n.GetStringValue(); } },
                 { "properties", n => { Properties = n.GetObjectValue<global::Marain.Tenancy.Client.Models.TenantResponse_properties>(global::Marain.Tenancy.Client.Models.TenantResponse_properties.CreateFromDiscriminatorValue); } },
             };
@@ -86,7 +86,7 @@ namespace Marain.Tenancy.Client.Models
             _ = writer ?? throw new ArgumentNullException(nameof(writer));
             writer.WriteStringValue("contentType", ContentType);
             writer.WriteStringValue("id", Id);
-            writer.WriteObjectValue<global::Marain.Tenancy.Client.Models.TenantResponse__links>("_links", Links);
+            writer.WriteObjectValue<global::Marain.Tenancy.Client.Models.TenantLinksResponse>("_links", Links);
             writer.WriteStringValue("name", Name);
             writer.WriteObjectValue<global::Marain.Tenancy.Client.Models.TenantResponse_properties>("properties", Properties);
         }

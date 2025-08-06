@@ -35,7 +35,7 @@ namespace Marain.Tenancy.Client.Item.Marain.Tenant.Children
         /// </summary>
         /// <param name="pathParameters">Path parameters for the request</param>
         /// <param name="requestAdapter">The request adapter to use to execute the requests.</param>
-        public ChildrenRequestBuilder(Dictionary<string, object> pathParameters, IRequestAdapter requestAdapter) : base(requestAdapter, "{+baseurl}/{tenantId}/marain/tenant/children{?continuationToken*,maxItems*}", pathParameters)
+        public ChildrenRequestBuilder(Dictionary<string, object> pathParameters, IRequestAdapter requestAdapter) : base(requestAdapter, "{+baseurl}/{tenantId}/marain/tenant/children{?ContinuationToken*,MaxItems*}", pathParameters)
         {
         }
         /// <summary>
@@ -43,9 +43,12 @@ namespace Marain.Tenancy.Client.Item.Marain.Tenant.Children
         /// </summary>
         /// <param name="rawUrl">The raw URL to use for the request builder.</param>
         /// <param name="requestAdapter">The request adapter to use to execute the requests.</param>
-        public ChildrenRequestBuilder(string rawUrl, IRequestAdapter requestAdapter) : base(requestAdapter, "{+baseurl}/{tenantId}/marain/tenant/children{?continuationToken*,maxItems*}", rawUrl)
+        public ChildrenRequestBuilder(string rawUrl, IRequestAdapter requestAdapter) : base(requestAdapter, "{+baseurl}/{tenantId}/marain/tenant/children{?ContinuationToken*,MaxItems*}", rawUrl)
         {
         }
+        /// <summary>
+        /// Retrieves a paginated list of child tenants.
+        /// </summary>
         /// <returns>A <see cref="global::Marain.Tenancy.Client.Models.ChildTenantsResponse"/></returns>
         /// <param name="cancellationToken">Cancellation token to use when cancelling requests</param>
         /// <param name="requestConfiguration">Configuration for the request such as headers, query parameters, and middleware options.</param>
@@ -68,6 +71,9 @@ namespace Marain.Tenancy.Client.Item.Marain.Tenant.Children
             };
             return await RequestAdapter.SendAsync<global::Marain.Tenancy.Client.Models.ChildTenantsResponse>(requestInfo, global::Marain.Tenancy.Client.Models.ChildTenantsResponse.CreateFromDiscriminatorValue, errorMapping, cancellationToken).ConfigureAwait(false);
         }
+        /// <summary>
+        /// Retrieves a paginated list of child tenants.
+        /// </summary>
         /// <returns>A <see cref="RequestInformation"/></returns>
         /// <param name="requestConfiguration">Configuration for the request such as headers, query parameters, and middleware options.</param>
 #if NETSTANDARD2_1_OR_GREATER || NETCOREAPP3_1_OR_GREATER
@@ -93,21 +99,19 @@ namespace Marain.Tenancy.Client.Item.Marain.Tenant.Children
         {
             return new global::Marain.Tenancy.Client.Item.Marain.Tenant.Children.ChildrenRequestBuilder(rawUrl, RequestAdapter);
         }
+        /// <summary>
+        /// Retrieves a paginated list of child tenants.
+        /// </summary>
         [global::System.CodeDom.Compiler.GeneratedCode("Kiota", "1.0.0")]
-        #pragma warning disable CS1591
         public partial class ChildrenRequestBuilderGetQueryParameters 
-        #pragma warning restore CS1591
         {
 #if NETSTANDARD2_1_OR_GREATER || NETCOREAPP3_1_OR_GREATER
 #nullable enable
-            [QueryParameter("continuationToken")]
             public string? ContinuationToken { get; set; }
 #nullable restore
 #else
-            [QueryParameter("continuationToken")]
             public string ContinuationToken { get; set; }
 #endif
-            [QueryParameter("maxItems")]
             public int? MaxItems { get; set; }
         }
     }

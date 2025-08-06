@@ -4,27 +4,22 @@
 
 namespace Marain.Tenancy.Specs.Bindings;
 
-using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Net.Http;
 using System.Threading.Tasks;
-
-using Corvus.Testing.ReqnRoll;
-
-using Microsoft.Extensions.DependencyInjection;
-
+using Microsoft.Testing.Platform.Requests;
 using Reqnroll;
 
 [Binding]
 public class TestTenantCleanup
 {
-    private static readonly HttpClient HttpClient = new();
     private readonly HashSet<(string ParentId, string TenantId)> tenantsToDelete = new();
 
-    public void AddTenantToDelete(string parentId, string id)
+    public void AddTenantToDelete(string? parentId, string? id)
     {
-        this.tenantsToDelete.Add((parentId, id));
+        if (!string.IsNullOrEmpty(parentId) && !string.IsNullOrEmpty(id))
+        {
+            this.tenantsToDelete.Add((parentId, id));
+        }
     }
 
     public void AddWellKnownTenantToDelete(string parentId, string id)
@@ -32,7 +27,7 @@ public class TestTenantCleanup
         this.tenantsToDelete.Add((parentId, id));
     }
 
-    [AfterScenario("@useTenancyFunction")]
+    [AfterScenario("@useTenancyApi")]
     public async Task CleanUpTestTenants(FeatureContext featureContext)
     {
         await Task.CompletedTask;

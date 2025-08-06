@@ -4,7 +4,6 @@
 
 namespace Marain.Tenancy.MinimalApi.Models;
 
-using System.Collections.Frozen;
 using System.Text.Json.Serialization;
 
 /// <summary>
@@ -40,5 +39,5 @@ public sealed record TenantResponse
     /// Gets the HAL-style links for the tenant.
     /// </summary>
     [JsonPropertyName("_links")]
-    public FrozenDictionary<string, LinkResponse>? Links { get; init; }
+    public required TenantLinksResponse Links { get; init; }
 }

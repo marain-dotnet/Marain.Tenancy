@@ -33,6 +33,9 @@ namespace Marain.Tenancy.Client.Item.Marain.Tenant.Children.Item
         public WithChildTenantItemRequestBuilder(string rawUrl, IRequestAdapter requestAdapter) : base(requestAdapter, "{+baseurl}/{tenantId}/marain/tenant/children/{childTenantId}", rawUrl)
         {
         }
+        /// <summary>
+        /// Deletes a child tenant and all its resources.
+        /// </summary>
         /// <param name="cancellationToken">Cancellation token to use when cancelling requests</param>
         /// <param name="requestConfiguration">Configuration for the request such as headers, query parameters, and middleware options.</param>
         /// <exception cref="global::Marain.Tenancy.Client.Models.HttpValidationProblemDetails">When receiving a 400 status code</exception>
@@ -54,6 +57,9 @@ namespace Marain.Tenancy.Client.Item.Marain.Tenant.Children.Item
             };
             await RequestAdapter.SendNoContentAsync(requestInfo, errorMapping, cancellationToken).ConfigureAwait(false);
         }
+        /// <summary>
+        /// Deletes a child tenant and all its resources.
+        /// </summary>
         /// <returns>A <see cref="RequestInformation"/></returns>
         /// <param name="requestConfiguration">Configuration for the request such as headers, query parameters, and middleware options.</param>
 #if NETSTANDARD2_1_OR_GREATER || NETCOREAPP3_1_OR_GREATER

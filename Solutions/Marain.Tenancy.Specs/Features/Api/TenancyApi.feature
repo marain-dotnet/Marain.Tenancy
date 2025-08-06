@@ -20,6 +20,10 @@ Scenario: Create a tenant
 	| f26450ab1668784bb327951c8b08f347 | Test |
 	Then I receive a 'Created' response
 	And the response should contain a Location header
+	And the response should contain an Etag header
+	And the response content should have a string property called 'name' with value 'Test'
+	And the response content should contain a "self" link
+	And the response content should contain a "children" link
 
 Scenario: Get the root tenant
 	When I request the tenant with Id 'f26450ab1668784bb327951c8b08f347' from the API
@@ -27,6 +31,8 @@ Scenario: Get the root tenant
 	And the response content should have a string property called 'name' with value 'Root'
 	And the response should not contain an Etag header
 	And the response should contain a Cache-Control header with value 'max-age=300'
+	And the response content should contain a "self" link with href "/f26450ab1668784bb327951c8b08f347/marain/tenant" 
+	And the response content should contain a "children" link with href "/f26450ab1668784bb327951c8b08f347/marain/tenant/children" 
 
 Scenario: Retrieve a newly created tenant using the location header returned from the create request
 	Given I have used the API to create a new tenant

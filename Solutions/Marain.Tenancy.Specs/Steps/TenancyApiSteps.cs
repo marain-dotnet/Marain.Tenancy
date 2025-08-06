@@ -12,7 +12,8 @@ using System.Text.Json.Nodes;
 using System.Threading.Tasks;
 
 using Marain.Tenancy.Specs.Bindings;
-
+using Marain.Tenancy.Specs.Helpers;
+using Microsoft.Extensions.DependencyModel;
 using Newtonsoft.Json.Linq;
 
 using NUnit.Framework;
@@ -22,13 +23,9 @@ using Reqnroll;
 [Binding]
 public class TenancyApiSteps
 {
-    private static readonly HttpClient HttpClient = new();
     private readonly Dictionary<string, string> namedIds = new();
     private readonly TestTenantCleanup testTenantCleanup;
-    private readonly MinimalApiTestableTenancyService serviceWrapper;
     private readonly ScenarioContext scenarioContext;
-    private HttpResponseMessage? response;
-    private string? responseContent;
     private TenancyResponse? tenancyResponse;
 
     public TenancyApiSteps(
@@ -36,7 +33,6 @@ public class TenancyApiSteps
         ScenarioContext scenarioContext)
     {
         this.testTenantCleanup = testTenantCleanup;
-        this.serviceWrapper = new MinimalApiTestableTenancyService();
         this.scenarioContext = scenarioContext;
     }
 
@@ -45,7 +41,7 @@ public class TenancyApiSteps
     [When(@"I request the tenancy service \/swagger endpoint")]
     public async Task WhenIRequestTheTenancyServiceEndpoint()
     {
-        this.tenancyResponse = await this.serviceWrapper.GetSwaggerAsync();
+        await this.GetSwaggerAsync();
     }
 
     [Given("I have requested the tenant with the ID called '([^']*)'")]
@@ -57,19 +53,19 @@ public class TenancyApiSteps
     [When("I request the tenant with Id '(.*)' from the API")]
     public async Task WhenIRequestTheTenantWithIdFromTheAPI(string tenantId)
     {
-        this.tenancyResponse = await this.serviceWrapper.GetTenantAsync(tenantId);
+        await this.GetTenantAsync(tenantId);
     }
 
     [When("I request the tenant using the Location from the previous response")]
     public async Task WhenIRequestTheTenantUsingTheLocationFromThePreviousResponse()
     {
-        this.tenancyResponse = await this.serviceWrapper.GetTenantByLocationAsync(this.Response.LocationHeader ?? throw new InvalidOperationException("This test step should only be executed if an earlier step produced a response with a location header."));
+        await this.GetTenantByLocationAsync(this.Response.LocationHeader ?? throw new InvalidOperationException("This test step should only be executed if an earlier step produced a response with a location header."));
     }
 
     [When("I request the tenant using the ID called '([^']*)' and the Etag from the previous response")]
     public async Task WhenIRequestTheTenantUsingTheIDCalledAndTheEtagFromThePreviousResponseAsync(string idName)
     {
-        this.tenancyResponse = await this.serviceWrapper.GetTenantAsync(this.namedIds[idName], this.Response.EtagHeader);
+        await this.GetTenantAsync(this.namedIds[idName], this.Response.EtagHeader);
     }
 
     [Given("I store the id from the response Location header as '([^']*)'")]
@@ -85,10 +81,10 @@ public class TenancyApiSteps
     }
 
     [Given("I have requested the tenant using the path called '(.*)'")]
-    public Task GivenIHaveRequestedTheTenantUsingThePathCalled(string name)
+    public async Task GivenIHaveRequestedTheTenantUsingThePathCalled(string name)
     {
         string path = this.scenarioContext.Get<string>(name);
-        return this.SendGetRequest(MinimalApiBindings.TenancyApiBaseUri, path);
+        await this.SendGetRequest(path);
     }
 
     [When("I request the tenant using the path called '(.*)' and the Etag from the previous response")]
@@ -97,7 +93,6 @@ public class TenancyApiSteps
         string path = this.scenarioContext.Get<string>(name);
 
         return this.SendGetRequest(
-            MinimalApiBindings.TenancyApiBaseUri,
             path,
             this.Response.EtagHeader ?? throw new InvalidOperationException("ETag not available from previous response"));
     }
@@ -109,7 +104,8 @@ public class TenancyApiSteps
         string parentId = table.Rows[0]["ParentTenantId"];
         string name = table.Rows[0]["Name"];
 
-        this.tenancyResponse = await this.serviceWrapper.CreateTenantAsync(parentId, name);
+        await this.CreateTenantAsync(parentId, name);
+
         if (this.Response.IsSuccessStatusCode && this.Response.LocationHeader is not null)
         {
             string id = this.GetTenantIdFromLocationHeader();
@@ -122,7 +118,7 @@ public class TenancyApiSteps
     public void ThenIReceiveAResponse(HttpStatusCode expectedStatusCode)
     {
         // If present, we'll use the response content as a message in case of failure
-        Assert.AreEqual(expectedStatusCode, this.Response.StatusCode, this.responseContent);
+        Assert.AreEqual(expectedStatusCode, this.Response.StatusCode, this.Response.BodyRaw);
     }
 
     [Then("the response should contain a Location header")]
@@ -149,8 +145,27 @@ public class TenancyApiSteps
         Assert.AreEqual(expectedValue, this.Response.CacheControlHeader);
     }
 
+    [Then("the response content should contain a {string} link")]
+    public void ThenTheResponseShouldContainALink(string linkName)
+    {
+        Assert.DoesNotThrow(() => this.GetPropertyNodeFromBodyJsonByPath($"_links.{linkName}"));
+    }
+
+    [Then("the response content should contain a {string} link with href {string}")]
+    public void ThenTheResponseShouldContainALinkWithHref(string linkName, string expectedHref)
+    {
+        this.ThenTheResponseObjectShouldHaveAStringPropertyCalledWithValue($"_links.{linkName}.href", expectedHref);
+    }
+
     [Then("the response content should have a string property called '(.*)' with value '(.*)'")]
     public void ThenTheResponseObjectShouldHaveAStringPropertyCalledWithValue(string propertyPath, string expectedValue)
+    {
+        JsonNode targetProperty = this.GetPropertyNodeFromBodyJsonByPath(propertyPath);
+        string? actualValue = targetProperty.GetValue<string>();
+        Assert.AreEqual(expectedValue, actualValue, $"Expected value of property '{propertyPath}' was '{expectedValue}', but actual value was '{actualValue}'");
+    }
+
+    private JsonNode GetPropertyNodeFromBodyJsonByPath(string propertyPath)
     {
         string[] pathElements = propertyPath.Split(".", StringSplitOptions.RemoveEmptyEntries);
 
@@ -161,8 +176,7 @@ public class TenancyApiSteps
             currentObject = currentObject[pathElement] ?? throw new InvalidOperationException($"Property named '{pathElement}' not found.");
         }
 
-        string? actualValue = currentObject.GetValue<string>();
-        Assert.AreEqual(expectedValue, actualValue, $"Expected value of property '{propertyPath}' was '{expectedValue}', but actual value was '{actualValue}'");
+        return currentObject;
     }
 
     private string GetTenantIdFromLocationHeader()
@@ -171,22 +185,101 @@ public class TenancyApiSteps
         return location[1..location.IndexOf('/', 1)];
     }
 
-    private async Task SendGetRequest(Uri baseUri, string path, string? etag = null)
+    private async Task CreateTenantAsync(string parentId, string name)
     {
-        var request = new HttpRequestMessage(HttpMethod.Get, new Uri(baseUri, path));
+        var requestBody = new { TenantName = name };
+        await this.SendPostRequest($"/{parentId}/marain/tenant", requestBody);
+    }
+
+    private async Task GetSwaggerAsync()
+    {
+        await this.SendGetRequest("/swagger");
+    }
+
+    private async Task GetTenantAsync(string tenantId, string? etag = null)
+    {
+        await this.SendGetRequest($"/{tenantId}/marain/tenant", etag);
+    }
+
+    private async Task GetTenantByLocationAsync(string location)
+    {
+        await this.SendGetRequest(location);
+    }
+
+    private async Task SetResponseAsync(HttpResponseMessage response)
+    {
+        string body = await response.Content.ReadAsStringAsync();
+
+        this.tenancyResponse = new TenancyResponse
+        {
+            LocationHeader = response!.Headers.Location?.ToString(),
+            EtagHeader = response.Headers.ETag?.Tag,
+            IsSuccessStatusCode = response.IsSuccessStatusCode,
+            StatusCode = response.StatusCode,
+            CacheControlHeader = response.Headers.CacheControl?.ToString(),
+            BodyRaw = body,
+            BodyJson = ParseResponseBody(response, body),
+        };
+    }
+
+    private static JsonObject? ParseResponseBody(HttpResponseMessage response, string responseContent)
+    {
+        if (response.IsSuccessStatusCode && !string.IsNullOrEmpty(responseContent))
+        {
+            try
+            {
+                return JsonNode.Parse(responseContent)?.AsObject();
+            }
+            catch
+            {
+                // If JSON parsing fails, leave parsedResponse as null
+            }
+        }
+
+        return null;
+    }
+
+    private async Task SendGetRequest(string path, string? etag = null)
+    {
+        var request = new HttpRequestMessage(HttpMethod.Get, path);
 
         if (!string.IsNullOrEmpty(etag))
         {
             request.Headers.Add("If-None-Match", etag);
         }
 
-        this.response = await HttpClient.SendAsync(request).ConfigureAwait(false);
-        this.responseContent = await this.response.Content.ReadAsStringAsync().ConfigureAwait(false);
+        HttpResponseMessage response = await MinimalApiWebApplicationFactory.Current.Client.SendAsync(request);
+        await this.SetResponseAsync(response);
+    }
 
-        if (this.response.IsSuccessStatusCode && !string.IsNullOrEmpty(this.responseContent))
+    private async Task SendPostRequest(string path, object? data)
+    {
+        HttpContent? content = null;
+
+        if (data is not null)
         {
-            var parsedResponse = JObject.Parse(this.responseContent);
-            this.scenarioContext.Set(parsedResponse);
+            string requestJson = System.Text.Json.JsonSerializer.Serialize(data);
+            content = new StringContent(requestJson, System.Text.Encoding.UTF8, "application/json");
         }
+
+        HttpResponseMessage response = await MinimalApiWebApplicationFactory.Current.Client.PostAsync(path, content);
+        await this.SetResponseAsync(response);
+    }
+
+    private class TenancyResponse
+    {
+        public string? LocationHeader { get; set; }
+
+        public string? EtagHeader { get; set; }
+
+        public bool IsSuccessStatusCode { get; set; }
+
+        public HttpStatusCode StatusCode { get; set; }
+
+        public string? CacheControlHeader { get; set; }
+
+        public string? BodyRaw { get; set; }
+
+        public JsonObject? BodyJson { get; set; }
     }
 }

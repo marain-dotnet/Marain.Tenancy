@@ -4,6 +4,7 @@
 
 namespace Marain.Tenancy.MinimalApi.Endpoints;
 
+using System.Net;
 using System.Threading.Tasks;
 using Marain.Tenancy.MinimalApi.Models;
 using Microsoft.Net.Http.Headers;
@@ -42,7 +43,11 @@ public class CachingEndpointFilter : IEndpointFilter
     /// <inheritdoc/>
     public async ValueTask<object?> InvokeAsync(EndpointFilterInvocationContext context, EndpointFilterDelegate next)
     {
-        context.HttpContext.Response.GetTypedHeaders().CacheControl = this.cacheControlHeaderValue;
+        if (context.HttpContext.Response.StatusCode == StatusCodes.Status200OK)
+        {
+            context.HttpContext.Response.GetTypedHeaders().CacheControl = this.cacheControlHeaderValue;
+        }
+
         return await next(context);
     }
 }

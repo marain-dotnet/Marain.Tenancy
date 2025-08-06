@@ -4,7 +4,6 @@
 
 namespace Marain.Tenancy.MinimalApi.Models;
 
-using System.Collections.Frozen;
 using System.Text.Json.Serialization;
 
 /// <summary>
@@ -16,13 +15,13 @@ public sealed record ChildTenantsResponse
     /// Gets the HAL-style links for the child tenants collection.
     /// </summary>
     [JsonPropertyName("_links")]
-    public FrozenDictionary<string, LinkResponse>? Links { get; init; }
+    public required ChildTenantLinksResponse Links { get; init; }
 
     /// <summary>
-    /// Gets the embedded child tenants data.
+    /// Gets the maximum items that were requested.
     /// </summary>
-    [JsonPropertyName("_embedded")]
-    public ChildTenantsEmbedded? Embedded { get; init; }
+    [JsonPropertyName("maxItems")]
+    public required int MaxItems { get; init; }
 
     /// <summary>
     /// Gets the continuation token for pagination.

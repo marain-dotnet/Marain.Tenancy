@@ -23,13 +23,13 @@ public class ClientTenantStore : ClientTenantProvider, ITenantStore
     /// Initializes a new instance of the <see cref="ClientTenantProvider"/> class.
     /// </summary>
     /// <param name="root">The Root tenant.</param>
-    /// <param name="tenantService">The tenant service.</param>
+    /// <param name="tenancyApiClient">The tenant service.</param>
     /// <param name="tenantMapper">The tenant mapper to use.</param>
     public ClientTenantStore(
         RootTenant root,
-        ITenancyService tenantService,
+        TenancyApiClient tenancyApiClient,
         ITenantMapper tenantMapper)
-        : base(root, tenantService, tenantMapper)
+        : base(root, tenancyApiClient, tenantMapper)
     {
     }
 
@@ -48,53 +48,57 @@ public class ClientTenantStore : ClientTenantProvider, ITenantStore
     /// <inheritdoc/>
     public async Task DeleteTenantAsync(string tenantId)
     {
-        try
-        {
-            // Extract parent tenant ID from the full tenant ID path
-            string parentTenantId = tenantId.Contains('/') ? tenantId.Substring(0, tenantId.LastIndexOf('/')) : throw new ArgumentException("Invalid tenant ID format");
-            await this.TenantService.DeleteChildTenantAsync(parentTenantId, tenantId).ConfigureAwait(false);
-        }
-        catch (ProblemDetails ex) when (ex.Status == 404)
-        {
-            throw new TenantNotFoundException();
-        }
-        catch (HttpValidationProblemDetails ex) when (ex.Status == 400)
-        {
-            throw new InvalidOperationException($"Invalid delete tenant request: {ex.Detail ?? ex.Title}");
-        }
+        await Task.CompletedTask;
+        throw new NotImplementedException();
+        ////try
+        ////{
+        ////    // Extract parent tenant ID from the full tenant ID path
+        ////    string parentTenantId = tenantId.Contains('/') ? tenantId.Substring(0, tenantId.LastIndexOf('/')) : throw new ArgumentException("Invalid tenant ID format");
+        ////    await this.TenantApiClient.DeleteChildTenantAsync(parentTenantId, tenantId).ConfigureAwait(false);
+        ////}
+        ////catch (ProblemDetails ex) when (ex.Status == 404)
+        ////{
+        ////    throw new TenantNotFoundException();
+        ////}
+        ////catch (HttpValidationProblemDetails ex) when (ex.Status == 400)
+        ////{
+        ////    throw new InvalidOperationException($"Invalid delete tenant request: {ex.Detail ?? ex.Title}");
+        ////}
     }
 
     /// <inheritdoc/>
     public async Task<TenantCollectionResult> GetChildrenAsync(string tenantId, int limit = 20, string? continuationToken = null)
     {
-        try
-        {
-            ChildTenantsResponse? result = await this.TenantService.GetChildTenantsAsync(tenantId, continuationToken, limit).ConfigureAwait(false);
+        await Task.CompletedTask;
+        throw new NotImplementedException();
+        ////try
+        ////{
+        ////    ChildTenantsResponse? result = await this.TenantApiClient.GetChildTenantsAsync(tenantId, continuationToken, limit).ConfigureAwait(false);
 
-            if (result == null)
-            {
-                throw new TenantNotFoundException();
-            }
+        ////    if (result == null)
+        ////    {
+        ////        throw new TenantNotFoundException();
+        ////    }
 
-            // Extract tenant IDs from the embedded tenants
-            List<string> tenantIds = result.Embedded?.Tenants?
-                .Where(t => !string.IsNullOrEmpty(t.Id))
-                .Select(t => t.Id!)
-                .ToList() ?? new List<string>();
+        ////    // Extract tenant IDs from the embedded tenants
+        ////    List<string> tenantIds = result.Embedded?.Tenants?
+        ////        .Where(t => !string.IsNullOrEmpty(t.Id))
+        ////        .Select(t => t.Id!)
+        ////        .ToList() ?? new List<string>();
 
-            // Use the continuation token from the response for pagination
-            string? nextContinuationToken = result.ContinuationToken;
+        ////    // Use the continuation token from the response for pagination
+        ////    string? nextContinuationToken = result.ContinuationToken;
 
-            return new TenantCollectionResult(tenantIds, nextContinuationToken);
-        }
-        catch (ProblemDetails ex) when (ex.Status == 404)
-        {
-            throw new TenantNotFoundException();
-        }
-        catch (HttpValidationProblemDetails ex) when (ex.Status == 400)
-        {
-            throw new InvalidOperationException($"Invalid get children request: {ex.Detail ?? ex.Title}");
-        }
+        ////    return new TenantCollectionResult(tenantIds, nextContinuationToken);
+        ////}
+        ////catch (ProblemDetails ex) when (ex.Status == 404)
+        ////{
+        ////    throw new TenantNotFoundException();
+        ////}
+        ////catch (HttpValidationProblemDetails ex) when (ex.Status == 400)
+        ////{
+        ////    throw new InvalidOperationException($"Invalid get children request: {ex.Detail ?? ex.Title}");
+        ////}
     }
 
     /// <inheritdoc/>
@@ -168,111 +172,115 @@ public class ClientTenantStore : ClientTenantProvider, ITenantStore
         IEnumerable<KeyValuePair<string, object>>? propertiesToSetOrAdd = null,
         IEnumerable<string>? propertiesToRemove = null)
     {
-        // Create a list of patch operations
-        var operations = new List<UpdateTenantRequestOperation>();
+        await Task.CompletedTask;
+        throw new NotImplementedException();
+        ////// Create a list of patch operations
+        ////var operations = new List<UpdateTenantRequestOperation>();
 
-        if (name is not null)
-        {
-            operations.Add(new UpdateTenantRequestOperation
-            {
-                Path = "/name",
-                Op = "replace",
-                Value = null, // TODO: Proper UntypedNode creation needed
-            });
-        }
+        ////if (name is not null)
+        ////{
+        ////    operations.Add(new UpdateTenantRequestOperation
+        ////    {
+        ////        Path = "/name",
+        ////        Op = "replace",
+        ////        Value = null, // TODO: Proper UntypedNode creation needed
+        ////    });
+        ////}
 
-        if (propertiesToSetOrAdd is not null)
-        {
-            foreach (KeyValuePair<string, object> kv in propertiesToSetOrAdd)
-            {
-                operations.Add(new UpdateTenantRequestOperation
-                {
-                    Path = "/properties/" + kv.Key,
-                    Op = "add",
-                    Value = null, // TODO: Proper UntypedNode creation needed
-                });
-            }
-        }
+        ////if (propertiesToSetOrAdd is not null)
+        ////{
+        ////    foreach (KeyValuePair<string, object> kv in propertiesToSetOrAdd)
+        ////    {
+        ////        operations.Add(new UpdateTenantRequestOperation
+        ////        {
+        ////            Path = "/properties/" + kv.Key,
+        ////            Op = "add",
+        ////            Value = null, // TODO: Proper UntypedNode creation needed
+        ////        });
+        ////    }
+        ////}
 
-        if (propertiesToRemove is not null)
-        {
-            foreach (string propertyName in propertiesToRemove)
-            {
-                operations.Add(new UpdateTenantRequestOperation
-                {
-                    Path = "/properties/" + propertyName,
-                    Op = "remove",
-                });
-            }
-        }
+        ////if (propertiesToRemove is not null)
+        ////{
+        ////    foreach (string propertyName in propertiesToRemove)
+        ////    {
+        ////        operations.Add(new UpdateTenantRequestOperation
+        ////        {
+        ////            Path = "/properties/" + propertyName,
+        ////            Op = "remove",
+        ////        });
+        ////    }
+        ////}
 
-        // Create a custom patch document that properly represents the operations array
-        // Since the generated Kiota model seems to have issues, we'll create a custom implementation
-        var patch = new UpdateTenantRequestJsonPatchDocument();
+        ////// Create a custom patch document that properly represents the operations array
+        ////// Since the generated Kiota model seems to have issues, we'll create a custom implementation
+        ////var patch = new UpdateTenantRequestJsonPatchDocument();
 
-        // NOTE: The current Kiota-generated model appears to have a design issue where
-        // Operations property is not properly serialized. This is a known limitation
-        // that may need to be addressed by updating the OpenAPI specification or
-        // using a different approach for JSON Patch operations.
-        try
-        {
-            TenantResponse? result = await this.TenantService.UpdateTenantAsync(tenantId, patch).ConfigureAwait(false);
+        ////// NOTE: The current Kiota-generated model appears to have a design issue where
+        ////// Operations property is not properly serialized. This is a known limitation
+        ////// that may need to be addressed by updating the OpenAPI specification or
+        ////// using a different approach for JSON Patch operations.
+        ////try
+        ////{
+        ////    TenantResponse? result = await this.TenantApiClient.UpdateTenantAsync(tenantId, patch).ConfigureAwait(false);
 
-            if (result == null)
-            {
-                throw new TenantNotFoundException();
-            }
+        ////    if (result == null)
+        ////    {
+        ////        throw new TenantNotFoundException();
+        ////    }
 
-            return this.TenantMapper.MapTenant(result);
-        }
-        catch (ProblemDetails ex) when (ex.Status == 404)
-        {
-            throw new TenantNotFoundException();
-        }
-        catch (ProblemDetails ex) when (ex.Status == 405)
-        {
-            throw new NotSupportedException("This tenant cannot be updated");
-        }
-        catch (HttpValidationProblemDetails ex) when (ex.Status == 400)
-        {
-            throw new ArgumentException($"Invalid update tenant request: {ex.Detail ?? ex.Title}");
-        }
+        ////    return this.TenantMapper.MapTenant(result);
+        ////}
+        ////catch (ProblemDetails ex) when (ex.Status == 404)
+        ////{
+        ////    throw new TenantNotFoundException();
+        ////}
+        ////catch (ProblemDetails ex) when (ex.Status == 405)
+        ////{
+        ////    throw new NotSupportedException("This tenant cannot be updated");
+        ////}
+        ////catch (HttpValidationProblemDetails ex) when (ex.Status == 400)
+        ////{
+        ////    throw new ArgumentException($"Invalid update tenant request: {ex.Detail ?? ex.Title}");
+        ////}
     }
 
     private async Task<ITenant> CreateChildTenantAsync(string parentTenantId, string name, Guid? wellKnownChildTenantGuid)
     {
-        try
-        {
-            var request = new CreateChildTenantRequest
-            {
-                TenantName = name,
-                WellKnownChildTenantGuid = wellKnownChildTenantGuid?.ToString(),
-            };
+        await Task.CompletedTask;
+        throw new NotImplementedException();
+        ////try
+        ////{
+        ////    var request = new CreateChildTenantRequest
+        ////    {
+        ////        TenantName = name,
+        ////        WellKnownChildTenantGuid = wellKnownChildTenantGuid?.ToString(),
+        ////    };
 
-            TenantResponse? createdTenant = await this.TenantService.CreateChildTenantAsync(parentTenantId, request).ConfigureAwait(false);
+        ////    TenantResponse? createdTenant = await this.TenantApiClient.CreateChildTenantAsync(parentTenantId, request).ConfigureAwait(false);
 
-            if (createdTenant == null)
-            {
-                throw new InvalidOperationException("Failed to create child tenant - service returned null response");
-            }
+        ////    if (createdTenant == null)
+        ////    {
+        ////        throw new InvalidOperationException("Failed to create child tenant - service returned null response");
+        ////    }
 
-            return this.TenantMapper.MapTenant(createdTenant);
-        }
-        catch (ProblemDetails ex) when (ex.Status == 404)
-        {
-            throw new TenantNotFoundException();
-        }
-        catch (ProblemDetails ex) when (ex.Status == 409)
-        {
-            throw new TenantConflictException();
-        }
-        catch (HttpValidationProblemDetails ex) when (ex.Status == 400)
-        {
-            throw new ArgumentException($"Invalid create child tenant request: {ex.Detail ?? ex.Title}");
-        }
-        catch (Exception ex)
-        {
-            throw new InvalidOperationException("Failed to create child tenant", ex);
-        }
+        ////    return this.TenantMapper.MapTenant(createdTenant);
+        ////}
+        ////catch (ProblemDetails ex) when (ex.Status == 404)
+        ////{
+        ////    throw new TenantNotFoundException();
+        ////}
+        ////catch (ProblemDetails ex) when (ex.Status == 409)
+        ////{
+        ////    throw new TenantConflictException();
+        ////}
+        ////catch (HttpValidationProblemDetails ex) when (ex.Status == 400)
+        ////{
+        ////    throw new ArgumentException($"Invalid create child tenant request: {ex.Detail ?? ex.Title}");
+        ////}
+        ////catch (Exception ex)
+        ////{
+        ////    throw new InvalidOperationException("Failed to create child tenant", ex);
+        ////}
     }
 }

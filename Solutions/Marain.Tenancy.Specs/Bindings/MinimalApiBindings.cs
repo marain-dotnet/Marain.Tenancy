@@ -4,7 +4,6 @@
 
 namespace Marain.Tenancy.Specs.Bindings;
 
-using System;
 using System.Net.Http;
 using Corvus.Testing.ReqnRoll;
 using Marain.Tenancy.Specs.Helpers;
@@ -18,15 +17,6 @@ using Reqnroll.BoDi;
 public static class MinimalApiBindings
 {
     /// <summary>
-    /// The port on which we host the function.
-    /// </summary>
-    public const int TenancyApiPort = 7071;
-
-    private static readonly string TenancyApiBaseUriText = $"http://localhost:{TenancyApiPort}";
-
-    public static Uri TenancyApiBaseUri { get; } = new(TenancyApiBaseUriText);
-
-    /// <summary>
     /// Runs the public API function.
     /// </summary>
     /// <param name="featureContext">The current feature context.</param>
@@ -36,8 +26,7 @@ public static class MinimalApiBindings
         FeatureContext featureContext,
         IObjectContainer specFlowDiContainer)
     {
-        var factory = new MinimalApiWebApplicationFactory();
-        HttpClient client = factory.CreateClient();
+        HttpClient client = MinimalApiWebApplicationFactory.Current.Client;
         specFlowDiContainer.RegisterInstanceAs(client);
     }
 }
