@@ -84,8 +84,10 @@ public static class TenantEndpoints
             .WithSummary("Update a tenant")
             .WithDescription("Updates tenant properties using JSON Patch operations.")
             .Produces<TenantResponse>()
+            .Produces(StatusCodes.Status405MethodNotAllowed)
             .ProducesValidationProblem()
             .ProducesProblem(StatusCodes.Status404NotFound)
+            .ProducesProblem(StatusCodes.Status422UnprocessableEntity)
             .AddValidation<UpdateTenantParameters>();
 
         group.MapDelete("/children/{childTenantId}", (
@@ -229,7 +231,7 @@ public static class TenantEndpoints
         }
     }
 
-    private static async Task<Results<Ok<TenantResponse>, ProblemHttpResult>> UpdateTenant(
+    private static async Task<Results<Ok<TenantResponse>, StatusCodeHttpResult, ProblemHttpResult>> UpdateTenant(
         UpdateTenantParameters parameters,
         ITenantStore tenantStore,
         LinkGenerator linkGenerator,
@@ -237,22 +239,50 @@ public static class TenantEndpoints
     {
         try
         {
-            // Apply patch to a temporary object to extract changes
-            UpdateTenantRequest tempTenant = new();
-            parameters.PatchDocument.ApplyTo(tempTenant);
-
-            // Extract properties to update
-            List<KeyValuePair<string, object>> propertiesToUpdate = [];
-            if (!string.IsNullOrEmpty(tempTenant.Description))
+            if (parameters.TenantId == RootTenant.RootTenantId)
             {
-                propertiesToUpdate.Add(new("description", tempTenant.Description));
+                return TypedResults.StatusCode(405);
+            }
+
+            string? name = null;
+            Dictionary<string, object>? propertiesToSet = [];
+            List<string>? propertiesToRemove = [];
+
+            foreach (UpdateTenantJsonPatchEntry entry in parameters.UpdateTenantJsonPatchArray)
+            {
+                if (entry.Path == "/name")
+                {
+                    if ((entry.Operation == UpdateTenantJsonPatchEntryOperation.Replace) && (entry.Value is string newTenantName))
+                    {
+                        name = newTenantName;
+                    }
+                    else
+                    {
+                        return ErrorHandlingExtensions.UnprocessableEntityProblem("\"/name\" property can only be used with op \"replace\" and \"value\" set to a string");
+                    }
+                }
+                else if (entry.Path.StartsWith("/properties/"))
+                {
+                    string propertyName = entry.Path[12..];
+                    switch (entry.Operation)
+                    {
+                        case UpdateTenantJsonPatchEntryOperation.Add:
+                        case UpdateTenantJsonPatchEntryOperation.Replace:
+                            propertiesToSet.Add(propertyName, entry.Value!);
+                            break;
+
+                        case UpdateTenantJsonPatchEntryOperation.Remove:
+                            propertiesToRemove.Add(propertyName);
+                            break;
+                    }
+                }
             }
 
             ITenant updatedTenant = await tenantStore.UpdateTenantAsync(
                 parameters.TenantId,
-                tempTenant.Name,
-                propertiesToUpdate,
-                null);
+                name,
+                propertiesToSet,
+                propertiesToRemove);
 
             TenantResponse response = MapTenantToResponse(updatedTenant, linkGenerator, context);
             return TypedResults.Ok(response);
@@ -295,22 +325,12 @@ public static class TenantEndpoints
     {
         Dictionary<string, object> properties = [];
 
-        // Convert IPropertyBag to Dictionary<string, object>
-        // We'll iterate over known property names since IPropertyBag doesn't expose Keys
-        foreach (string key in new[] { "description", "parent", "created", "modified", })
-        {
-            if (tenant.Properties.TryGet<object>(key, out object? value) && value != null)
-            {
-                properties[key] = value;
-            }
-        }
-
         return new()
         {
             Id = tenant.Id,
             Name = tenant.Name,
             ContentType = "application/vnd.marain.tenant",
-            Properties = properties,
+            Properties = tenant.Properties.AsDictionary().ToDictionary(),
             Links = new()
             {
                 Self = BuildTenantLink(tenant.Id, linkGenerator, context),

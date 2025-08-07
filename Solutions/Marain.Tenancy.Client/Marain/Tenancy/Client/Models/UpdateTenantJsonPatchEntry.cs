@@ -9,34 +9,36 @@ namespace Marain.Tenancy.Client.Models
 {
     [global::System.CodeDom.Compiler.GeneratedCode("Kiota", "1.0.0")]
     #pragma warning disable CS1591
-    public partial class UpdateTenantRequestJsonPatchDocument : IParsable
+    public partial class UpdateTenantJsonPatchEntry : IParsable
     #pragma warning restore CS1591
     {
-        /// <summary>The contractResolver property</summary>
+        /// <summary>The op property</summary>
+        public global::Marain.Tenancy.Client.Models.UpdateTenantJsonPatchEntryOperation? Op { get; set; }
+        /// <summary>The path property</summary>
 #if NETSTANDARD2_1_OR_GREATER || NETCOREAPP3_1_OR_GREATER
 #nullable enable
-        public global::Marain.Tenancy.Client.Models.IContractResolver? ContractResolver { get; set; }
+        public string? Path { get; set; }
 #nullable restore
 #else
-        public global::Marain.Tenancy.Client.Models.IContractResolver ContractResolver { get; set; }
+        public string Path { get; set; }
 #endif
-        /// <summary>The operations property</summary>
+        /// <summary>The value property</summary>
 #if NETSTANDARD2_1_OR_GREATER || NETCOREAPP3_1_OR_GREATER
 #nullable enable
-        public List<global::Marain.Tenancy.Client.Models.UpdateTenantRequestOperation>? Operations { get; private set; }
+        public UntypedNode? Value { get; set; }
 #nullable restore
 #else
-        public List<global::Marain.Tenancy.Client.Models.UpdateTenantRequestOperation> Operations { get; private set; }
+        public UntypedNode Value { get; set; }
 #endif
         /// <summary>
         /// Creates a new instance of the appropriate class based on discriminator value
         /// </summary>
-        /// <returns>A <see cref="global::Marain.Tenancy.Client.Models.UpdateTenantRequestJsonPatchDocument"/></returns>
+        /// <returns>A <see cref="global::Marain.Tenancy.Client.Models.UpdateTenantJsonPatchEntry"/></returns>
         /// <param name="parseNode">The parse node to use to read the discriminator value and create the object</param>
-        public static global::Marain.Tenancy.Client.Models.UpdateTenantRequestJsonPatchDocument CreateFromDiscriminatorValue(IParseNode parseNode)
+        public static global::Marain.Tenancy.Client.Models.UpdateTenantJsonPatchEntry CreateFromDiscriminatorValue(IParseNode parseNode)
         {
             _ = parseNode ?? throw new ArgumentNullException(nameof(parseNode));
-            return new global::Marain.Tenancy.Client.Models.UpdateTenantRequestJsonPatchDocument();
+            return new global::Marain.Tenancy.Client.Models.UpdateTenantJsonPatchEntry();
         }
         /// <summary>
         /// The deserialization information for the current model
@@ -46,8 +48,9 @@ namespace Marain.Tenancy.Client.Models
         {
             return new Dictionary<string, Action<IParseNode>>
             {
-                { "contractResolver", n => { ContractResolver = n.GetObjectValue<global::Marain.Tenancy.Client.Models.IContractResolver>(global::Marain.Tenancy.Client.Models.IContractResolver.CreateFromDiscriminatorValue); } },
-                { "operations", n => { Operations = n.GetCollectionOfObjectValues<global::Marain.Tenancy.Client.Models.UpdateTenantRequestOperation>(global::Marain.Tenancy.Client.Models.UpdateTenantRequestOperation.CreateFromDiscriminatorValue)?.AsList(); } },
+                { "op", n => { Op = n.GetEnumValue<global::Marain.Tenancy.Client.Models.UpdateTenantJsonPatchEntryOperation>(); } },
+                { "path", n => { Path = n.GetStringValue(); } },
+                { "value", n => { Value = n.GetObjectValue<UntypedNode>(UntypedNode.CreateFromDiscriminatorValue); } },
             };
         }
         /// <summary>
@@ -57,7 +60,9 @@ namespace Marain.Tenancy.Client.Models
         public virtual void Serialize(ISerializationWriter writer)
         {
             _ = writer ?? throw new ArgumentNullException(nameof(writer));
-            writer.WriteObjectValue<global::Marain.Tenancy.Client.Models.IContractResolver>("contractResolver", ContractResolver);
+            writer.WriteEnumValue<global::Marain.Tenancy.Client.Models.UpdateTenantJsonPatchEntryOperation>("op", Op);
+            writer.WriteStringValue("path", Path);
+            writer.WriteObjectValue<UntypedNode>("value", Value);
         }
     }
 }

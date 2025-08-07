@@ -4,7 +4,6 @@
 
 namespace Marain.Tenancy.MinimalApi.Models;
 
-using Microsoft.AspNetCore.JsonPatch;
 using Microsoft.AspNetCore.Mvc;
 
 /// <summary>
@@ -19,8 +18,8 @@ public sealed record UpdateTenantParameters
     public required string TenantId { get; init; }
 
     /// <summary>
-    /// Gets the JSON patch document for updating the tenant.
+    /// Gets the JSON patch documents for updating the tenant.
     /// </summary>
     [FromBody]
-    public required JsonPatchDocument<UpdateTenantRequest> PatchDocument { get; init; }
+    public required UpdateTenantJsonPatchEntry[] UpdateTenantJsonPatchArray { get; init; }
 }

@@ -41,7 +41,7 @@ Scenario: Update a child tenant
 	| SecondKey | This is a string                | string          |
 	| ThirdKey  | 1999-01-17                      | datetimeoffset  |
 	And I get the tenant id of the tenant called "ChildTenant1" and call it "ChildTenantId"
-	And I use the Tenancy Client to get the tenant with the id "ChildTenantId" and call it "Result"
+	And I use the Tenancy Client to get the tenant with the id called "ChildTenantId" and call it "Result"
 	Then the tenant called "ChildTenant1" should have the same ID as the tenant called "Result"
 	And the tenant called "Result" should have the properties
 	| Key       | Value                           | Type            |
@@ -84,7 +84,7 @@ Scenario: Get children when no child tenants exist using the parent tenant Id
 	Given I use the Tenancy Client to create a child tenant called "ChildTenant1" for the root tenant
 	When I get the tenant id of the tenant called "ChildTenant1" and call it "ChildTenantId"
 	And I use the Tenancy Client to get the children of the tenant with the id called "ChildTenantId" with maxItems 20 and call them "Result"
-	Then there should be no ids in the children called "Result"
+	Then there should be no links in the GetTenants link collection of the children called "Result"
 
 Scenario: Get children when no child tenants exist using the parent tenant children link
 	Given I use the Tenancy Client to create a child tenant called "ChildTenant1" for the root tenant
@@ -187,5 +187,7 @@ Scenario: Root tenant has empty properties
 	And the tenant called "Root" should have a children link with path "/f26450ab1668784bb327951c8b08f347/marain/tenant/children"
 
 Scenario: Updates to root tenant are prohibited
-	When I try to update the properties of the tenant with id "f26450ab1668784bb327951c8b08f347"
-	Then it should throw a NotSupportedException
+	When I use the Tenancy Client to update the properties of the tenant with id "f26450ab1668784bb327951c8b08f347"
+	| Key       | Value            | Type           |
+	| FirstKey  | 1                | integer        |
+	Then it should throw an ApiException with Response Status Code 405

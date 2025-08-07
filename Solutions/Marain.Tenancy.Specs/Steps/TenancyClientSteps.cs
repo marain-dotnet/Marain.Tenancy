@@ -18,6 +18,7 @@ using Marain.Tenancy.Specs.Bindings;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyModel;
 using Microsoft.Kiota.Abstractions;
+using Microsoft.Kiota.Abstractions.Serialization;
 using Microsoft.Kiota.Http.HttpClientLibrary.Middleware;
 using Microsoft.Kiota.Http.HttpClientLibrary.Middleware.Options;
 using NUnit.Framework;
@@ -143,6 +144,32 @@ public class TenancyClientSteps : Steps
         await this.GetTenantByIdAndStoreResponseWithHeadersAsync(tenantId, etag);
     }
 
+    [Given("I use the Tenancy Client to update the properties of the tenant called {string}")]
+    [When("I use the Tenancy Client to update the properties of the tenant called {string}")]
+    public async Task WhenIUseTheTenancyClientToUpdateThePropertiesOfTheTenantCalled(string tenantName, DataTable dataTable)
+    {
+        ApiResponseWithHeaders<TenantResponse> tenant = this.ScenarioContext.Get<ApiResponseWithHeaders<TenantResponse>>(tenantName);
+
+        List<UpdateTenantJsonPatchEntry> updates = DataTableToUpdateTenantJsonPatchEntry(dataTable);
+
+        await this.TenancyApiClient[tenant.Response!.Id!].Marain.Tenant.PatchAsync(updates);
+    }
+
+    [When("I use the Tenancy Client to update the properties of the tenant with id {string}")]
+    public async Task WhenIUseTheTenancyClientToUpdateThePropertiesOfTheTenantWithId(string tenantId, DataTable dataTable)
+    {
+        List<UpdateTenantJsonPatchEntry> updates = DataTableToUpdateTenantJsonPatchEntry(dataTable);
+
+        try
+        {
+            await this.TenancyApiClient[tenantId].Marain.Tenant.PatchAsync(updates);
+        }
+        catch (Exception e)
+        {
+            CommonSteps.LastException = e;
+        }
+    }
+
     [Given("I use the Tenancy Client to get the children of the tenant with the id called {string} with maxItems {int} and call them {string}")]
     [When("I use the Tenancy Client to get the children of the tenant with the id called {string} with maxItems {int} and call them {string}")]
     public async Task WhenIGetTheChildrenOfTheTenantWithTheIdCalledWithMaxItemsAndCallThem(string tenantIdName, int maxItems, string resultName)
@@ -198,6 +225,34 @@ public class TenancyClientSteps : Steps
         CommonSteps.RethrowLastExceptionIfPresent();
         ApiResponseWithHeaders<TenantResponse> response = this.ScenarioContext.Get<ApiResponseWithHeaders<TenantResponse>>(tenantName);
         Assert.AreEqual(0, response.Response?.Properties?.AdditionalData.Count ?? 0);
+    }
+
+    [Then("the tenant called {string} should have the properties")]
+    public void ThenTheTenantCalledShouldHaveTheProperties(string tenantName, DataTable dataTable)
+    {
+        CommonSteps.RethrowLastExceptionIfPresent();
+        ApiResponseWithHeaders<TenantResponse> response = this.ScenarioContext.Get<ApiResponseWithHeaders<TenantResponse>>(tenantName);
+
+        IEnumerable<(string Key, string Value, string Type)> expectedProperties = dataTable.CreateSet<(string Key, string Value, string Type)>();
+        IDictionary<string, object> actualProperties = response.Response?.Properties?.AdditionalData ?? throw new InvalidOperationException($"The tenant {tenantName} does not have any properties.");
+
+        foreach ((string key, string value, string type) in expectedProperties)
+        {
+            Assert.IsTrue(actualProperties.ContainsKey(key));
+
+            if (type == "integer")
+            {
+                Assert.AreEqual(int.Parse(value), actualProperties[key]);
+            }
+            else if (type == "datatimeoffset")
+            {
+                Assert.AreEqual(DateTimeOffset.Parse(value), actualProperties[key]);
+            }
+            else
+            {
+                Assert.AreEqual(value, actualProperties[key]);
+            }
+        }
     }
 
     [Then("the tenant called {string} should have a self link with path {string}")]
@@ -314,6 +369,28 @@ public class TenancyClientSteps : Steps
     {
         ApiResponseWithHeaders<ChildTenantsResponse> result = this.ScenarioContext.Get<ApiResponseWithHeaders<ChildTenantsResponse>>(resultName);
         Assert.AreEqual(expectedItems, result.Response?.Links?.GetTenant?.Count);
+    }
+
+    private static List<UpdateTenantJsonPatchEntry> DataTableToUpdateTenantJsonPatchEntry(DataTable dataTable)
+    {
+        List<UpdateTenantJsonPatchEntry> updates = [];
+
+        foreach ((string key, string value, string type) in dataTable.CreateSet<(string Key, string Value, string Type)>())
+        {
+            UntypedNode? valueNode;
+            if (type == "integer")
+            {
+                valueNode = new UntypedInteger(int.Parse(value));
+            }
+            else
+            {
+                valueNode = new UntypedString(value);
+            }
+
+            updates.Add(new() { Op = UpdateTenantJsonPatchEntryOperation.Add, Path = $"/properties/{key}", Value = valueNode });
+        }
+
+        return updates;
     }
 
     private async Task GetTenantByIdAndStoreResponseWithHeadersAsync(string tenantId, string? etag, string? name = null)

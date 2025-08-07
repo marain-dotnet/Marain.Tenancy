@@ -73,13 +73,14 @@ namespace Marain.Tenancy.Client.Item.Marain.Tenant
         /// <param name="requestConfiguration">Configuration for the request such as headers, query parameters, and middleware options.</param>
         /// <exception cref="global::Marain.Tenancy.Client.Models.HttpValidationProblemDetails">When receiving a 400 status code</exception>
         /// <exception cref="global::Marain.Tenancy.Client.Models.ProblemDetails">When receiving a 404 status code</exception>
+        /// <exception cref="global::Marain.Tenancy.Client.Models.ProblemDetails">When receiving a 422 status code</exception>
 #if NETSTANDARD2_1_OR_GREATER || NETCOREAPP3_1_OR_GREATER
 #nullable enable
-        public async Task<global::Marain.Tenancy.Client.Models.TenantResponse?> PatchAsync(global::Marain.Tenancy.Client.Models.UpdateTenantRequestJsonPatchDocument body, Action<RequestConfiguration<DefaultQueryParameters>>? requestConfiguration = default, CancellationToken cancellationToken = default)
+        public async Task<global::Marain.Tenancy.Client.Models.TenantResponse?> PatchAsync(List<global::Marain.Tenancy.Client.Models.UpdateTenantJsonPatchEntry> body, Action<RequestConfiguration<DefaultQueryParameters>>? requestConfiguration = default, CancellationToken cancellationToken = default)
         {
 #nullable restore
 #else
-        public async Task<global::Marain.Tenancy.Client.Models.TenantResponse> PatchAsync(global::Marain.Tenancy.Client.Models.UpdateTenantRequestJsonPatchDocument body, Action<RequestConfiguration<DefaultQueryParameters>> requestConfiguration = default, CancellationToken cancellationToken = default)
+        public async Task<global::Marain.Tenancy.Client.Models.TenantResponse> PatchAsync(List<global::Marain.Tenancy.Client.Models.UpdateTenantJsonPatchEntry> body, Action<RequestConfiguration<DefaultQueryParameters>> requestConfiguration = default, CancellationToken cancellationToken = default)
         {
 #endif
             _ = body ?? throw new ArgumentNullException(nameof(body));
@@ -88,6 +89,7 @@ namespace Marain.Tenancy.Client.Item.Marain.Tenant
             {
                 { "400", global::Marain.Tenancy.Client.Models.HttpValidationProblemDetails.CreateFromDiscriminatorValue },
                 { "404", global::Marain.Tenancy.Client.Models.ProblemDetails.CreateFromDiscriminatorValue },
+                { "422", global::Marain.Tenancy.Client.Models.ProblemDetails.CreateFromDiscriminatorValue },
             };
             return await RequestAdapter.SendAsync<global::Marain.Tenancy.Client.Models.TenantResponse>(requestInfo, global::Marain.Tenancy.Client.Models.TenantResponse.CreateFromDiscriminatorValue, errorMapping, cancellationToken).ConfigureAwait(false);
         }
@@ -145,11 +147,11 @@ namespace Marain.Tenancy.Client.Item.Marain.Tenant
         /// <param name="requestConfiguration">Configuration for the request such as headers, query parameters, and middleware options.</param>
 #if NETSTANDARD2_1_OR_GREATER || NETCOREAPP3_1_OR_GREATER
 #nullable enable
-        public RequestInformation ToPatchRequestInformation(global::Marain.Tenancy.Client.Models.UpdateTenantRequestJsonPatchDocument body, Action<RequestConfiguration<DefaultQueryParameters>>? requestConfiguration = default)
+        public RequestInformation ToPatchRequestInformation(List<global::Marain.Tenancy.Client.Models.UpdateTenantJsonPatchEntry> body, Action<RequestConfiguration<DefaultQueryParameters>>? requestConfiguration = default)
         {
 #nullable restore
 #else
-        public RequestInformation ToPatchRequestInformation(global::Marain.Tenancy.Client.Models.UpdateTenantRequestJsonPatchDocument body, Action<RequestConfiguration<DefaultQueryParameters>> requestConfiguration = default)
+        public RequestInformation ToPatchRequestInformation(List<global::Marain.Tenancy.Client.Models.UpdateTenantJsonPatchEntry> body, Action<RequestConfiguration<DefaultQueryParameters>> requestConfiguration = default)
         {
 #endif
             _ = body ?? throw new ArgumentNullException(nameof(body));

@@ -40,6 +40,20 @@ public static class ErrorHandlingExtensions
             instance: instance);
 
     /// <summary>
+    /// Creates a problem details response for an unprocessable entity erorr.
+    /// </summary>
+    /// <param name="detail">The detailed error message.</param>
+    /// <param name="instance">The instance URI.</param>
+    /// <returns>An unprocessable entity problem details response.</returns>
+    public static ProblemHttpResult UnprocessableEntityProblem(string detail, string? instance = null) =>
+        TypedResults.Problem(
+            detail: detail,
+            statusCode: StatusCodes.Status422UnprocessableEntity,
+            title: "Unprocessable Entity",
+            type: "https://datatracker.ietf.org/doc/html/rfc4918#section-11.2",
+            instance: instance);
+
+    /// <summary>
     /// Creates a problem details response for a conflict error.
     /// </summary>
     /// <param name="detail">The detailed error message.</param>

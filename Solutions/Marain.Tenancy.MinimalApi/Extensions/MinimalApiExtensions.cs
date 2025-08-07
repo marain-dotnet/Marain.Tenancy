@@ -33,6 +33,8 @@ public static class MinimalApiExtensions
                 Version = "1.0.0",
                 Description = "Marain tenant management API",
             });
+
+            options.SupportNonNullableReferenceTypes();
         });
 
         builder.Services.AddValidatorsFromAssemblyContaining<CreateChildTenantParametersValidator>();

@@ -2,9 +2,12 @@
 // Copyright (c) Endjin Limited. All rights reserved.
 // </copyright>
 
+using System.Text.Json;
+using System.Text.Json.Serialization;
 using Corvus.Storage.Azure.BlobStorage;
 using Marain.Tenancy.MinimalApi.Extensions;
 using Marain.Tenancy.MinimalApi.Models;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.OpenApi.Models;
 using Microsoft.OpenApi.Writers;
 using Swashbuckle.AspNetCore.Swagger;
@@ -42,6 +45,17 @@ if (rootStorageConfiguration is not null)
 {
     builder.Services.AddTenantStoreOnAzureBlobStorage(rootStorageConfiguration);
 }
+
+// The next two pieces of configuration are both required to ensure enum options are serialized/deserialized as strings rather than integers.
+builder.Services.ConfigureHttpJsonOptions(options =>
+{
+    options.SerializerOptions.Converters.Add(new JsonStringEnumConverter(JsonNamingPolicy.CamelCase, false));
+});
+
+builder.Services.Configure<JsonOptions>(options =>
+{
+    options.JsonSerializerOptions.Converters.Add(new JsonStringEnumConverter(JsonNamingPolicy.CamelCase, false));
+});
 
 // Configure HTTPS redirection and HSTS in production
 if (!builder.Environment.IsDevelopment())

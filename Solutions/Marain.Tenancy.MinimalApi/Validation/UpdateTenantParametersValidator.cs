@@ -20,5 +20,15 @@ public sealed class UpdateTenantParametersValidator : AbstractValidator<UpdateTe
         this.RuleFor(x => x.TenantId)
             .NotEmpty()
             .WithMessage("TenantId is required");
+
+        this.RuleFor(x => x.UpdateTenantJsonPatchArray)
+            .NotNull()
+            .NotEmpty()
+            .WithMessage("Body is required");
+
+        this.RuleForEach(x => x.UpdateTenantJsonPatchArray)
+            .NotNull()
+            .NotEmpty()
+            .SetValidator(new UpdateTenantJsonPatchEntryValidator());
     }
 }
