@@ -7,6 +7,7 @@ namespace Marain.Tenancy.Specs.Steps;
 using System;
 using System.ClientModel;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
 using Azure;
@@ -103,10 +104,10 @@ public class TenancyClientSteps : Steps
     {
         CreateChildTenantRequest request = new() { TenantName = tenantName };
         HeadersInspectionHandlerOption headersInspectionhandler = new() { InspectResponseHeaders = true };
+
         TenantResponse? response = await this.TenancyApiClient[RootTenant.RootTenantId].Marain.Tenant.PostAsync(request, config => config.Options.Add(headersInspectionhandler)).ConfigureAwait(false);
 
         this.testTenantCleanup.AddTenantToDelete(RootTenant.RootTenantId, response?.Id);
-
         this.ScenarioContext.Set(new ApiResponseWithHeaders<TenantResponse>(response, headersInspectionhandler.ResponseHeaders), tenantName);
     }
 
@@ -261,9 +262,7 @@ public class TenancyClientSteps : Steps
         CommonSteps.RethrowLastExceptionIfPresent();
         ApiResponseWithHeaders<TenantResponse> response = this.ScenarioContext.Get<ApiResponseWithHeaders<TenantResponse>>(tenantName);
         Assert.IsNotNull(response.Response?.Links?.Self?.Href, $"Tenant '{tenantName}' does not contain a self link.");
-        Uri uri = new(response.Response!.Links!.Self!.Href!);
-        string actualPath = uri.AbsolutePath;
-        Assert.AreEqual(expectedPath, actualPath);
+        Assert.AreEqual(expectedPath, response.Response!.Links!.Self!.Href!);
     }
 
     [Then("the tenant called {string} should have a children link with path {string}")]
@@ -272,9 +271,7 @@ public class TenancyClientSteps : Steps
         CommonSteps.RethrowLastExceptionIfPresent();
         ApiResponseWithHeaders<TenantResponse> response = this.ScenarioContext.Get<ApiResponseWithHeaders<TenantResponse>>(tenantName);
         Assert.IsNotNull(response.Response?.Links?.Children?.Href, $"Tenant '{tenantName}' does not contain a children link.");
-        Uri uri = new(response.Response!.Links!.Children!.Href!);
-        string actualPath = uri.AbsolutePath;
-        Assert.AreEqual(expectedPath, actualPath);
+        Assert.AreEqual(expectedPath, response.Response!.Links!.Children!.Href!);
     }
 
     [Then("the children called {string} should contain a self link")]

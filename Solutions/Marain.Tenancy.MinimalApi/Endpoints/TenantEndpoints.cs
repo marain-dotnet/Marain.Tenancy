@@ -7,8 +7,10 @@ namespace Marain.Tenancy.MinimalApi.Endpoints;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Linq;
+using System.Text.Json;
 using System.Threading.Tasks;
 using Corvus.Json;
+using Corvus.Json.Serialization;
 using Corvus.Tenancy;
 using Corvus.Tenancy.Exceptions;
 using Marain.Tenancy.MinimalApi.ErrorHandling;
@@ -34,7 +36,8 @@ public static class TenantEndpoints
                 ITenantStore tenantStore,
                 IPropertyBagFactory propertyBagFactory,
                 LinkGenerator linkGenerator,
-                HttpContext context) =>
+                HttpContext context,
+                IJsonSerializerOptionsProvider serializerOptionsProvider) =>
                 GetTenant(parameters, tenantStore, propertyBagFactory, linkGenerator, context))
             .WithName(EndpointNames.GetTenant)
             .WithSummary("Get a tenant by ID")
@@ -105,7 +108,7 @@ public static class TenantEndpoints
         return group;
     }
 
-    private static async Task<Results<Ok<TenantResponse>, StatusCodeHttpResult, ProblemHttpResult>> GetTenant(
+    private static async Task<Results<IResult, Ok<TenantResponse>, StatusCodeHttpResult, ProblemHttpResult>> GetTenant(
         GetTenantParameters parameters,
         ITenantStore tenantStore,
         IPropertyBagFactory propertyBagFactory,
@@ -252,9 +255,9 @@ public static class TenantEndpoints
             {
                 if (entry.Path == "/name")
                 {
-                    if ((entry.Operation == UpdateTenantJsonPatchEntryOperation.Replace) && (entry.Value is string newTenantName))
+                    if ((entry.Operation == UpdateTenantJsonPatchEntryOperation.Replace) && (entry.Value is JsonElement valueElement) && (valueElement.ValueKind == JsonValueKind.String))
                     {
-                        name = newTenantName;
+                        name = valueElement.GetString();
                     }
                     else
                     {
@@ -341,7 +344,7 @@ public static class TenantEndpoints
 
     private static LinkResponse BuildTenantLink(string tenantId, LinkGenerator linkGenerator, HttpContext context)
     {
-        string href = linkGenerator.GetUriByName(context, EndpointNames.GetTenant, new { tenantId = tenantId })
+        string href = linkGenerator.GetPathByName(context, EndpointNames.GetTenant, new { tenantId = tenantId })
             ?? throw new InvalidOperationException($"Unable to generate self link for tenant Id {tenantId}");
 
         return new() { Href = href };
@@ -349,7 +352,7 @@ public static class TenantEndpoints
 
     private static LinkResponse BuildGetChildrenLink(string tenantId, int? maxItems, string? continuationToken, LinkGenerator linkGenerator, HttpContext context)
     {
-        string href = linkGenerator.GetUriByName(
+        string href = linkGenerator.GetPathByName(
             context,
             EndpointNames.GetChildTenants,
             new { tenantId, maxItems, continuationToken }) ?? throw new InvalidOperationException("Unable to generate self link for GetChildTenants");
@@ -359,7 +362,7 @@ public static class TenantEndpoints
 
     private static LinkResponse BuildDeleteTenantLink(string parentTenantId, string tenantId, LinkGenerator linkGenerator, HttpContext context)
     {
-        string href = linkGenerator.GetUriByName(context, EndpointNames.DeleteChildTenant, new { tenantId = parentTenantId, childTenantId = tenantId })
+        string href = linkGenerator.GetPathByName(context, EndpointNames.DeleteChildTenant, new { tenantId = parentTenantId, childTenantId = tenantId })
             ?? throw new InvalidOperationException($"Unable to generate self link for tenant Id {tenantId}");
 
         return new() { Href = href };

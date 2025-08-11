@@ -15,9 +15,9 @@ $ImageName = "mcr.microsoft.com/azure-storage/azurite:latest"
 $DataDirectory = "./azurite-data"
 
 # Hardcoded ports to avoid collisions with other Azurite instances
-$BlobPort = 10042
-$QueuePort = 10043
-$TablePort = 10044
+$BlobPort = 11000
+$QueuePort = 11001
+$TablePort = 11002
 
 function Test-DockerRunning {
     try {

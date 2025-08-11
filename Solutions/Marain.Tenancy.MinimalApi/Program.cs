@@ -2,15 +2,9 @@
 // Copyright (c) Endjin Limited. All rights reserved.
 // </copyright>
 
-using System.Text.Json;
-using System.Text.Json.Serialization;
 using Corvus.Storage.Azure.BlobStorage;
 using Marain.Tenancy.MinimalApi.Extensions;
 using Marain.Tenancy.MinimalApi.Models;
-using Microsoft.AspNetCore.Mvc;
-using Microsoft.OpenApi.Models;
-using Microsoft.OpenApi.Writers;
-using Swashbuckle.AspNetCore.Swagger;
 
 WebApplicationBuilder builder = WebApplication.CreateBuilder(args);
 
@@ -46,16 +40,7 @@ if (rootStorageConfiguration is not null)
     builder.Services.AddTenantStoreOnAzureBlobStorage(rootStorageConfiguration);
 }
 
-// The next two pieces of configuration are both required to ensure enum options are serialized/deserialized as strings rather than integers.
-builder.Services.ConfigureHttpJsonOptions(options =>
-{
-    options.SerializerOptions.Converters.Add(new JsonStringEnumConverter(JsonNamingPolicy.CamelCase, false));
-});
-
-builder.Services.Configure<JsonOptions>(options =>
-{
-    options.JsonSerializerOptions.Converters.Add(new JsonStringEnumConverter(JsonNamingPolicy.CamelCase, false));
-});
+builder.ConfigureUnifiedJsonSerialization();
 
 // Configure HTTPS redirection and HSTS in production
 if (!builder.Environment.IsDevelopment())
@@ -70,6 +55,19 @@ if (!builder.Environment.IsDevelopment())
 
 // Add health checks
 builder.Services.AddHealthChecks();
+
+// Add HTTP logging for request/response body logging in development
+// This logs all HTTP request/response details including bodies up to 4KB each
+if (builder.Environment.IsDevelopment())
+{
+    builder.Services.AddHttpLogging(options =>
+    {
+        options.LoggingFields = Microsoft.AspNetCore.HttpLogging.HttpLoggingFields.All;
+        options.RequestBodyLogLimit = 4096;
+        options.ResponseBodyLogLimit = 4096;
+        options.CombineLogs = true; // Single log entry per request
+    });
+}
 
 WebApplication app = builder.Build();
 
@@ -92,27 +90,16 @@ else
 
 app.UseExceptionHandler();
 
-// Add health check endpoint
-app.MapHealthChecks("/health");
-
-// Map custom /swagger endpoint to serve JSON directly
+// Add HTTP logging middleware in development
 if (app.Environment.IsDevelopment())
 {
-    app.MapGet("/swagger", async (HttpContext context, IServiceProvider serviceProvider) =>
-    {
-        ISwaggerProvider swaggerProvider = serviceProvider.GetRequiredService<ISwaggerProvider>();
-        OpenApiDocument swagger = swaggerProvider.GetSwagger("v1");
-
-        using var stringWriter = new StringWriter();
-        swagger.SerializeAsV3(new OpenApiJsonWriter(stringWriter));
-        string json = stringWriter.ToString();
-
-        context.Response.ContentType = "application/json";
-        await context.Response.WriteAsync(json);
-    });
+    app.UseHttpLogging();
 }
 
-// Map tenancy endpoints
+// Add health check endpoint
+app.MapHealthChecks("/health");
+app.MapCustomSwaggerEndpoint();
+app.MapSerializationDemoEndpoint();
 app.MapTenancyEndpoints();
 
 app.Run();

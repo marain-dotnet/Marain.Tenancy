@@ -27,7 +27,8 @@ kiota generate `
     --output $FullOutputPath `
     --namespace-name $Namespace `
     --class-name "TenancyApiClient" `
-    --exclude-backward-compatible
+    --exclude-backward-compatible `
+    --serializer none
 
 Write-Output "Kiota client generation completed successfully!"
 Write-Output "Generated files in: $FullOutputPath"

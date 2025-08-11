@@ -4,12 +4,8 @@
 
 namespace Marain.Tenancy.Specs.Bindings;
 
-using System;
-using System.Collections.Generic;
-using System.Net.Http;
 using Corvus.Testing.ReqnRoll;
 using Marain.Tenancy.Specs.Helpers;
-using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Reqnroll;
 
@@ -30,7 +26,7 @@ public static class TenancyClientBindings
             featureContext,
             serviceCollection =>
             {
-                serviceCollection.AddUnauthenticatedTenancyClient(
+                serviceCollection.AddUnauthenticatedTenancyClientWithCorvusSerialization(
                     MinimalApiWebApplicationFactory.Current.Server.BaseAddress.ToString(),
                     MinimalApiWebApplicationFactory.Current.Server.CreateHandler());
             });

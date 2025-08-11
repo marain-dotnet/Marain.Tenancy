@@ -8,11 +8,15 @@ using System;
 using System.Collections.Generic;
 using System.Net;
 using System.Net.Http;
+using System.Text.Json;
 using System.Text.Json.Nodes;
 using System.Threading.Tasks;
-
+using Corvus.Extensions.Json.Internal;
+using Corvus.Json.Serialization;
+using Corvus.Testing.ReqnRoll;
 using Marain.Tenancy.Specs.Bindings;
 using Marain.Tenancy.Specs.Helpers;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyModel;
 using Newtonsoft.Json.Linq;
 
@@ -21,19 +25,16 @@ using NUnit.Framework;
 using Reqnroll;
 
 [Binding]
-public class TenancyApiSteps
+public class TenancyApiSteps : Steps
 {
     private readonly Dictionary<string, string> namedIds = new();
     private readonly TestTenantCleanup testTenantCleanup;
-    private readonly ScenarioContext scenarioContext;
     private TenancyResponse? tenancyResponse;
 
     public TenancyApiSteps(
-        TestTenantCleanup testTenantCleanup,
-        ScenarioContext scenarioContext)
+        TestTenantCleanup testTenantCleanup)
     {
         this.testTenantCleanup = testTenantCleanup;
-        this.scenarioContext = scenarioContext;
     }
 
     private TenancyResponse Response => this.tenancyResponse ?? throw new InvalidOperationException("No response available");
@@ -77,20 +78,20 @@ public class TenancyApiSteps
     [Given("I store the value of the response Location header as '(.*)'")]
     public void GivenIStoreTheValueOfTheResponseLocationHeaderAs(string name)
     {
-        this.scenarioContext.Set(this.Response.LocationHeader, name);
+        this.ScenarioContext.Set(this.Response.LocationHeader, name);
     }
 
     [Given("I have requested the tenant using the path called '(.*)'")]
     public async Task GivenIHaveRequestedTheTenantUsingThePathCalled(string name)
     {
-        string path = this.scenarioContext.Get<string>(name);
+        string path = this.ScenarioContext.Get<string>(name);
         await this.SendGetRequest(path);
     }
 
     [When("I request the tenant using the path called '(.*)' and the Etag from the previous response")]
     public Task WhenIRequestTheTenantUsingThePathCalledAndTheEtagFromThePreviousResponse(string name)
     {
-        string path = this.scenarioContext.Get<string>(name);
+        string path = this.ScenarioContext.Get<string>(name);
 
         return this.SendGetRequest(
             path,
@@ -254,11 +255,18 @@ public class TenancyApiSteps
 
     private async Task SendPostRequest(string path, object? data)
     {
+        IServiceProvider serviceProvider = ContainerBindings.GetServiceProvider(this.FeatureContext);
+        IJsonSerializerOptionsProvider serializationOptionsProvider = serviceProvider.GetRequiredService<IJsonSerializerOptionsProvider>();
+
         HttpContent? content = null;
 
         if (data is not null)
         {
-            string requestJson = System.Text.Json.JsonSerializer.Serialize(data);
+            string requestJson = JsonSerializer.Serialize(data, serializationOptionsProvider.Instance);
+
+            TestContext.WriteLine($"Serialized request body for POST {path}:");
+            TestContext.WriteLine(requestJson);
+
             content = new StringContent(requestJson, System.Text.Encoding.UTF8, "application/json");
         }
 

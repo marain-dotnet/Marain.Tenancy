@@ -7,6 +7,7 @@ namespace Marain.Tenancy.Specs.Bindings;
 using System.Net.Http;
 using Corvus.Testing.ReqnRoll;
 using Marain.Tenancy.Specs.Helpers;
+using Microsoft.Extensions.DependencyInjection;
 using Reqnroll;
 using Reqnroll.BoDi;
 
@@ -16,6 +17,21 @@ using Reqnroll.BoDi;
 [Binding]
 public static class MinimalApiBindings
 {
+    [BeforeFeature("useTenancyApi", Order = ContainerBeforeFeatureOrder.PopulateServiceCollection)]
+    public static void ConfigureContainerForTenancyApi(FeatureContext context)
+    {
+        ContainerBindings.ConfigureServices(
+            context,
+            services =>
+            {
+                services.AddJsonSerializerOptionsProvider();
+                services.AddJsonCultureInfoConverter();
+                services.AddJsonDateTimeOffsetToIso8601AndUnixTimeConverter();
+                services.AddCamelCaseConverterForEnums();
+                services.AddJsonPropertyBagFactory();
+            });
+    }
+
     /// <summary>
     /// Runs the public API function.
     /// </summary>
