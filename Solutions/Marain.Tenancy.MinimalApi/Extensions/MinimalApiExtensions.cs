@@ -44,6 +44,11 @@ public static class MinimalApiExtensions
             });
 
             options.SupportNonNullableReferenceTypes();
+
+            // Add Swagger support for the custom JsonConverters added to the serialization setup in ConfigureUnifiedJsonSerialization.
+            options.AddJsonDateTimeOffsetToIso8601AndUnixTimeStampConverterSwaggerGen();
+            options.AddJsonCultureInfoConverterSwaggerGen();
+            options.AddJsonPropertyBagConverterSwaggerGen();
         });
 
         builder.Services.AddValidatorsFromAssemblyContaining<CreateChildTenantParametersValidator>();

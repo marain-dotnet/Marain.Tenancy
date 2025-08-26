@@ -32,6 +32,16 @@
           "Microsoft.Extensions.DependencyInjection.Abstractions": "8.0.2"
         }
       },
+      "Microsoft.OpenApi.Readers": {
+        "type": "Direct",
+        "requested": "[1.6.21, )",
+        "resolved": "1.6.21",
+        "contentHash": "bIDnWKNcvZX0f5HoCI4pQldcYszc14UKSDgPits/i88hnWdVeNVcrEcUqjTK8QYMfGaKuCgQh97r2dOuGU9CMQ==",
+        "dependencies": {
+          "Microsoft.OpenApi": "1.6.21",
+          "SharpYaml": "2.1.1"
+        }
+      },
       "Microsoft.Testing.Platform": {
         "type": "Direct",
         "requested": "[1.7.3, )",
@@ -739,6 +749,11 @@
         "type": "Transitive",
         "resolved": "13.0.3",
         "contentHash": "HrC5BXdl00IP9zeV+0Z848QWPAoCr9P3bDEZguI+gkLcBKAOxix/tLEAAHC+UvDNPv4a2d18lOReHMOagPa+zQ=="
+      },
+      "SharpYaml": {
+        "type": "Transitive",
+        "resolved": "2.1.1",
+        "contentHash": "BISoFuW2AwZYXxrZGaBnedo21BvrdgC4kkWd6QYrOdhOGSsZB0RSqcBw09l9caUE1g3sykJoRfSbtSzZS6tYig=="
       },
       "Swashbuckle.AspNetCore": {
         "type": "Transitive",
