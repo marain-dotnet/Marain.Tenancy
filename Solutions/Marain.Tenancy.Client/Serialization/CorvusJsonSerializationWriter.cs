@@ -88,6 +88,13 @@ public class CorvusJsonSerializationWriter : ISerializationWriter, IDisposable
             return;
         }
 
+        // Special handling for UntypedNode - serialize the underlying value directly
+        if (value is UntypedNode untypedNode)
+        {
+            this.WriteUntypedNodeValue(key, untypedNode);
+            return;
+        }
+
         if (key != null)
         {
             this.writer.WriteStartObject(key);
@@ -907,6 +914,135 @@ public class CorvusJsonSerializationWriter : ISerializationWriter, IDisposable
     /// Gets or sets the action called when the serialization starts.
     /// </summary>
     public Action<IParsable, ISerializationWriter>? OnStartObjectSerialization { get; set; }
+
+    /// <summary>
+    /// Writes an UntypedNode value by recursively serializing its underlying value directly.
+    /// </summary>
+    /// <param name="key">The property key.</param>
+    /// <param name="untypedNode">The UntypedNode to write.</param>
+    private void WriteUntypedNodeValue(string? key, UntypedNode untypedNode)
+    {
+        switch (untypedNode)
+        {
+            case UntypedInteger intNode:
+                this.WriteIntValue(key, intNode.GetValue());
+                break;
+
+            case UntypedString stringNode:
+                this.WriteStringValue(key, stringNode.GetValue());
+                break;
+
+            case UntypedBoolean boolNode:
+                this.WriteBoolValue(key, boolNode.GetValue());
+                break;
+
+            case UntypedDouble doubleNode:
+                this.WriteDoubleValue(key, doubleNode.GetValue());
+                break;
+
+            case UntypedDecimal decimalNode:
+                this.WriteDecimalValue(key, decimalNode.GetValue());
+                break;
+
+            case UntypedObject objectNode:
+                this.WriteUntypedObject(key, objectNode);
+                break;
+
+            case UntypedArray arrayNode:
+                this.WriteUntypedArray(key, arrayNode);
+                break;
+
+            default:
+                // Handle any additional UntypedNode types that might exist
+                // by falling back to extracting the raw value and serializing it
+                object? rawValue = untypedNode switch
+                {
+                    var node when node.GetType().Name.StartsWith("Untyped") => 
+                        node.GetType().GetMethod("GetValue")?.Invoke(node, null),
+                    _ => null
+                };
+
+                if (rawValue == null)
+                {
+                    this.WriteNullValue(key);
+                }
+                else
+                {
+                    // Use JsonSerializer for any unrecognized types
+                    string json = JsonSerializer.Serialize(rawValue, this.options);
+                    if (key != null)
+                    {
+                        this.writer.WritePropertyName(key);
+                    }
+                    this.writer.WriteRawValue(json);
+                }
+                break;
+        }
+    }
+
+    /// <summary>
+    /// Writes an UntypedObject by recursively writing its properties.
+    /// </summary>
+    /// <param name="key">The property key.</param>
+    /// <param name="untypedObject">The UntypedObject to write.</param>
+    private void WriteUntypedObject(string? key, UntypedObject untypedObject)
+    {
+        IDictionary<string, UntypedNode>? objectData = untypedObject.GetValue();
+        
+        if (objectData == null)
+        {
+            this.WriteNullValue(key);
+            return;
+        }
+
+        if (key != null)
+        {
+            this.writer.WriteStartObject(key);
+        }
+        else
+        {
+            this.writer.WriteStartObject();
+        }
+
+        foreach (KeyValuePair<string, UntypedNode> property in objectData)
+        {
+            this.WriteUntypedNodeValue(property.Key, property.Value);
+        }
+
+        this.writer.WriteEndObject();
+    }
+
+    /// <summary>
+    /// Writes an UntypedArray by recursively writing its elements.
+    /// </summary>
+    /// <param name="key">The property key.</param>
+    /// <param name="untypedArray">The UntypedArray to write.</param>
+    private void WriteUntypedArray(string? key, UntypedArray untypedArray)
+    {
+        IEnumerable<UntypedNode>? arrayData = untypedArray.GetValue();
+        
+        if (arrayData == null)
+        {
+            this.WriteNullValue(key);
+            return;
+        }
+
+        if (key != null)
+        {
+            this.writer.WriteStartArray(key);
+        }
+        else
+        {
+            this.writer.WriteStartArray();
+        }
+
+        foreach (UntypedNode element in arrayData)
+        {
+            this.WriteUntypedNodeValue(null, element);
+        }
+
+        this.writer.WriteEndArray();
+    }
 
     /// <summary>
     /// Disposes the writer and underlying resources.

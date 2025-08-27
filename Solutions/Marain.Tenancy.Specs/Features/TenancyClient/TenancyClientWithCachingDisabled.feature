@@ -36,10 +36,10 @@ Scenario: Get a tenant with an etag retrieved from a tenant got from the Get Ten
 Scenario: Update a child tenant
 	Given I use the Tenancy Client to create a child tenant called "ChildTenant1" for the root tenant
 	When I use the Tenancy Client to update the properties of the tenant called "ChildTenant1"
-	| Key       | Value                           | Type            |
-	| FirstKey  | 1                               | integer         |
-	| SecondKey | This is a string                | string          |
-	| ThirdKey  | 1999-01-17                      | datetimeoffset  |
+	| Key       | Value                           | Type            | Action  |
+	| FirstKey  | 1                               | integer         | Add     |
+	| SecondKey | This is a string                | string          | Add     |
+	| ThirdKey  | 1999-01-17                      | datetimeoffset  | Add     |
 	And I get the tenant id of the tenant called "ChildTenant1" and call it "ChildTenantId"
 	And I use the Tenancy Client to get the tenant with the id called "ChildTenantId" and call it "Result"
 	Then the tenant called "ChildTenant1" should have the same ID as the tenant called "Result"
@@ -52,20 +52,20 @@ Scenario: Update a child tenant
 Scenario: Add, update, and remove properties of a child tenant
 	Given I use the Tenancy Client to create a child tenant called "ChildTenant1" for the root tenant
 	And I use the Tenancy Client to update the properties of the tenant called "ChildTenant1"
-	| Key       | Value            | Type           |
-	| FirstKey  | 1                | integer        |
-	| SecondKey | This is a string | string         |
-	| ThirdKey  | 1999-01-17       | datetimeoffset |
+	| Key       | Value            | Type           | Action  |
+	| FirstKey  | 1                | integer        | Add     |
+	| SecondKey | This is a string | string         | Add     |
+	| ThirdKey  | 1999-01-17       | datetimeoffset | Add     |
 	When I use the Tenancy Client to rename the tenant called "ChildTenant1" to "RenamedChildTenant1" and update its properties
-	| Property  | Value                | Type    | Action   |
-	| FirstKey  | 2                    | integer | addOrSet |
-	| FourthKey | 4                    | integer | addOrSet |
-	| FifthKey  | This is a new string | string  | addOrSet |
-	| ThirdKey  |                      |         | remove   |
+	| Key       | Value                | Type    | Action  |
+	| FirstKey  | 2                    | integer | Replace |
+	| FourthKey | 4                    | integer | Add     |
+	| FifthKey  | This is a new string | string  | Add     |
+	| ThirdKey  |                      |         | Remove  |
 	And I get the tenant id of the tenant called "ChildTenant1" and call it "ChildTenantId"
-	And I get the tenant with the id "ChildTenantId" and call it "Result"
+	And I use the Tenancy Client to get the tenant with the id called "ChildTenantId" and call it "Result"
 	Then the tenant called "ChildTenant1" should have the same ID as the tenant called "Result"
-	And the tenant called "Result" should now have the name "RenamedChildTenant1"
+	And the tenant called "Result" should have the name "RenamedChildTenant1"
 	And the tenant called "Result" should have the properties
 	| Key       | Value                | Type    |
 	| FirstKey  | 2                    | integer |

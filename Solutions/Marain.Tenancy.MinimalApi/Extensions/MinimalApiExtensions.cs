@@ -102,38 +102,6 @@ public static class MinimalApiExtensions
     }
 
     /// <summary>
-    /// Maps the serialization demo endpoint.
-    /// </summary>
-    /// <param name="app">The web application.</param>
-    /// <returns>The web application for chaining.</returns>
-    public static WebApplication MapSerializationDemoEndpoint(this WebApplication app)
-    {
-        app.MapGet("/debug/serialization-demo", (IPropertyBagFactory propertyBagFactory) =>
-        {
-            Dictionary<string, object> propertyBagData = new()
-            {
-                ["string-demo"] = "string",
-                ["int-demo"] = 4,
-                ["decimal-demo"] = 56.32m,
-                ["datetimeoffset-demo"] = DateTimeOffset.UtcNow,
-                ["nestedobject-demo"] = new { Property1 = "One", Property2 = 2 },
-            };
-
-            var testData = new
-            {
-                DateTime = DateTimeOffset.Now,
-                Culture = CultureInfo.CurrentCulture,
-                PropertyBag = propertyBagFactory.Create(propertyBagData),
-            };
-
-            // Return both for comparison (ASP.NET Core will use configured options for response)
-            return TypedResults.Ok(testData);
-        });
-
-        return app;
-    }
-
-    /// <summary>
     /// Configures both HTTP and MVC Json serialization.
     /// </summary>
     /// <param name="builder">The <see cref="WebApplicationBuilder"/> to configure.</param>

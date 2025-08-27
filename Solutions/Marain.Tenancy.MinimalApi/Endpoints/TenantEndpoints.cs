@@ -344,7 +344,7 @@ public static class TenantEndpoints
 
     private static LinkResponse BuildTenantLink(string tenantId, LinkGenerator linkGenerator, HttpContext context)
     {
-        string href = linkGenerator.GetPathByName(context, EndpointNames.GetTenant, new { tenantId = tenantId })
+        string href = linkGenerator.GetUriByName(context, EndpointNames.GetTenant, new { tenantId = tenantId })
             ?? throw new InvalidOperationException($"Unable to generate self link for tenant Id {tenantId}");
 
         return new() { Href = href };
@@ -352,7 +352,7 @@ public static class TenantEndpoints
 
     private static LinkResponse BuildGetChildrenLink(string tenantId, int? maxItems, string? continuationToken, LinkGenerator linkGenerator, HttpContext context)
     {
-        string href = linkGenerator.GetPathByName(
+        string href = linkGenerator.GetUriByName(
             context,
             EndpointNames.GetChildTenants,
             new { tenantId, maxItems, continuationToken }) ?? throw new InvalidOperationException("Unable to generate self link for GetChildTenants");
@@ -362,7 +362,7 @@ public static class TenantEndpoints
 
     private static LinkResponse BuildDeleteTenantLink(string parentTenantId, string tenantId, LinkGenerator linkGenerator, HttpContext context)
     {
-        string href = linkGenerator.GetPathByName(context, EndpointNames.DeleteChildTenant, new { tenantId = parentTenantId, childTenantId = tenantId })
+        string href = linkGenerator.GetUriByName(context, EndpointNames.DeleteChildTenant, new { tenantId = parentTenantId, childTenantId = tenantId })
             ?? throw new InvalidOperationException($"Unable to generate self link for tenant Id {tenantId}");
 
         return new() { Href = href };

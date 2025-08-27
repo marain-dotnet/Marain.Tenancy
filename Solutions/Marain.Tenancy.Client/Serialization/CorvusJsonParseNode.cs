@@ -57,6 +57,9 @@ public class CorvusJsonParseNode : IParseNode
             // Call OnBeforeAssignFieldValues if available
             this.OnBeforeAssignFieldValues?.Invoke(instance);
             
+            // Check if this object implements IAdditionalDataHolder
+            IAdditionalDataHolder? additionalDataHolder = instance as IAdditionalDataHolder;
+            
             // Process each field in the JSON object
             foreach (JsonProperty property in this._jsonElement.EnumerateObject())
             {
@@ -64,6 +67,13 @@ public class CorvusJsonParseNode : IParseNode
                 {
                     var childNode = new CorvusJsonParseNode(property.Value, this._options);
                     deserializer(childNode);
+                }
+                else if (additionalDataHolder != null)
+                {
+                    // Store unmatched properties in AdditionalData
+                    var childNode = new CorvusJsonParseNode(property.Value, this._options);
+                    object? value = this.GetValueFromJsonElement(property.Value);
+                    additionalDataHolder.AdditionalData[property.Name] = value!;
                 }
             }
             
@@ -518,4 +528,83 @@ public class CorvusJsonParseNode : IParseNode
     /// Gets or sets the action called after the field values are assigned from the response.
     /// </summary>
     public Action<IParsable>? OnAfterAssignFieldValues { get; set; }
+
+    /// <summary>
+    /// Converts a JsonElement to an appropriate .NET object for AdditionalData storage.
+    /// </summary>
+    /// <param name="element">The JSON element to convert.</param>
+    /// <returns>The converted .NET object.</returns>
+    private object? GetValueFromJsonElement(JsonElement element)
+    {
+        return element.ValueKind switch
+        {
+            JsonValueKind.String => element.GetString(),
+            JsonValueKind.Number => this.GetNumericValue(element),
+            JsonValueKind.True => true,
+            JsonValueKind.False => false,
+            JsonValueKind.Null => null,
+            JsonValueKind.Object => this.ConvertJsonObjectToDictionary(element),
+            JsonValueKind.Array => this.ConvertJsonArrayToList(element),
+            _ => element.GetRawText(),
+        };
+    }
+
+    /// <summary>
+    /// Gets the appropriate numeric value from a JsonElement.
+    /// </summary>
+    /// <param name="element">The JSON element containing a number.</param>
+    /// <returns>The numeric value as the most appropriate .NET type.</returns>
+    private object GetNumericValue(JsonElement element)
+    {
+        // Try to get as integer first (most common case)
+        if (element.TryGetInt32(out int intValue))
+        {
+            return intValue;
+        }
+        
+        // Try as long
+        if (element.TryGetInt64(out long longValue))
+        {
+            return longValue;
+        }
+        
+        // Try as decimal for precise decimal numbers
+        if (element.TryGetDecimal(out decimal decimalValue))
+        {
+            return decimalValue;
+        }
+        
+        // Fall back to double
+        return element.GetDouble();
+    }
+
+    /// <summary>
+    /// Converts a JSON object to a dictionary.
+    /// </summary>
+    /// <param name="element">The JSON object element.</param>
+    /// <returns>A dictionary representation of the JSON object.</returns>
+    private Dictionary<string, object?> ConvertJsonObjectToDictionary(JsonElement element)
+    {
+        var result = new Dictionary<string, object?>();
+        foreach (JsonProperty property in element.EnumerateObject())
+        {
+            result[property.Name] = this.GetValueFromJsonElement(property.Value);
+        }
+        return result;
+    }
+
+    /// <summary>
+    /// Converts a JSON array to a list.
+    /// </summary>
+    /// <param name="element">The JSON array element.</param>
+    /// <returns>A list representation of the JSON array.</returns>
+    private List<object?> ConvertJsonArrayToList(JsonElement element)
+    {
+        var result = new List<object?>();
+        foreach (JsonElement item in element.EnumerateArray())
+        {
+            result.Add(this.GetValueFromJsonElement(item));
+        }
+        return result;
+    }
 }

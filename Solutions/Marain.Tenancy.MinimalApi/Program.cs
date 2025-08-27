@@ -99,7 +99,6 @@ if (app.Environment.IsDevelopment())
 // Add health check endpoint
 app.MapHealthChecks("/health");
 app.MapCustomSwaggerEndpoint();
-app.MapSerializationDemoEndpoint();
 app.MapTenancyEndpoints();
 
 app.Run();

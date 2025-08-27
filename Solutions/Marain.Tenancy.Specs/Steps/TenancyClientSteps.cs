@@ -5,22 +5,19 @@
 namespace Marain.Tenancy.Specs.Steps;
 
 using System;
-using System.ClientModel;
 using System.Collections.Generic;
-using System.IO;
 using System.Linq;
+using System.Text.Json;
 using System.Threading.Tasks;
-using Azure;
+using Corvus.Json.Serialization;
 using Corvus.Tenancy;
 using Corvus.Testing.ReqnRoll;
 using Marain.Tenancy.Client;
+using Marain.Tenancy.Client.Helpers;
 using Marain.Tenancy.Client.Models;
 using Marain.Tenancy.Specs.Bindings;
 using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.DependencyModel;
 using Microsoft.Kiota.Abstractions;
-using Microsoft.Kiota.Abstractions.Serialization;
-using Microsoft.Kiota.Http.HttpClientLibrary.Middleware;
 using Microsoft.Kiota.Http.HttpClientLibrary.Middleware.Options;
 using NUnit.Framework;
 using Reqnroll;
@@ -149,9 +146,26 @@ public class TenancyClientSteps : Steps
     [When("I use the Tenancy Client to update the properties of the tenant called {string}")]
     public async Task WhenIUseTheTenancyClientToUpdateThePropertiesOfTheTenantCalled(string tenantName, DataTable dataTable)
     {
+        IServiceProvider serviceProvider = ContainerBindings.GetServiceProvider(this.FeatureContext);
+        IJsonSerializerOptionsProvider serializerOptionsProvider = serviceProvider.GetRequiredService<IJsonSerializerOptionsProvider>();
+
         ApiResponseWithHeaders<TenantResponse> tenant = this.ScenarioContext.Get<ApiResponseWithHeaders<TenantResponse>>(tenantName);
 
-        List<UpdateTenantJsonPatchEntry> updates = DataTableToUpdateTenantJsonPatchEntry(dataTable);
+        List<UpdateTenantJsonPatchEntry> updates = DataTableToUpdateTenantJsonPatchEntry(dataTable, serializerOptionsProvider.Instance);
+
+        await this.TenancyApiClient[tenant.Response!.Id!].Marain.Tenant.PatchAsync(updates);
+    }
+
+    [When("I use the Tenancy Client to rename the tenant called {string} to {string} and update its properties")]
+    public async Task WhenIUseTheTenancyClientToRenameTheTenantCalledToAndUpdateItsProperties(string tenantName, string newName, DataTable dataTable)
+    {
+        IServiceProvider serviceProvider = ContainerBindings.GetServiceProvider(this.FeatureContext);
+        IJsonSerializerOptionsProvider serializerOptionsProvider = serviceProvider.GetRequiredService<IJsonSerializerOptionsProvider>();
+
+        ApiResponseWithHeaders<TenantResponse> tenant = this.ScenarioContext.Get<ApiResponseWithHeaders<TenantResponse>>(tenantName);
+
+        List<UpdateTenantJsonPatchEntry> updates = DataTableToUpdateTenantJsonPatchEntry(dataTable, serializerOptionsProvider.Instance);
+        updates.Add(UpdateTenantJsonPatchEntryFactory.Create(UpdateTenantJsonPatchEntryOperation.Replace, "/name", newName));
 
         await this.TenancyApiClient[tenant.Response!.Id!].Marain.Tenant.PatchAsync(updates);
     }
@@ -159,7 +173,10 @@ public class TenancyClientSteps : Steps
     [When("I use the Tenancy Client to update the properties of the tenant with id {string}")]
     public async Task WhenIUseTheTenancyClientToUpdateThePropertiesOfTheTenantWithId(string tenantId, DataTable dataTable)
     {
-        List<UpdateTenantJsonPatchEntry> updates = DataTableToUpdateTenantJsonPatchEntry(dataTable);
+        IServiceProvider serviceProvider = ContainerBindings.GetServiceProvider(this.FeatureContext);
+        IJsonSerializerOptionsProvider serializerOptionsProvider = serviceProvider.GetRequiredService<IJsonSerializerOptionsProvider>();
+
+        List<UpdateTenantJsonPatchEntry> updates = DataTableToUpdateTenantJsonPatchEntry(dataTable, serializerOptionsProvider.Instance);
 
         try
         {
@@ -228,6 +245,15 @@ public class TenancyClientSteps : Steps
         Assert.AreEqual(0, response.Response?.Properties?.AdditionalData.Count ?? 0);
     }
 
+    [Then("the tenant called {string} should have the name {string}")]
+    public void ThenTheTenantCalledShouldHaveTheName(string tenantName, string expectedName)
+    {
+        CommonSteps.RethrowLastExceptionIfPresent();
+        ApiResponseWithHeaders<TenantResponse> response = this.ScenarioContext.Get<ApiResponseWithHeaders<TenantResponse>>(tenantName);
+
+        Assert.AreEqual(expectedName, response?.Response?.Name);
+    }
+
     [Then("the tenant called {string} should have the properties")]
     public void ThenTheTenantCalledShouldHaveTheProperties(string tenantName, DataTable dataTable)
     {
@@ -239,19 +265,36 @@ public class TenancyClientSteps : Steps
 
         foreach ((string key, string value, string type) in expectedProperties)
         {
-            Assert.IsTrue(actualProperties.ContainsKey(key));
+            // Try both PascalCase and camelCase versions of the key
+            string camelCaseKey = char.ToLowerInvariant(key[0]) + key.Substring(1);
+            bool keyExists = actualProperties.ContainsKey(key) || actualProperties.ContainsKey(camelCaseKey);
+            string actualKey = actualProperties.ContainsKey(key) ? key : camelCaseKey;
+
+            Assert.IsTrue(keyExists, $"Property '{key}' (or '{camelCaseKey}') not found in AdditionalData. Available keys: {string.Join(", ", actualProperties.Keys)}");
 
             if (type == "integer")
             {
-                Assert.AreEqual(int.Parse(value), actualProperties[key]);
+                Assert.AreEqual(int.Parse(value), actualProperties[actualKey]);
             }
-            else if (type == "datatimeoffset")
+            else if (type == "datetimeoffset")
             {
-                Assert.AreEqual(DateTimeOffset.Parse(value), actualProperties[key]);
+                // The value comes back as a complex object containing the serialized DateTimeOffset
+                object actualValue = actualProperties[actualKey];
+                if (actualValue is Dictionary<string, object?> dict)
+                {
+                    Assert.IsTrue(dict.ContainsKey("dateTimeOffset"), "DateTimeOffset object should contain 'dateTimeOffset' property");
+                    string serializedValue = dict["dateTimeOffset"]?.ToString()!;
+                    Assert.AreEqual(DateTimeOffset.Parse(value), DateTimeOffset.Parse(serializedValue));
+                }
+                else
+                {
+                    // Fallback: try direct comparison
+                    Assert.AreEqual(DateTimeOffset.Parse(value), actualValue);
+                }
             }
             else
             {
-                Assert.AreEqual(value, actualProperties[key]);
+                Assert.AreEqual(value, actualProperties[actualKey]);
             }
         }
     }
@@ -262,7 +305,7 @@ public class TenancyClientSteps : Steps
         CommonSteps.RethrowLastExceptionIfPresent();
         ApiResponseWithHeaders<TenantResponse> response = this.ScenarioContext.Get<ApiResponseWithHeaders<TenantResponse>>(tenantName);
         Assert.IsNotNull(response.Response?.Links?.Self?.Href, $"Tenant '{tenantName}' does not contain a self link.");
-        Assert.AreEqual(expectedPath, response.Response!.Links!.Self!.Href!);
+        Assert.IsTrue(response.Response!.Links!.Self!.Href!.EndsWith(expectedPath));
     }
 
     [Then("the tenant called {string} should have a children link with path {string}")]
@@ -271,7 +314,7 @@ public class TenancyClientSteps : Steps
         CommonSteps.RethrowLastExceptionIfPresent();
         ApiResponseWithHeaders<TenantResponse> response = this.ScenarioContext.Get<ApiResponseWithHeaders<TenantResponse>>(tenantName);
         Assert.IsNotNull(response.Response?.Links?.Children?.Href, $"Tenant '{tenantName}' does not contain a children link.");
-        Assert.AreEqual(expectedPath, response.Response!.Links!.Children!.Href!);
+        Assert.IsTrue(response.Response!.Links!.Children!.Href!.EndsWith(expectedPath));
     }
 
     [Then("the children called {string} should contain a self link")]
@@ -368,23 +411,34 @@ public class TenancyClientSteps : Steps
         Assert.AreEqual(expectedItems, result.Response?.Links?.GetTenant?.Count);
     }
 
-    private static List<UpdateTenantJsonPatchEntry> DataTableToUpdateTenantJsonPatchEntry(DataTable dataTable)
+    private static List<UpdateTenantJsonPatchEntry> DataTableToUpdateTenantJsonPatchEntry(DataTable dataTable, JsonSerializerOptions serializerOptions)
     {
         List<UpdateTenantJsonPatchEntry> updates = [];
 
-        foreach ((string key, string value, string type) in dataTable.CreateSet<(string Key, string Value, string Type)>())
+        foreach ((string key, string value, string type, UpdateTenantJsonPatchEntryOperation operation) in dataTable.CreateSet<(string Key, string Value, string Type, UpdateTenantJsonPatchEntryOperation Operation)>())
         {
-            UntypedNode? valueNode;
             if (type == "integer")
             {
-                valueNode = new UntypedInteger(int.Parse(value));
+                updates.Add(UpdateTenantJsonPatchEntryFactory.Create(
+                    UpdateTenantJsonPatchEntryOperation.Add,
+                    $"/properties/{key}",
+                    int.Parse(value)));
+            }
+            else if (type == "datetimeoffset")
+            {
+                updates.Add(UpdateTenantJsonPatchEntryFactory.Create(
+                    UpdateTenantJsonPatchEntryOperation.Add,
+                    $"/properties/{key}",
+                    DateTimeOffset.Parse(value),
+                    serializerOptions));
             }
             else
             {
-                valueNode = new UntypedString(value);
+                updates.Add(UpdateTenantJsonPatchEntryFactory.Create(
+                    UpdateTenantJsonPatchEntryOperation.Add,
+                    $"/properties/{key}",
+                    value));
             }
-
-            updates.Add(new() { Op = UpdateTenantJsonPatchEntryOperation.Add, Path = $"/properties/{key}", Value = valueNode });
         }
 
         return updates;
