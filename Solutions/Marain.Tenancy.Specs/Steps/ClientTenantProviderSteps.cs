@@ -298,7 +298,7 @@ public class ClientTenantProviderSteps
     ////    return this.store.DeleteTenantAsync(tenantId);
     ////}
 
-    [When("I get a tenant with id \"(.*)\" from the tenant store")]
+    [When("I use the ClientTenantProvider to get a tenant with id {string}")]
     public async Task WhenIGetATenantWithId(string tenantId)
     {
         try
@@ -307,7 +307,7 @@ public class ClientTenantProviderSteps
         }
         catch (Exception ex)
         {
-            this.scenarioContext.Set(ex);
+            CommonSteps.SetLastException(this.scenarioContext, ex);
         }
     }
 

@@ -5,12 +5,15 @@
 namespace Marain.Tenancy;
 
 using System;
+using System.Collections.Generic;
+using System.Linq;
 using System.Threading.Tasks;
 using Corvus.Tenancy;
 using Corvus.Tenancy.Exceptions;
 using Marain.Tenancy.Client;
 using Marain.Tenancy.Client.Models;
 using Marain.Tenancy.Mappers;
+using Microsoft.Kiota.Http.HttpClientLibrary.Middleware.Options;
 
 /// <summary>
 /// An <see cref="ITenantProvider"/> built over a Marain tenancy instance.
@@ -46,33 +49,43 @@ public class ClientTenantProvider : ITenantProvider
     /// <inheritdoc/>
     public async Task<ITenant> GetTenantAsync(string tenantId, string? eTag = null)
     {
-        await Task.CompletedTask;
-        throw new NotImplementedException();
-        ////// The root tenant is a special case - it lives just in memory. This is because
-        ////// services use it to configure service-specific defaults.
-        ////if (tenantId == this.Root.Id)
-        ////{
-        ////    return this.Root;
-        ////}
+        // The root tenant is a special case - it lives just in memory. This is because
+        // services use it to configure service-specific defaults.
+        if (tenantId == this.Root.Id)
+        {
+            return this.Root;
+        }
 
-        ////try
-        ////{
-        ////    TenantResponse? tenant = await this.TenantApiClient.GetTenantAsync(tenantId, eTag).ConfigureAwait(false);
+        try
+        {
+            HeadersInspectionHandlerOption headersInspectionhandler = new() { InspectResponseHeaders = true };
 
-        ////    if (tenant == null)
-        ////    {
-        ////        throw new TenantNotFoundException();
-        ////    }
+            TenantResponse? tenant = await this.TenantApiClient[tenantId].Marain.Tenant.GetAsync(config =>
+            {
+                config.Options.Add(headersInspectionhandler);
 
-        ////    return this.TenantMapper.MapTenant(tenant);
-        ////}
-        ////catch (ProblemDetails ex) when (ex.Status == 404)
-        ////{
-        ////    throw new TenantNotFoundException();
-        ////}
-        ////catch (HttpValidationProblemDetails ex) when (ex.Status == 400)
-        ////{
-        ////    throw new ArgumentException($"Invalid tenant request: {ex.Detail ?? ex.Title}");
-        ////}
+                if (!string.IsNullOrEmpty(eTag))
+                {
+                    config.Headers.Add("If-None-Match", eTag);
+                }
+            }).ConfigureAwait(false);
+
+            if (tenant == null)
+            {
+                throw new TenantNotFoundException();
+            }
+
+            headersInspectionhandler.ResponseHeaders.TryGetValue("ETag", out IEnumerable<string>? etagValues);
+
+            return this.TenantMapper.MapTenant(tenant, etagValues?.FirstOrDefault());
+        }
+        catch (ProblemDetails ex) when (ex.Status == 404)
+        {
+            throw new TenantNotFoundException();
+        }
+        catch (HttpValidationProblemDetails ex) when (ex.Status == 400)
+        {
+            throw new ArgumentException($"Invalid tenant request: {ex.Detail ?? ex.Title}");
+        }
     }
 }

@@ -184,6 +184,16 @@
           "System.Interactive": "6.0.1"
         }
       },
+      "Corvus.Extensions.Newtonsoft.Json": {
+        "type": "Transitive",
+        "resolved": "3.0.2",
+        "contentHash": "Htc652U9rb9V6Ik6L18H09cKpVnsk95qU5ZBUfjpk0ehtV3BzhJuVA2xoEtk4vN/vhq2mSf8JZswwznPZilLBw==",
+        "dependencies": {
+          "Corvus.Json.Abstractions": "3.0.2",
+          "Microsoft.Extensions.DependencyInjection.Abstractions": "3.1.32",
+          "Newtonsoft.Json": "13.0.3"
+        }
+      },
       "Corvus.Identity.Abstractions": {
         "type": "Transitive",
         "resolved": "4.0.1",
@@ -353,6 +363,15 @@
         "resolved": "8.0.19",
         "contentHash": "iTKZC+re7D1GRYIltORRTONhX9sZ8AbIU2QFP+2eLneACdKoARGla/zuQq7U0jvekd/nNJxZM2rwn98mKnGDPw==",
         "dependencies": {
+          "System.IO.Pipelines": "8.0.0"
+        }
+      },
+      "Microsoft.AspNetCore.WebUtilities": {
+        "type": "Transitive",
+        "resolved": "8.0.14",
+        "contentHash": "CnD6y/y/Zp3uWCl/6NuZIsnltEsDPEjtVV3r5egL1/RvABdRduyrHbMFdrhoeVRzZkyhhIgO8erGWUXDtYIQBQ==",
+        "dependencies": {
+          "Microsoft.Net.Http.Headers": "8.0.14",
           "System.IO.Pipelines": "8.0.0"
         }
       },
@@ -787,6 +806,14 @@
           "Microsoft.Kiota.Abstractions": "1.19.0"
         }
       },
+      "Microsoft.Net.Http.Headers": {
+        "type": "Transitive",
+        "resolved": "8.0.14",
+        "contentHash": "JXEPNgWSjrUAfYkUt04kpENDt+HlXwlSwJOef6c4bAm1X/BrZOrQngdQfm6FRByC37NeXnzNppzFZUbPWy0j1w==",
+        "dependencies": {
+          "Microsoft.Extensions.Primitives": "8.0.0"
+        }
+      },
       "Microsoft.NET.Test.Sdk": {
         "type": "Transitive",
         "resolved": "17.14.1",
@@ -1111,6 +1138,16 @@
           "Microsoft.Extensions.Http": "[8.0.*, )",
           "Microsoft.Kiota.Authentication.Azure": "[1.19.0, )",
           "Microsoft.Kiota.Bundle": "[1.19.0, )"
+        }
+      },
+      "marain.tenancy.clienttenantprovider": {
+        "type": "Project",
+        "dependencies": {
+          "Corvus.Extensions.Newtonsoft.Json": "[3.0.2, )",
+          "Corvus.Tenancy.Abstractions": "[4.0.1, )",
+          "Marain.Tenancy.Client": "[1.0.0, )",
+          "Microsoft.AspNetCore.WebUtilities": "[8.0.14, )",
+          "Newtonsoft.Json": "[13.0.3, )"
         }
       },
       "marain.tenancy.minimalapi": {

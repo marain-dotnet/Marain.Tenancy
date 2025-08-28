@@ -55,6 +55,7 @@
   </ItemGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\Marain.Tenancy.ClientTenantProvider\Marain.Tenancy.ClientTenantProvider.csproj" />
     <ProjectReference Include="..\Marain.Tenancy.MinimalApi\Marain.Tenancy.MinimalApi.csproj" />
     <ProjectReference Include="..\Marain.Tenancy.Client\Marain.Tenancy.Client.csproj" />
   </ItemGroup>

@@ -38,7 +38,7 @@ public static class Program
             string tenancyServiceBaseUri = ctx.Configuration["TenancyClient:TenancyServiceBaseUri"]
                 ?? throw new InvalidOperationException("TenancyClient:TenancyServiceBaseUri configuration is required");
 
-            services.AddTenantProviderServiceClient(tenancyServiceBaseUri);
+            services.AddTenantProviderServiceClient();
         });
 
         await builder.RunCommandLineApplicationAsync<TenancyCliCommand>(args).ConfigureAwait(false);

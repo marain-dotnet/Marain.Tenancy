@@ -13,6 +13,7 @@ using Corvus.Tenancy.Exceptions;
 using Marain.Tenancy.Client;
 using Marain.Tenancy.Client.Models;
 using Marain.Tenancy.Mappers;
+using Microsoft.Kiota.Http.HttpClientLibrary.Middleware.Options;
 
 /// <summary>
 /// An <see cref="ITenantProvider"/> built over a Marain tenancy instance.
@@ -48,57 +49,59 @@ public class ClientTenantStore : ClientTenantProvider, ITenantStore
     /// <inheritdoc/>
     public async Task DeleteTenantAsync(string tenantId)
     {
-        await Task.CompletedTask;
-        throw new NotImplementedException();
-        ////try
-        ////{
-        ////    // Extract parent tenant ID from the full tenant ID path
-        ////    string parentTenantId = tenantId.Contains('/') ? tenantId.Substring(0, tenantId.LastIndexOf('/')) : throw new ArgumentException("Invalid tenant ID format");
-        ////    await this.TenantApiClient.DeleteChildTenantAsync(parentTenantId, tenantId).ConfigureAwait(false);
-        ////}
-        ////catch (ProblemDetails ex) when (ex.Status == 404)
-        ////{
-        ////    throw new TenantNotFoundException();
-        ////}
-        ////catch (HttpValidationProblemDetails ex) when (ex.Status == 400)
-        ////{
-        ////    throw new InvalidOperationException($"Invalid delete tenant request: {ex.Detail ?? ex.Title}");
-        ////}
+        try
+        {
+            // Extract parent tenant ID from the full tenant ID path
+            string parentTenantId = tenantId.Contains('/') ? tenantId.Substring(0, tenantId.LastIndexOf('/')) : throw new ArgumentException("Invalid tenant ID format");
+
+            await this.TenantApiClient[parentTenantId].Marain.Tenant.Children[tenantId].DeleteAsync().ConfigureAwait(false);
+        }
+        catch (ProblemDetails ex) when (ex.Status == 404)
+        {
+            throw new TenantNotFoundException();
+        }
+        catch (HttpValidationProblemDetails ex) when (ex.Status == 400)
+        {
+            throw new InvalidOperationException($"Invalid delete tenant request: {ex.Detail ?? ex.Title}");
+        }
     }
 
     /// <inheritdoc/>
     public async Task<TenantCollectionResult> GetChildrenAsync(string tenantId, int limit = 20, string? continuationToken = null)
     {
-        await Task.CompletedTask;
-        throw new NotImplementedException();
-        ////try
-        ////{
-        ////    ChildTenantsResponse? result = await this.TenantApiClient.GetChildTenantsAsync(tenantId, continuationToken, limit).ConfigureAwait(false);
+        try
+        {
+            ChildTenantsResponse? result = await this.TenantApiClient[tenantId].Marain.Tenant.Children.GetAsync(config =>
+            {
+                config.QueryParameters.ContinuationToken = continuationToken;
+                config.QueryParameters.MaxItems = limit;
+            }).ConfigureAwait(false);
 
-        ////    if (result == null)
-        ////    {
-        ////        throw new TenantNotFoundException();
-        ////    }
+            if (result is null)
+            {
+                throw new TenantNotFoundException();
+            }
 
-        ////    // Extract tenant IDs from the embedded tenants
-        ////    List<string> tenantIds = result.Embedded?.Tenants?
-        ////        .Where(t => !string.IsNullOrEmpty(t.Id))
-        ////        .Select(t => t.Id!)
-        ////        .ToList() ?? new List<string>();
+            // Extract tenant IDs from the linked tenants
+            List<LinkResponse> childLinkResponses = result?.Links?.GetTenant ?? [];
+            IEnumerable<string> childTenantIds = childLinkResponses
+                .Select(x => x.Href)
+                .Where(x => string.IsNullOrEmpty(x))
+                .Select(x => this.TenantMapper.ExtractTenantIdFromAbsoluteUrl(x!));
 
-        ////    // Use the continuation token from the response for pagination
-        ////    string? nextContinuationToken = result.ContinuationToken;
+            // Use the continuation token from the response for pagination
+            string? nextContinuationToken = result!.ContinuationToken;
 
-        ////    return new TenantCollectionResult(tenantIds, nextContinuationToken);
-        ////}
-        ////catch (ProblemDetails ex) when (ex.Status == 404)
-        ////{
-        ////    throw new TenantNotFoundException();
-        ////}
-        ////catch (HttpValidationProblemDetails ex) when (ex.Status == 400)
-        ////{
-        ////    throw new InvalidOperationException($"Invalid get children request: {ex.Detail ?? ex.Title}");
-        ////}
+            return new TenantCollectionResult(childTenantIds, nextContinuationToken);
+        }
+        catch (ProblemDetails ex) when (ex.Status == 404)
+        {
+            throw new TenantNotFoundException();
+        }
+        catch (HttpValidationProblemDetails ex) when (ex.Status == 400)
+        {
+            throw new InvalidOperationException($"Invalid get children request: {ex.Detail ?? ex.Title}");
+        }
     }
 
     /// <inheritdoc/>
@@ -247,40 +250,42 @@ public class ClientTenantStore : ClientTenantProvider, ITenantStore
 
     private async Task<ITenant> CreateChildTenantAsync(string parentTenantId, string name, Guid? wellKnownChildTenantGuid)
     {
-        await Task.CompletedTask;
-        throw new NotImplementedException();
-        ////try
-        ////{
-        ////    var request = new CreateChildTenantRequest
-        ////    {
-        ////        TenantName = name,
-        ////        WellKnownChildTenantGuid = wellKnownChildTenantGuid?.ToString(),
-        ////    };
+        try
+        {
+            CreateChildTenantRequest body = new()
+            {
+                TenantName = name,
+                WellKnownChildTenantGuid = wellKnownChildTenantGuid?.ToString(),
+            };
 
-        ////    TenantResponse? createdTenant = await this.TenantApiClient.CreateChildTenantAsync(parentTenantId, request).ConfigureAwait(false);
+            HeadersInspectionHandlerOption headersInspectionhandler = new() { InspectResponseHeaders = true };
 
-        ////    if (createdTenant == null)
-        ////    {
-        ////        throw new InvalidOperationException("Failed to create child tenant - service returned null response");
-        ////    }
+            TenantResponse? createdTenant = await this.TenantApiClient[parentTenantId].Marain.Tenant.PostAsync(body, config => config.Options.Add(headersInspectionhandler));
 
-        ////    return this.TenantMapper.MapTenant(createdTenant);
-        ////}
-        ////catch (ProblemDetails ex) when (ex.Status == 404)
-        ////{
-        ////    throw new TenantNotFoundException();
-        ////}
-        ////catch (ProblemDetails ex) when (ex.Status == 409)
-        ////{
-        ////    throw new TenantConflictException();
-        ////}
-        ////catch (HttpValidationProblemDetails ex) when (ex.Status == 400)
-        ////{
-        ////    throw new ArgumentException($"Invalid create child tenant request: {ex.Detail ?? ex.Title}");
-        ////}
-        ////catch (Exception ex)
-        ////{
-        ////    throw new InvalidOperationException("Failed to create child tenant", ex);
-        ////}
+            if (createdTenant == null)
+            {
+                throw new InvalidOperationException("Failed to create child tenant - service returned null response");
+            }
+
+            headersInspectionhandler.ResponseHeaders.TryGetValue("ETag", out IEnumerable<string>? etagValues);
+
+            return this.TenantMapper.MapTenant(createdTenant, etagValues?.FirstOrDefault());
+        }
+        catch (ProblemDetails ex) when (ex.Status == 404)
+        {
+            throw new TenantNotFoundException();
+        }
+        catch (ProblemDetails ex) when (ex.Status == 409)
+        {
+            throw new TenantConflictException();
+        }
+        catch (HttpValidationProblemDetails ex) when (ex.Status == 400)
+        {
+            throw new ArgumentException($"Invalid create child tenant request: {ex.Detail ?? ex.Title}");
+        }
+        catch (Exception ex)
+        {
+            throw new InvalidOperationException("Failed to create child tenant", ex);
+        }
     }
 }

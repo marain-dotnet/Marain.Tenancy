@@ -1,6 +1,7 @@
 ﻿@perFeatureContainer
 @useTenancyApi
-@useTenantStore
+@useTenancyClient
+@useClientTenantProvider
 
 Feature: Tenancy Api
 	In order to use Marain Tenant services
@@ -8,8 +9,8 @@ Feature: Tenancy Api
 	I want to be able to use an implementation of ITenantStore that uses the Tenancy Api.
 
 Scenario: Get a tenant that does not exist
-	When I get a tenant with id "NotFound" from the tenant store
-	Then it should throw a TenantNotFoundException
+	When I use the ClientTenantProvider to get a tenant with id "NotFound"
+	Then it should throw a "TenantNotFoundException"
 
 ##Scenario: Create a tenant
 ##	When I use the API to create a new tenant

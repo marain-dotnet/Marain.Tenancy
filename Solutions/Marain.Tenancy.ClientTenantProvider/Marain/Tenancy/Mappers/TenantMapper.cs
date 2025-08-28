@@ -9,6 +9,7 @@ using System.Collections.Generic;
 using System.Linq;
 using Corvus.Json;
 using Corvus.Tenancy;
+using Marain.Tenancy.Client.Models;
 using Microsoft.AspNetCore.WebUtilities;
 using Newtonsoft.Json.Linq;
 
@@ -30,45 +31,38 @@ public class TenantMapper : ITenantMapper
     }
 
     /// <inheritdoc/>
-    public ITenant MapTenant(object source)
+    public ITenant MapTenant(TenantResponse source, string? etag)
     {
-        if (source is Client.Models.TenantResponse tenantFromService)
+        return new Tenant(
+            source.Id ?? string.Empty,
+            source.Name ?? string.Empty,
+            this.propertyBagFactory.Create(source?.Properties?.AdditionalData ?? new Dictionary<string, object>()))
         {
-            return new Tenant(
-                tenantFromService.Id ?? string.Empty,
-                tenantFromService.Name ?? string.Empty,
-                this.propertyBagFactory.Create(ConvertProperties(tenantFromService.Properties) ?? new Dictionary<string, object>()))
-            {
-                ETag = string.Empty, // Kiota TenantResponse doesn't have ETag property exposed
-            };
-        }
-
-        // Fallback for legacy compatibility
-        Client.Models.TenantResponse? tenant = ((JObject)source).ToObject<Client.Models.TenantResponse>();
-        if (tenant != null)
-        {
-            return new Tenant(
-                tenant.Id ?? string.Empty,
-                tenant.Name ?? string.Empty,
-                this.propertyBagFactory.Create(ConvertProperties(tenant.Properties) ?? new Dictionary<string, object>()))
-            {
-                ETag = string.Empty,
-            };
-        }
-
-        throw new ArgumentException("Invalid tenant source object", nameof(source));
+            ETag = etag,
+        };
     }
 
     /// <inheritdoc/>
-    public Client.Models.TenantResponse MapTenant(ITenant source)
+    public TenantResponse MapTenant(ITenant source)
     {
-        return new Client.Models.TenantResponse
+        return new TenantResponse
         {
             Id = source.Id,
             Name = source.Name,
             ContentType = source.ContentType,
             Properties = ConvertToKiotaProperties(((JObject)source.Properties).ToObject<Dictionary<string, object>>()),
         };
+    }
+
+    /// <inheritdoc/>
+    public string ExtractTenantIdFromAbsoluteUrl(string absoluteUrl)
+    {
+        Uri uri = new(absoluteUrl, UriKind.Absolute);
+        string path = uri.AbsolutePath;
+
+        // Path will start with a slash. The tenant Id is the first element in the path, and will always be followed
+        // by additional elements.
+        return path[1..path.IndexOf('/', 1)];
     }
 
     /// <inheritdoc/>
@@ -111,18 +105,6 @@ public class TenantMapper : ITenantMapper
         }
 
         return query["continuationToken"].FirstOrDefault();
-    }
-
-    private static Dictionary<string, object>? ConvertProperties(Client.Models.TenantResponse_properties? properties)
-    {
-        // Kiota generated properties object needs conversion
-        if (properties == null)
-        {
-            return null;
-        }
-
-        // For now, return empty dictionary until we understand Kiota property structure
-        return new Dictionary<string, object>();
     }
 
     private static Client.Models.TenantResponse_properties? ConvertToKiotaProperties(Dictionary<string, object>? properties)

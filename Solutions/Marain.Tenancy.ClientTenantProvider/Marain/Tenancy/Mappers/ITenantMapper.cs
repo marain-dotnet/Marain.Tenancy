@@ -6,6 +6,7 @@ namespace Marain.Tenancy.Mappers;
 
 using System;
 using Corvus.Tenancy;
+using Marain.Tenancy.Client.Models;
 
 /// <summary>
 /// Maps a <see cref="Client.Models.TenantResponse"/> to an <see cref="ITenant"/>.
@@ -16,16 +17,24 @@ public interface ITenantMapper
     /// Map the tenant from client to SDK.
     /// </summary>
     /// <param name="source">The source model.</param>
+    /// <param name="etag">The Etag header from the response.</param>
     /// <returns>The <see cref="ITenant"/>.</returns>
     /// <remarks>It is assumed this is an object which can be cast to a TenantResponse.</remarks>
-    ITenant MapTenant(object source);
+    ITenant MapTenant(TenantResponse source, string? etag = null);
 
     /// <summary>
     /// Map the tenant from SDK to client.
     /// </summary>
     /// <param name="source">The source <see cref="ITenant"/>.</param>
     /// <returns>The <see cref="Client.Models.TenantResponse"/>.</returns>
-    Client.Models.TenantResponse MapTenant(ITenant source);
+    TenantResponse MapTenant(ITenant source);
+
+    /// <summary>
+    /// Extracts a tenant ID from an absolute Marain location.
+    /// </summary>
+    /// <param name="absoluteUrl">The absolute Url string.</param>
+    /// <returns>The tenant Id.</returns>
+    string ExtractTenantIdFromAbsoluteUrl(string absoluteUrl);
 
     /// <summary>
     /// Extracts a tenant ID from a Marain location.
