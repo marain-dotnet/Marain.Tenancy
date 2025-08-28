@@ -4,61 +4,55 @@
 
 namespace Marain.Tenancy.Specs.Bindings;
 
+using System;
 using System.Collections.Generic;
+using System.Linq;
+using System.Net.Http;
 using System.Threading.Tasks;
-using Microsoft.Testing.Platform.Requests;
+using Marain.Tenancy.Specs.Helpers;
 using Reqnroll;
 
 [Binding]
-public class TestTenantCleanup
+public static class TestTenantCleanup
 {
-    private readonly HashSet<(string ParentId, string TenantId)> tenantsToDelete = new();
+    private static readonly HashSet<(string ParentId, string TenantId)> TenantsToDelete = [];
 
-    public void AddTenantToDelete(string? parentId, string? id)
+    public static void AddTenantToDelete(string? parentId, string? id)
     {
         if (!string.IsNullOrEmpty(parentId) && !string.IsNullOrEmpty(id))
         {
-            this.tenantsToDelete.Add((parentId, id));
+            TenantsToDelete.Add((parentId, id));
         }
     }
 
-    public void AddWellKnownTenantToDelete(string parentId, string id)
+    public static void RemoveTenantToDelete(string? parentId, string? id)
     {
-        this.tenantsToDelete.Add((parentId, id));
+        if (!string.IsNullOrEmpty(parentId) && !string.IsNullOrEmpty(id))
+        {
+            TenantsToDelete.RemoveWhere(x => x == (parentId, id));
+        }
     }
 
     [AfterScenario("@useTenancyApi")]
-    public async Task CleanUpTestTenants(FeatureContext featureContext)
+    public static Task CleanUpTestTenants(FeatureContext featureContext)
     {
-        await Task.CompletedTask;
-        ////IServiceProvider serviceProvider = ContainerBindings.GetServiceProvider(featureContext);
+        return Task.CompletedTask;
         ////var errors = new List<Exception>();
-        ////foreach ((string parentId, string id) in this.tenantsToDelete.OrderByDescending(t => t.ParentId.Length + t.TenantId.Length))
+        ////foreach ((string parentId, string id) in TenantsToDelete.OrderByDescending(t => t.ParentId.Length + t.TenantId.Length))
         ////{
         ////    try
         ////    {
-        ////        if (FunctionBindings.TestHostMode == MultiHost.TestHostModes.TenancyClient)
-        ////        {
-        ////            var deleteUri = new Uri(FunctionBindings.TenancyApiBaseUri, $"/{parentId}/marain/tenant/children/{id}");
-        ////            HttpResponseMessage response = await HttpClient.DeleteAsync(deleteUri)
-        ////                .ConfigureAwait(false);
-        ////        }
-        ////        else
-        ////        {
-        ////            // We were in MinimalApi mode, so use the testable service to delete
-        ////            ITestableTenancyService service = serviceProvider.GetRequiredService<ITestableTenancyService>();
-
-        ////            // For MinimalApi mode, we use HTTP client as well since we're testing the HTTP interface
-        ////            var deleteUri = new Uri(FunctionBindings.TenancyApiBaseUri, $"/{parentId}/marain/tenant/children/{id}");
-        ////            HttpResponseMessage response = await HttpClient.DeleteAsync(deleteUri)
-        ////                .ConfigureAwait(false);
-        ////        }
+        ////        HttpResponseMessage response = await MinimalApiWebApplicationFactory.Current.Client.DeleteAsync(
+        ////            $"/{parentId}/marain/tenant/children/{id}").ConfigureAwait(false);
+        ////        response.EnsureSuccessStatusCode();
         ////    }
         ////    catch (Exception x)
         ////    {
         ////        errors.Add(x);
         ////    }
         ////}
+
+        ////TenantsToDelete.Clear();
 
         ////if (errors.Count > 0)
         ////{

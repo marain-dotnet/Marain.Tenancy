@@ -188,6 +188,6 @@ Scenario: Root tenant has empty properties
 
 Scenario: Updates to root tenant are prohibited
 	When I use the Tenancy Client to update the properties of the tenant with id "f26450ab1668784bb327951c8b08f347"
-	| Key       | Value            | Type           |
-	| FirstKey  | 1                | integer        |
+	| Key       | Value                           | Type            | Action  |
+	| FirstKey  | 1                               | integer         | Add     |
 	Then it should throw an ApiException with Response Status Code 405

@@ -11,14 +11,11 @@ using System.Net.Http;
 using System.Text.Json;
 using System.Text.Json.Nodes;
 using System.Threading.Tasks;
-using Corvus.Extensions.Json.Internal;
 using Corvus.Json.Serialization;
 using Corvus.Testing.ReqnRoll;
 using Marain.Tenancy.Specs.Bindings;
 using Marain.Tenancy.Specs.Helpers;
 using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.DependencyModel;
-using Newtonsoft.Json.Linq;
 
 using NUnit.Framework;
 
@@ -28,14 +25,7 @@ using Reqnroll;
 public class TenancyApiSteps : Steps
 {
     private readonly Dictionary<string, string> namedIds = new();
-    private readonly TestTenantCleanup testTenantCleanup;
     private TenancyResponse? tenancyResponse;
-
-    public TenancyApiSteps(
-        TestTenantCleanup testTenantCleanup)
-    {
-        this.testTenantCleanup = testTenantCleanup;
-    }
 
     private TenancyResponse Response => this.tenancyResponse ?? throw new InvalidOperationException("No response available");
 
@@ -110,7 +100,7 @@ public class TenancyApiSteps : Steps
         if (this.Response.IsSuccessStatusCode && this.Response.LocationHeader is not null)
         {
             string id = this.GetTenantIdFromLocationHeader();
-            this.testTenantCleanup.AddTenantToDelete(parentId, id);
+            TestTenantCleanup.AddTenantToDelete(parentId, id);
         }
     }
 
@@ -152,10 +142,13 @@ public class TenancyApiSteps : Steps
         Assert.DoesNotThrow(() => this.GetPropertyNodeFromBodyJsonByPath($"_links.{linkName}"));
     }
 
-    [Then("the response content should contain a {string} link with href {string}")]
-    public void ThenTheResponseShouldContainALinkWithHref(string linkName, string expectedHref)
+    [Then("the response content should contain a {string} link with href with path {string}")]
+    public void ThenTheResponseShouldContainALinkWithHref(string linkName, string expectedHrefPath)
     {
-        this.ThenTheResponseObjectShouldHaveAStringPropertyCalledWithValue($"_links.{linkName}.href", expectedHref);
+        JsonNode targetProperty = this.GetPropertyNodeFromBodyJsonByPath($"_links.{linkName}.href");
+        string? actualValue = targetProperty.GetValue<string>();
+
+        Assert.IsTrue(actualValue?.EndsWith(expectedHrefPath));
     }
 
     [Then("the response content should have a string property called '(.*)' with value '(.*)'")]

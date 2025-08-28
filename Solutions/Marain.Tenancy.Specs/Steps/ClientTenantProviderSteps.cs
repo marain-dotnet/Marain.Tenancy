@@ -25,17 +25,14 @@ using Reqnroll;
 public class ClientTenantProviderSteps
 {
     private readonly ScenarioContext scenarioContext;
-    private readonly TestTenantCleanup testTenantCleanup;
     private readonly ITenantStore store;
     private readonly IJsonPropertyBagFactory propertyBagFactory;
 
     public ClientTenantProviderSteps(
         FeatureContext featureContext,
-        ScenarioContext scenarioContext,
-        TestTenantCleanup testTenantCleanup)
+        ScenarioContext scenarioContext)
     {
         this.scenarioContext = scenarioContext;
-        this.testTenantCleanup = testTenantCleanup;
         this.store = ContainerBindings.GetServiceProvider(featureContext).GetRequiredService<ITenantStore>();
         this.propertyBagFactory = ContainerBindings.GetServiceProvider(featureContext).GetRequiredService<IJsonPropertyBagFactory>();
     }

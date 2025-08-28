@@ -11,29 +11,44 @@ using NUnit.Framework;
 using Reqnroll;
 
 [Binding]
-public class CommonSteps
+public class CommonSteps : Steps
 {
-    public static Exception? LastException { get; set; }
+    private const string LastExceptionKey = "LastException";
+
+    public static Exception? GetLastException(ScenarioContext context)
+    {
+        context.TryGetValue(LastExceptionKey, out Exception? ex);
+        return ex;
+    }
+
+    public static void SetLastException(ScenarioContext context, Exception ex)
+    {
+        context.Set(ex, LastExceptionKey);
+    }
 
     [Then("it should throw a {string}")]
     public void ThenItShouldThrowAnException(string exceptionTypeName)
     {
-        Assert.AreEqual(exceptionTypeName, LastException?.GetType().Name);
+        Exception? lastException = GetLastException(this.ScenarioContext);
+        Assert.AreEqual(exceptionTypeName, lastException?.GetType().Name);
     }
 
     [Then("it should throw an ApiException with Response Status Code {int}")]
     public void ThenTheApiExceptionShouldHaveStatusCode(int expectedStatusCode)
     {
-        Assert.IsInstanceOf<ApiException>(LastException);
-        var ex = (ApiException)LastException!;
+        Exception? lastException = GetLastException(this.ScenarioContext);
+        Assert.IsInstanceOf<ApiException>(lastException);
+        var ex = (ApiException)lastException!;
         Assert.AreEqual(expectedStatusCode, ex.ResponseStatusCode);
     }
 
-    public static void RethrowLastExceptionIfPresent()
+    public static void RethrowLastExceptionIfPresent(ScenarioContext context)
     {
-        if (LastException is not null)
+        Exception? lastException = GetLastException(context);
+
+        if (lastException is not null)
         {
-            var dispatchInfo = ExceptionDispatchInfo.Capture(LastException);
+            var dispatchInfo = ExceptionDispatchInfo.Capture(lastException);
             dispatchInfo.Throw();
         }
     }
