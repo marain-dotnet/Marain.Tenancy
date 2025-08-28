@@ -5,19 +5,16 @@
 namespace Marain.Tenancy.MinimalApi.Endpoints;
 
 using System.Collections.Generic;
-using System.Collections.ObjectModel;
 using System.Linq;
 using System.Text.Json;
 using System.Threading.Tasks;
 using Corvus.Json;
-using Corvus.Json.Serialization;
 using Corvus.Tenancy;
 using Corvus.Tenancy.Exceptions;
 using Marain.Tenancy.MinimalApi.ErrorHandling;
 using Marain.Tenancy.MinimalApi.Models;
 using Marain.Tenancy.MinimalApi.Validation;
 using Microsoft.AspNetCore.Http.HttpResults;
-using Microsoft.CodeAnalysis.CSharp.Syntax;
 
 /// <summary>
 /// Contains endpoint implementations for tenant operations.
@@ -31,14 +28,7 @@ public static class TenantEndpoints
     /// <returns>The route group builder for chaining.</returns>
     public static RouteGroupBuilder RegisterTenantEndpoints(this RouteGroupBuilder group)
     {
-        group.MapGet("/", (
-                [AsParameters] GetTenantParameters parameters,
-                ITenantStore tenantStore,
-                IPropertyBagFactory propertyBagFactory,
-                LinkGenerator linkGenerator,
-                HttpContext context,
-                IJsonSerializerOptionsProvider serializerOptionsProvider) =>
-                GetTenant(parameters, tenantStore, propertyBagFactory, linkGenerator, context))
+        group.MapGet("/", GetTenant)
             .WithName(EndpointNames.GetTenant)
             .WithSummary("Get a tenant by ID")
             .WithDescription("Retrieves detailed information about a specific tenant.")
@@ -49,12 +39,7 @@ public static class TenantEndpoints
             .AddValidation<GetTenantParameters>()
             .AddEndpointFilter<CachingEndpointFilter>();
 
-        group.MapPost("/", (
-                [AsParameters] CreateChildTenantParameters parameters,
-                ITenantStore tenantStore,
-                LinkGenerator linkGenerator,
-                HttpContext context) =>
-                CreateChildTenant(parameters, tenantStore, linkGenerator, context))
+        group.MapPost("/", CreateChildTenant)
             .WithName(EndpointNames.CreateChildTenant)
             .WithSummary("Create a child tenant")
             .WithDescription("Creates a new child tenant under the specified parent tenant.")
@@ -63,12 +48,7 @@ public static class TenantEndpoints
             .ProducesProblem(StatusCodes.Status409Conflict)
             .AddValidation<CreateChildTenantParameters>();
 
-        group.MapGet("/children", (
-                [AsParameters] GetChildrenParameters parameters,
-                ITenantStore tenantStore,
-                LinkGenerator linkGenerator,
-                HttpContext context) =>
-                GetChildTenants(parameters, tenantStore, linkGenerator, context))
+        group.MapGet("/children", GetChildTenants)
             .WithName(EndpointNames.GetChildTenants)
             .WithSummary("Get child tenants")
             .WithDescription("Retrieves a paginated list of child tenants.")
@@ -77,12 +57,7 @@ public static class TenantEndpoints
             .ProducesProblem(StatusCodes.Status404NotFound)
             .AddValidation<GetChildrenParameters>();
 
-        group.MapPatch("/", (
-                [AsParameters] UpdateTenantParameters parameters,
-                ITenantStore tenantStore,
-                LinkGenerator linkGenerator,
-                HttpContext context) =>
-                UpdateTenant(parameters, tenantStore, linkGenerator, context))
+        group.MapPatch("/", UpdateTenant)
             .WithName(EndpointNames.UpdateTenant)
             .WithSummary("Update a tenant")
             .WithDescription("Updates tenant properties using JSON Patch operations.")
@@ -93,10 +68,7 @@ public static class TenantEndpoints
             .ProducesProblem(StatusCodes.Status422UnprocessableEntity)
             .AddValidation<UpdateTenantParameters>();
 
-        group.MapDelete("/children/{childTenantId}", (
-                [AsParameters] DeleteChildTenantParameters parameters,
-                ITenantStore tenantStore) =>
-                DeleteChildTenant(parameters, tenantStore))
+        group.MapDelete("/children/{childTenantId}", DeleteChildTenant)
             .WithName(EndpointNames.DeleteChildTenant)
             .WithSummary("Delete a child tenant")
             .WithDescription("Deletes a child tenant and all its resources.")
@@ -109,7 +81,7 @@ public static class TenantEndpoints
     }
 
     private static async Task<Results<IResult, Ok<TenantResponse>, StatusCodeHttpResult, ProblemHttpResult>> GetTenant(
-        GetTenantParameters parameters,
+        [AsParameters] GetTenantParameters parameters,
         ITenantStore tenantStore,
         IPropertyBagFactory propertyBagFactory,
         LinkGenerator linkGenerator,
@@ -143,7 +115,7 @@ public static class TenantEndpoints
     }
 
     private static async Task<Results<Created<TenantResponse>, ProblemHttpResult>> CreateChildTenant(
-        CreateChildTenantParameters parameters,
+        [AsParameters] CreateChildTenantParameters parameters,
         ITenantStore tenantStore,
         LinkGenerator linkGenerator,
         HttpContext context)
@@ -188,7 +160,7 @@ public static class TenantEndpoints
     }
 
     private static async Task<Results<Ok<ChildTenantsResponse>, ProblemHttpResult>> GetChildTenants(
-        GetChildrenParameters parameters,
+        [AsParameters] GetChildrenParameters parameters,
         ITenantStore tenantStore,
         LinkGenerator linkGenerator,
         HttpContext context)
@@ -235,7 +207,7 @@ public static class TenantEndpoints
     }
 
     private static async Task<Results<Ok<TenantResponse>, StatusCodeHttpResult, ProblemHttpResult>> UpdateTenant(
-        UpdateTenantParameters parameters,
+        [AsParameters] UpdateTenantParameters parameters,
         ITenantStore tenantStore,
         LinkGenerator linkGenerator,
         HttpContext context)
@@ -301,7 +273,7 @@ public static class TenantEndpoints
     }
 
     private static async Task<Results<NoContent, ProblemHttpResult>> DeleteChildTenant(
-        DeleteChildTenantParameters parameters,
+        [AsParameters] DeleteChildTenantParameters parameters,
         ITenantStore tenantStore)
     {
         try
