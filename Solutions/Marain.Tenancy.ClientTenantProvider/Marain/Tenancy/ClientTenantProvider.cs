@@ -13,6 +13,7 @@ using Corvus.Tenancy.Exceptions;
 using Marain.Tenancy.Client;
 using Marain.Tenancy.Client.Models;
 using Marain.Tenancy.Mappers;
+using Microsoft.Kiota.Abstractions;
 using Microsoft.Kiota.Http.HttpClientLibrary.Middleware.Options;
 
 /// <summary>
@@ -86,6 +87,10 @@ public class ClientTenantProvider : ITenantProvider
         catch (HttpValidationProblemDetails ex) when (ex.Status == 400)
         {
             throw new ArgumentException($"Invalid tenant request: {ex.Detail ?? ex.Title}");
+        }
+        catch (ApiException ex) when (ex.ResponseStatusCode == 304)
+        {
+            throw new TenantNotModifiedException();
         }
     }
 }

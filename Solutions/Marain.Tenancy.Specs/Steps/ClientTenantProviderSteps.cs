@@ -9,6 +9,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text.Json;
 using System.Threading.Tasks;
+using Azure;
 using Corvus.Json.PropertyBag;
 using Corvus.Tenancy;
 using Corvus.Tenancy.Exceptions;
@@ -18,13 +19,13 @@ using Marain.Tenancy.Client.Models;
 using Marain.Tenancy.Specs.Bindings;
 
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Kiota.Http.HttpClientLibrary.Middleware.Options;
 using NUnit.Framework;
 using Reqnroll;
 
 [Binding]
-public class ClientTenantProviderSteps
+public class ClientTenantProviderSteps : Steps
 {
-    private readonly ScenarioContext scenarioContext;
     private readonly ITenantStore store;
     private readonly IJsonPropertyBagFactory propertyBagFactory;
 
@@ -32,9 +33,135 @@ public class ClientTenantProviderSteps
         FeatureContext featureContext,
         ScenarioContext scenarioContext)
     {
-        this.scenarioContext = scenarioContext;
         this.store = ContainerBindings.GetServiceProvider(featureContext).GetRequiredService<ITenantStore>();
         this.propertyBagFactory = ContainerBindings.GetServiceProvider(featureContext).GetRequiredService<IJsonPropertyBagFactory>();
+    }
+
+    [When("I use the ClientTenantProvider to get a tenant with id {string}")]
+    public async Task WhenIGetATenantWithId(string tenantId)
+    {
+        await CommonSteps.ExecuteAndStoreExceptionIfThrownAsync(
+            async () => await this.store.GetTenantAsync(tenantId).ConfigureAwait(false),
+            this.ScenarioContext);
+    }
+
+    [Given("I use the ClientTenantProvider to create a child tenant called {string} for the root tenant")]
+    [When("I use the ClientTenantProvider to create a child tenant called {string} for the root tenant")]
+    public async Task WhenIUseTheClientTenantProviderToCreateAChildTenantCalledForTheRootTenant(string tenantName)
+    {
+        ITenant result = await this.store.CreateChildTenantAsync(RootTenant.RootTenantId, tenantName).ConfigureAwait(false);
+
+        TestTenantCleanup.AddTenantToDelete(RootTenant.RootTenantId, result.Id);
+        this.ScenarioContext.Set(result, tenantName);
+    }
+
+    [Given("I use the ClientTenantProvider to get the tenant with the id called {string} and call it {string}")]
+    [When("I use the ClientTenantProvider to get the tenant with the id called {string} and call it {string}")]
+    public async Task WhenIUseTheClientTenantProviderToGetTheTenantWithTheIdCalledAndCallIt(string tenantIdName, string tenantName)
+    {
+        string tenantId = this.ScenarioContext.Get<string>(tenantIdName);
+
+        await CommonSteps.ExecuteAndStoreExceptionIfThrownAsync(
+            async () =>
+            {
+                ITenant tenant = await this.store.GetTenantAsync(tenantId).ConfigureAwait(false);
+                this.ScenarioContext.Set(tenant, tenantName);
+            },
+            this.ScenarioContext);
+    }
+
+    [When("I use the ClientTenantProvider to get the tenant with the id called {string} and the ETag called {string} and call it {string}")]
+    public async Task WhenIUseTheClientTenantProviderToGetTheTenantWithTheIdCalledAndTheETagCalled(string tenantIdName, string tenantEtagName, string tenantName)
+    {
+        string tenantId = this.ScenarioContext.Get<string>(tenantIdName);
+        string etag = this.ScenarioContext.Get<string>(tenantEtagName);
+
+        await CommonSteps.ExecuteAndStoreExceptionIfThrownAsync(
+            async () =>
+            {
+                ITenant tenant = await this.store.GetTenantAsync(tenantId, etag).ConfigureAwait(false);
+                this.ScenarioContext.Set(tenant, tenantName);
+            },
+            this.ScenarioContext);
+    }
+
+    [When("I use the ClientTenantProvider to get the children of the tenant with the id called {string} with limit {int} and call them {string}")]
+    public async Task WhenIUseTheClientTenantProviderToGetTheChildrenOfTheTenantWithTheIdCalledWithMaxItemsAndCallThem(string tenantIdName, int limit, string resultName)
+    {
+        string tenantId = this.ScenarioContext.Get<string>(tenantIdName);
+        TenantCollectionResult result = await this.store.GetChildrenAsync(tenantId, limit).ConfigureAwait(false);
+        this.ScenarioContext.Set(result, resultName);
+    }
+
+    [When("I use the ClientTenantProvider to get the children of the tenant with the id called {string} with limit {int} and continuation token from the children called {string} and call them {string}")]
+    public async Task WhenIUseTheClientTenantProviderToGetTheChildrenOfTheTenantWithTheIdCalledWithLimitAndContinuationTokenFromTheChildrenCalledAndCallThem(string tenantIdName, int limit, string previousResultName, string resultName)
+    {
+        string tenantId = this.ScenarioContext.Get<string>(tenantIdName);
+        TenantCollectionResult previousResult = this.ScenarioContext.Get<TenantCollectionResult>(previousResultName);
+        TenantCollectionResult result = await this.store.GetChildrenAsync(tenantId, limit, previousResult.ContinuationToken).ConfigureAwait(false);
+        this.ScenarioContext.Set(result, resultName);
+    }
+
+    [When("I use the ClientTenantProvider to delete the tenant with the id called {string}")]
+    public async Task WhenIUseTheClientTenantProviderToDeleteTheTenantWithTheIdCalledThatIsAChildOfTheTenantWithTheIdCalled(string childTenantIdName)
+    {
+        string childTenantId = this.ScenarioContext.Get<string>(childTenantIdName);
+
+        await CommonSteps.ExecuteAndStoreExceptionIfThrownAsync(() => this.store.DeleteTenantAsync(childTenantId), this.ScenarioContext).ConfigureAwait(false);
+    }
+
+    [Then("there should be no Ids in the list of child tenant Ids in the children called {string}")]
+    public void ThenThereShouldBeNoIdsInTheGetTenantsLinkCollectionOfTheChildrenCalled(string resultName)
+    {
+        CommonSteps.RethrowLastExceptionIfPresent(this.ScenarioContext);
+        TenantCollectionResult result = this.ScenarioContext.Get<TenantCollectionResult>(resultName);
+        CollectionAssert.IsEmpty(result.Tenants);
+    }
+
+    [Then("the Ids in the list of child tenant Ids in the children called {string} should match the Ids of the tenants called")]
+    public void ThenTheIdsInTheListOfChildTenantIdsTheChildrenCalledShouldMatchTheIdsOfTheTenantsCalled(string resultName, DataTable dataTable)
+    {
+        CommonSteps.RethrowLastExceptionIfPresent(this.ScenarioContext);
+        TenantCollectionResult result = this.ScenarioContext.Get<TenantCollectionResult>(resultName);
+        IList<string> childTenantIds = result.Tenants;
+
+        Assert.AreEqual(dataTable.RowCount, childTenantIds.Count);
+
+        foreach (DataTableRow row in dataTable.Rows)
+        {
+            ITenant tenant = this.ScenarioContext.Get<ITenant>(row[0]);
+            Assert.IsNotNull(tenant, $"Tenant with name '{row[0]}' not found.");
+
+            CollectionAssert.Contains(childTenantIds, tenant.Id);
+        }
+    }
+
+    [Then("the Ids in the list of child tenant Ids in the children called {string} should contain {int} items")]
+    public void ThenTheIdsInTheListOfChildTenantIdsInTheChildrenCalledShouldContainItems(string resultName, int expectedItemCount)
+    {
+        CommonSteps.RethrowLastExceptionIfPresent(this.ScenarioContext);
+        TenantCollectionResult result = this.ScenarioContext.Get<TenantCollectionResult>(resultName);
+        Assert.AreEqual(expectedItemCount, result.Tenants.Count);
+    }
+
+    [Then("the Ids in the lists of child tenant Ids in the children called {string} and {string} should each match {int} of the self Ids of the tenants called")]
+    public void ThenTheIdsInTheListsOfChildTenantIdsInTheChildrenCalledAndShouldEachMatchOfTheSelfIdsOfTheTenantsCalled(string result1Name, string result2Name, int expectedMatchingItemsPerResult, DataTable dataTable)
+    {
+        TenantCollectionResult result1 = this.ScenarioContext.Get<TenantCollectionResult>(result1Name);
+        Assert.AreEqual(expectedMatchingItemsPerResult, result1.Tenants.Count);
+
+        TenantCollectionResult result2 = this.ScenarioContext.Get<TenantCollectionResult>(result2Name);
+        Assert.AreEqual(expectedMatchingItemsPerResult, result2.Tenants.Count);
+
+        List<string> childTenantIds = [.. result1.Tenants, .. result2.Tenants];
+
+        foreach (DataTableRow row in dataTable.Rows)
+        {
+            ITenant tenant = this.ScenarioContext.Get<ITenant>(row[0]);
+            Assert.IsNotNull(tenant, $"Tenant with name '{row[0]}' not found.");
+
+            CollectionAssert.Contains(childTenantIds, tenant.Id);
+        }
     }
 
     ////[Given("I get the tenant id of the tenant called \"(.*)\" and call it \"(.*)\"")]
@@ -297,19 +424,6 @@ public class ClientTenantProviderSteps
     ////    string tenantId = this.scenarioContext.Get<string>(tenantIdName);
     ////    return this.store.DeleteTenantAsync(tenantId);
     ////}
-
-    [When("I use the ClientTenantProvider to get a tenant with id {string}")]
-    public async Task WhenIGetATenantWithId(string tenantId)
-    {
-        try
-        {
-            await this.store.GetTenantAsync(tenantId).ConfigureAwait(false);
-        }
-        catch (Exception ex)
-        {
-            CommonSteps.SetLastException(this.scenarioContext, ex);
-        }
-    }
 
     ////[Given(@"I get the ETag of the tenant called ""(.*)"" and call it ""(.*)""")]
     ////public void GivenIGetTheETagOfTheTenantCalledAndCallIt(string tenantName, string eTagName)

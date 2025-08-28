@@ -52,7 +52,7 @@ public class ClientTenantStore : ClientTenantProvider, ITenantStore
         try
         {
             // Extract parent tenant ID from the full tenant ID path
-            string parentTenantId = tenantId.Contains('/') ? tenantId.Substring(0, tenantId.LastIndexOf('/')) : throw new ArgumentException("Invalid tenant ID format");
+            string? parentTenantId = tenantId.GetParentId();
 
             await this.TenantApiClient[parentTenantId].Marain.Tenant.Children[tenantId].DeleteAsync().ConfigureAwait(false);
         }
@@ -86,7 +86,7 @@ public class ClientTenantStore : ClientTenantProvider, ITenantStore
             List<LinkResponse> childLinkResponses = result?.Links?.GetTenant ?? [];
             IEnumerable<string> childTenantIds = childLinkResponses
                 .Select(x => x.Href)
-                .Where(x => string.IsNullOrEmpty(x))
+                .Where(x => !string.IsNullOrEmpty(x))
                 .Select(x => this.TenantMapper.ExtractTenantIdFromAbsoluteUrl(x!));
 
             // Use the continuation token from the response for pagination

@@ -12,7 +12,7 @@ Scenario: Get a tenant that does not exist
 	When I use the Tenancy Client to get a tenant with id "NotFound"
 	Then it should throw a "ProblemDetails"
 
-Scenario: Create a child tenant
+Scenario: Create a child tenant of the root tenant
 	Given I use the Tenancy Client to create a child tenant called "ChildTenant1" for the root tenant
 	When I get the tenant id of the tenant called "ChildTenant1" and call it "ChildTenantId"
 	And I use the Tenancy Client to get the tenant with the id called "ChildTenantId" and call it "Result"
