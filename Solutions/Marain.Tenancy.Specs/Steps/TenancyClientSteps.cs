@@ -212,51 +212,6 @@ public class TenancyClientSteps : Steps
         Assert.AreEqual(0, response.Body?.Properties?.AdditionalData.Count ?? 0);
     }
 
-    [Then("the tenant called {string} should have the properties")]
-    public void ThenTheTenantCalledShouldHaveTheProperties(string tenantName, DataTable dataTable)
-    {
-        CommonSteps.RethrowLastExceptionIfPresent(this.ScenarioContext);
-        ApiResponseWithHeaders<TenantResponse> response = this.ScenarioContext.Get<ApiResponseWithHeaders<TenantResponse>>(tenantName);
-
-        IEnumerable<(string Key, string Value, string Type)> expectedProperties = dataTable.CreateSet<(string Key, string Value, string Type)>();
-        IDictionary<string, object> actualProperties = response.Body?.Properties?.AdditionalData ?? throw new InvalidOperationException($"The tenant {tenantName} does not have any properties.");
-
-        foreach ((string key, string value, string type) in expectedProperties)
-        {
-            // Try both PascalCase and camelCase versions of the key
-            string camelCaseKey = char.ToLowerInvariant(key[0]) + key.Substring(1);
-            bool keyExists = actualProperties.ContainsKey(key) || actualProperties.ContainsKey(camelCaseKey);
-            string actualKey = actualProperties.ContainsKey(key) ? key : camelCaseKey;
-
-            Assert.IsTrue(keyExists, $"Property '{key}' (or '{camelCaseKey}') not found in AdditionalData. Available keys: {string.Join(", ", actualProperties.Keys)}");
-
-            if (type == "integer")
-            {
-                Assert.AreEqual(int.Parse(value), actualProperties[actualKey]);
-            }
-            else if (type == "datetimeoffset")
-            {
-                // The value comes back as a complex object containing the serialized DateTimeOffset
-                object actualValue = actualProperties[actualKey];
-                if (actualValue is Dictionary<string, object?> dict)
-                {
-                    Assert.IsTrue(dict.ContainsKey("dateTimeOffset"), "DateTimeOffset object should contain 'dateTimeOffset' property");
-                    string serializedValue = dict["dateTimeOffset"]?.ToString()!;
-                    Assert.AreEqual(DateTimeOffset.Parse(value), DateTimeOffset.Parse(serializedValue));
-                }
-                else
-                {
-                    // Fallback: try direct comparison
-                    Assert.AreEqual(DateTimeOffset.Parse(value), actualValue);
-                }
-            }
-            else
-            {
-                Assert.AreEqual(value, actualProperties[actualKey]);
-            }
-        }
-    }
-
     [Then("the tenant called {string} should have a self link with path {string}")]
     public void ThenTheTenantCalledShouldHaveASelfLinkWithValue(string tenantName, string expectedPath)
     {

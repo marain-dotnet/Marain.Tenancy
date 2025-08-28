@@ -9,6 +9,7 @@ using System.Linq;
 using System.Text.Json;
 using System.Threading.Tasks;
 using Corvus.Json;
+using Corvus.Json.Serialization;
 using Corvus.Tenancy;
 using Corvus.Tenancy.Exceptions;
 using Marain.Tenancy.MinimalApi.ErrorHandling;
@@ -260,6 +261,7 @@ public static class TenantEndpoints
                 propertiesToRemove);
 
             TenantResponse response = MapTenantToResponse(updatedTenant, linkGenerator, context);
+
             return TypedResults.Ok(response);
         }
         catch (TenantNotFoundException)
@@ -305,7 +307,7 @@ public static class TenantEndpoints
             Id = tenant.Id,
             Name = tenant.Name,
             ContentType = "application/vnd.marain.tenant",
-            Properties = tenant.Properties.AsDictionary().ToDictionary(),
+            Properties = tenant.Properties, // TODO: Clone this?
             Links = new()
             {
                 Self = BuildTenantLink(tenant.Id, linkGenerator, context),

@@ -15,6 +15,7 @@ using Corvus.Tenancy;
 using Corvus.Tenancy.Exceptions;
 using Corvus.Testing.ReqnRoll;
 using Marain.Tenancy.Client;
+using Marain.Tenancy.Client.Helpers;
 using Marain.Tenancy.Client.Models;
 using Marain.Tenancy.Specs.Bindings;
 
@@ -53,6 +54,18 @@ public class ClientTenantProviderSteps : Steps
 
         TestTenantCleanup.AddTenantToDelete(RootTenant.RootTenantId, result.Id);
         this.ScenarioContext.Set(result, tenantName);
+    }
+
+    [When("I use the ClientTenantProvider to update the properties of the tenant called {string}")]
+    public async Task WhenIUseTheClientTenantProviderToUpdateThePropertiesOfTheTenantCalled(string tenantName, DataTable dataTable)
+    {
+        ITenant tenant = this.ScenarioContext.Get<ITenant>(tenantName);
+        IDictionary<string, object> propertiesToAddOrUpdate = DataTableToPropertiesToAddOrUpdate(dataTable);
+        IList<string> propertiesToRemove = DataTableToPropertiesToRemove(dataTable);
+
+        await CommonSteps.ExecuteAndStoreExceptionIfThrownAsync(
+            async () => await this.store.UpdateTenantAsync(tenant.Id, null, propertiesToAddOrUpdate, propertiesToRemove),
+            this.ScenarioContext);
     }
 
     [Given("I use the ClientTenantProvider to get the tenant with the id called {string} and call it {string}")]
@@ -163,6 +176,38 @@ public class ClientTenantProviderSteps : Steps
             CollectionAssert.Contains(childTenantIds, tenant.Id);
         }
     }
+
+    private static IDictionary<string, object> DataTableToPropertiesToAddOrUpdate(DataTable dataTable)
+    {
+        Dictionary<string, object> result = [];
+        IEnumerable<(string Key, string Value, string Type, UpdateTenantJsonPatchEntryOperation Operation)> rows = dataTable
+            .CreateSet<(string Key, string Value, string Type, UpdateTenantJsonPatchEntryOperation Operation)>()
+            .Where(x => x.Operation != UpdateTenantJsonPatchEntryOperation.Remove);
+
+        foreach ((string key, string value, string type, UpdateTenantJsonPatchEntryOperation _) in rows)
+        {
+            if (type == "integer")
+            {
+                result.Add(key, int.Parse(value));
+            }
+            else if (type == "datetimeoffset")
+            {
+                result.Add(key, DateTimeOffset.Parse(value));
+            }
+            else
+            {
+                result.Add(key, value);
+            }
+        }
+
+        return result;
+    }
+
+    private static IList<string> DataTableToPropertiesToRemove(DataTable dataTable) => dataTable
+            .CreateSet<(string Key, string Value, string Type, UpdateTenantJsonPatchEntryOperation Operation)>()
+            .Where(x => x.Operation == UpdateTenantJsonPatchEntryOperation.Remove)
+            .Select(x => x.Key)
+            .ToList();
 
     ////[Given("I get the tenant id of the tenant called \"(.*)\" and call it \"(.*)\"")]
     ////[When("I get the tenant id of the tenant called \"(.*)\" and call it \"(.*)\"")]

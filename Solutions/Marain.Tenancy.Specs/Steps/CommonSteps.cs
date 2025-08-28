@@ -9,6 +9,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Runtime.ExceptionServices;
 using System.Threading.Tasks;
+using Corvus.Json;
 using Corvus.Tenancy;
 using Corvus.Testing.ReqnRoll;
 using Marain.Tenancy.Client;
@@ -171,6 +172,51 @@ public class CommonSteps : Steps
             childrenName,
             response => Assert.IsNull(response.Body?.ContinuationToken),
             response => Assert.IsNull(response.ContinuationToken));
+    }
+
+    [Then("the tenant called {string} should have the properties")]
+    public void ThenTheTenantCalledShouldHaveTheProperties(string tenantName, DataTable dataTable)
+    {
+        Dictionary<string, object> actualProperties = [];
+
+        this.ProcessTenantResponseBasedOnType(
+            tenantName,
+            response => actualProperties = response.Body?.Properties?.AdditionalData.ToDictionary() ?? throw new InvalidOperationException($"The tenant {tenantName} does not have any properties."),
+            response => actualProperties = response.Properties.AsDictionary().ToDictionary());
+
+        IEnumerable<(string Key, string Value, string Type)> expectedProperties = dataTable.CreateSet<(string Key, string Value, string Type)>();
+
+        foreach ((string key, string value, string type) in expectedProperties)
+        {
+            Assert.IsTrue(
+                actualProperties.ContainsKey(key),
+                $"Property '{key}' not found in properties. Available keys: {string.Join(", ", actualProperties.Keys)}");
+
+            if (type == "integer")
+            {
+                Assert.AreEqual(int.Parse(value), actualProperties[key]);
+            }
+            else if (type == "datetimeoffset")
+            {
+                // The value comes back as a complex object containing the serialized DateTimeOffset
+                object actualValue = actualProperties[key];
+                if (actualValue is Dictionary<string, object?> dict)
+                {
+                    Assert.IsTrue(dict.ContainsKey("dateTimeOffset"), "DateTimeOffset object should contain 'dateTimeOffset' property");
+                    string serializedValue = dict["dateTimeOffset"]?.ToString()!;
+                    Assert.AreEqual(DateTimeOffset.Parse(value), DateTimeOffset.Parse(serializedValue));
+                }
+                else
+                {
+                    // Fallback: try direct comparison
+                    Assert.AreEqual(DateTimeOffset.Parse(value), actualValue);
+                }
+            }
+            else
+            {
+                Assert.AreEqual(value, actualProperties[key]);
+            }
+        }
     }
 
     private void ProcessTenantResponseBasedOnType(

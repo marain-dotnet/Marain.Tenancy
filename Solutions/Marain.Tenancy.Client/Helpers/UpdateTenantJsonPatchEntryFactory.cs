@@ -184,4 +184,17 @@ public static class UpdateTenantJsonPatchEntryFactory
             Value = new UntypedString(value),
         };
     }
+
+    /// <summary>
+    /// Creates an delete entry.
+    /// </summary>
+    /// <param name="path">The <see cref="UpdateTenantJsonPatchEntry.Path" />.</param>
+    public static UpdateTenantJsonPatchEntry CreateDeleteEntry(string path)
+    {
+        return new()
+        {
+            Op = UpdateTenantJsonPatchEntryOperation.Remove,
+            Path = path,
+        };
+    }
 }

@@ -32,6 +32,23 @@ Scenario: Get a tenant with an etag retrieved from a tenant got from the Get Ten
 	When I use the ClientTenantProvider to get the tenant with the id called "ChildTenantId" and the ETag called "ResultETag" and call it "Result"
 	Then it should throw a "TenantNotModifiedException"
 
+Scenario: Update a child tenant
+	Given I use the ClientTenantProvider to create a child tenant called "ChildTenant1" for the root tenant
+	When I use the ClientTenantProvider to update the properties of the tenant called "ChildTenant1"
+	| Key       | Value                           | Type            | Action  |
+	| FirstKey  | 1                               | integer         | Add     |
+	| SecondKey | This is a string                | string          | Add     |
+	| ThirdKey  | 1999-01-17                      | datetimeoffset  | Add     |
+	And I get the tenant id of the tenant called "ChildTenant1" and call it "ChildTenantId"
+	And I use the ClientTenantProvider to get the tenant with the id called "ChildTenantId" and call it "Result"
+	Then the tenant called "ChildTenant1" should have the same ID as the tenant called "Result"
+	And the tenant called "Result" should have the properties
+	| Key       | Value                           | Type            |
+	| FirstKey  | 1                               | integer         |
+	| SecondKey | This is a string                | string          |
+	| ThirdKey  | 1999-01-17                      | datetimeoffset  |
+
+
 Scenario: Create a child of a child
 	Given I use the ClientTenantProvider to create a child tenant called "ChildTenant1" for the root tenant
 	And I create a child tenant called "ChildTenant2" for the tenant called "ChildTenant1"

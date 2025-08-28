@@ -8,9 +8,11 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using Corvus.Json.Serialization;
 using Corvus.Tenancy;
 using Corvus.Tenancy.Exceptions;
 using Marain.Tenancy.Client;
+using Marain.Tenancy.Client.Helpers;
 using Marain.Tenancy.Client.Models;
 using Marain.Tenancy.Mappers;
 using Microsoft.Kiota.Http.HttpClientLibrary.Middleware.Options;
@@ -20,18 +22,23 @@ using Microsoft.Kiota.Http.HttpClientLibrary.Middleware.Options;
 /// </summary>
 public class ClientTenantStore : ClientTenantProvider, ITenantStore
 {
+    private readonly IJsonSerializerOptionsProvider serializerOptionsProvider;
+
     /// <summary>
     /// Initializes a new instance of the <see cref="ClientTenantProvider"/> class.
     /// </summary>
     /// <param name="root">The Root tenant.</param>
     /// <param name="tenancyApiClient">The tenant service.</param>
     /// <param name="tenantMapper">The tenant mapper to use.</param>
+    /// <param name="serializerOptionsProvider">The current <see cref="IJsonSerializerOptionsProvider"/>.</param>
     public ClientTenantStore(
         RootTenant root,
         TenancyApiClient tenancyApiClient,
-        ITenantMapper tenantMapper)
+        ITenantMapper tenantMapper,
+        IJsonSerializerOptionsProvider serializerOptionsProvider)
         : base(root, tenancyApiClient, tenantMapper)
     {
+        this.serializerOptionsProvider = serializerOptionsProvider;
     }
 
     /// <inheritdoc/>
@@ -175,77 +182,63 @@ public class ClientTenantStore : ClientTenantProvider, ITenantStore
         IEnumerable<KeyValuePair<string, object>>? propertiesToSetOrAdd = null,
         IEnumerable<string>? propertiesToRemove = null)
     {
-        await Task.CompletedTask;
-        throw new NotImplementedException();
-        ////// Create a list of patch operations
-        ////var operations = new List<UpdateTenantRequestOperation>();
+        // Create a list of patch operations
+        var operations = new List<UpdateTenantJsonPatchEntry>();
 
-        ////if (name is not null)
-        ////{
-        ////    operations.Add(new UpdateTenantRequestOperation
-        ////    {
-        ////        Path = "/name",
-        ////        Op = "replace",
-        ////        Value = null, // TODO: Proper UntypedNode creation needed
-        ////    });
-        ////}
+        if (name is not null)
+        {
+            operations.Add(
+                UpdateTenantJsonPatchEntryFactory.Create(
+                    UpdateTenantJsonPatchEntryOperation.Replace,
+                    "/name",
+                    name!));
+        }
 
-        ////if (propertiesToSetOrAdd is not null)
-        ////{
-        ////    foreach (KeyValuePair<string, object> kv in propertiesToSetOrAdd)
-        ////    {
-        ////        operations.Add(new UpdateTenantRequestOperation
-        ////        {
-        ////            Path = "/properties/" + kv.Key,
-        ////            Op = "add",
-        ////            Value = null, // TODO: Proper UntypedNode creation needed
-        ////        });
-        ////    }
-        ////}
+        if (propertiesToSetOrAdd is not null)
+        {
+            foreach (KeyValuePair<string, object> kv in propertiesToSetOrAdd)
+            {
+                operations.Add(
+                    UpdateTenantJsonPatchEntryFactory.Create(
+                        UpdateTenantJsonPatchEntryOperation.Add,
+                        "/properties/" + kv.Key,
+                        kv.Value,
+                        this.serializerOptionsProvider.Instance));
+            }
+        }
 
-        ////if (propertiesToRemove is not null)
-        ////{
-        ////    foreach (string propertyName in propertiesToRemove)
-        ////    {
-        ////        operations.Add(new UpdateTenantRequestOperation
-        ////        {
-        ////            Path = "/properties/" + propertyName,
-        ////            Op = "remove",
-        ////        });
-        ////    }
-        ////}
+        if (propertiesToRemove is not null)
+        {
+            foreach (string propertyName in propertiesToRemove)
+            {
+                operations.Add(
+                    UpdateTenantJsonPatchEntryFactory.CreateDeleteEntry("/properties/" + propertyName));
+            }
+        }
 
-        ////// Create a custom patch document that properly represents the operations array
-        ////// Since the generated Kiota model seems to have issues, we'll create a custom implementation
-        ////var patch = new UpdateTenantRequestJsonPatchDocument();
+        try
+        {
+            TenantResponse? result = await this.TenantApiClient[tenantId].Marain.Tenant.PatchAsync(operations).ConfigureAwait(false);
 
-        ////// NOTE: The current Kiota-generated model appears to have a design issue where
-        ////// Operations property is not properly serialized. This is a known limitation
-        ////// that may need to be addressed by updating the OpenAPI specification or
-        ////// using a different approach for JSON Patch operations.
-        ////try
-        ////{
-        ////    TenantResponse? result = await this.TenantApiClient.UpdateTenantAsync(tenantId, patch).ConfigureAwait(false);
+            if (result == null)
+            {
+                throw new TenantNotFoundException();
+            }
 
-        ////    if (result == null)
-        ////    {
-        ////        throw new TenantNotFoundException();
-        ////    }
-
-        ////    return this.TenantMapper.MapTenant(result);
-        ////}
-        ////catch (ProblemDetails ex) when (ex.Status == 404)
-        ////{
-        ////    throw new TenantNotFoundException();
-        ////}
-        ////catch (ProblemDetails ex) when (ex.Status == 405)
-        ////{
-        ////    throw new NotSupportedException("This tenant cannot be updated");
-        ////}
-        ////catch (HttpValidationProblemDetails ex) when (ex.Status == 400)
-        ////{
-        ////    throw new ArgumentException($"Invalid update tenant request: {ex.Detail ?? ex.Title}");
-        ////}
+            return this.TenantMapper.MapTenant(result);
+        }
+        catch (ProblemDetails ex) when (ex.Status == 404)
+        {
+            throw new TenantNotFoundException();
+        }
+        catch (ProblemDetails ex) when (ex.Status == 405)
+        {
+            throw new NotSupportedException("This tenant cannot be updated");
+        }
+        catch (HttpValidationProblemDetails ex) when (ex.Status == 400)
+        {
+            throw new ArgumentException($"Invalid update tenant request: {ex.Detail ?? ex.Title}");
+        }
     }
 
     private async Task<ITenant> CreateChildTenantAsync(string parentTenantId, string name, Guid? wellKnownChildTenantGuid)
