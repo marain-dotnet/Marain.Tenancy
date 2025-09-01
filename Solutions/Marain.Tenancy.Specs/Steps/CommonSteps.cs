@@ -6,14 +6,16 @@ namespace Marain.Tenancy.Specs.Steps;
 
 using System;
 using System.Collections.Generic;
+using System.Collections.ObjectModel;
 using System.Linq;
 using System.Runtime.ExceptionServices;
 using System.Threading.Tasks;
 using Corvus.Json;
 using Corvus.Tenancy;
 using Corvus.Testing.ReqnRoll;
+using Marain.Clients;
 using Marain.Tenancy.Client;
-using Marain.Tenancy.Client.Models;
+using Marain.Tenancy.Client.Resources;
 using Marain.Tenancy.Specs.Bindings;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Kiota.Abstractions;
@@ -27,12 +29,12 @@ public class CommonSteps : Steps
     private const string LastExceptionKey = "LastException";
 
     private ITenantStore? store;
-    private TenancyApiClient apiClient;
+    private ITenancyClient apiClient;
 
     public CommonSteps(FeatureContext featureContext)
     {
         this.store = ContainerBindings.GetServiceProvider(featureContext).GetService<ITenantStore>();
-        this.apiClient = ContainerBindings.GetServiceProvider(featureContext).GetRequiredService<TenancyApiClient>();
+        this.apiClient = ContainerBindings.GetServiceProvider(featureContext).GetRequiredService<ITenancyClient>();
     }
 
     public static Exception? GetLastException(ScenarioContext context)
@@ -123,9 +125,7 @@ public class CommonSteps : Steps
             tenantName,
             tenant =>
             {
-                tenant.Headers.TryGetValue("ETag", out IEnumerable<string>? etagValues);
-                string? etag = etagValues?.FirstOrDefault();
-
+                tenant.Headers.TryGetValue("ETag", out string? etag);
                 this.ScenarioContext.Set(etag, tenantETagName);
             },
             tenant => this.ScenarioContext.Set(tenant.ETag, tenantETagName));
@@ -149,13 +149,11 @@ public class CommonSteps : Steps
             {
                 Assert.IsNotNull(parentTenant.Body);
 
-                CreateChildTenantRequest request = new() { TenantName = childName };
-                HeadersInspectionHandlerOption headersInspectionhandler = new() { InspectResponseHeaders = true };
-                TenantResponse? response = await this.apiClient[parentTenant.Body!.Id].Marain.Tenant.PostAsync(request, config => config.Options.Add(headersInspectionhandler)).ConfigureAwait(false);
+                ApiResponse<TenantResource> response = await this.apiClient.CreateChildTenantAsync(parentTenant.Body.Id, childName).ConfigureAwait(false);
 
-                TestTenantCleanup.AddTenantToDelete(parentTenant.Body.Id, response?.Id);
+                TestTenantCleanup.AddTenantToDelete(parentTenant.Body.Id, response.Body.Id);
 
-                this.ScenarioContext.Set(new ApiResponseWithHeaders<TenantResponse>(response, headersInspectionhandler.ResponseHeaders), childName);
+                this.ScenarioContext.Set(response, childName);
             },
             async parentTenant =>
             {
@@ -177,12 +175,12 @@ public class CommonSteps : Steps
     [Then("the tenant called {string} should have the properties")]
     public void ThenTheTenantCalledShouldHaveTheProperties(string tenantName, DataTable dataTable)
     {
-        Dictionary<string, object> actualProperties = [];
+        IReadOnlyDictionary<string, object> actualProperties = ReadOnlyDictionary<string, object>.Empty;
 
         this.ProcessTenantResponseBasedOnType(
             tenantName,
-            response => actualProperties = response.Body?.Properties?.AdditionalData.ToDictionary() ?? throw new InvalidOperationException($"The tenant {tenantName} does not have any properties."),
-            response => actualProperties = response.Properties.AsDictionaryRecursive().ToDictionary());
+            response => actualProperties = response.Body.Properties?.AsDictionaryRecursive() ?? throw new InvalidOperationException($"The tenant {tenantName} does not have any properties."),
+            response => actualProperties = response.Properties.AsDictionaryRecursive());
 
         IEnumerable<(string Key, string Value, string Type)> expectedProperties = dataTable.CreateSet<(string Key, string Value, string Type)>();
 
@@ -219,12 +217,43 @@ public class CommonSteps : Steps
         }
     }
 
+    public static (IDictionary<string, object>? PropertiesToAddOrUpdate, IEnumerable<string>? PropertiesToRemove) DataTableToUpdateTenantJsonPatchEntry(DataTable dataTable)
+    {
+        IDictionary<string, object> updates = new Dictionary<string, object>();
+        IList<string> removals = [];
+
+        foreach ((string key, string value, string type, string action) in dataTable.CreateSet<(string Key, string Value, string Type, string Action)>())
+        {
+            if (action == "Remove")
+            {
+                removals.Add(key);
+            }
+            else
+            {
+                if (type == "integer")
+                {
+                    updates.Add(key, int.Parse(value));
+                }
+                else if (type == "datetimeoffset")
+                {
+                    updates.Add(key, DateTimeOffset.Parse(value));
+                }
+                else
+                {
+                    updates.Add(key, value);
+                }
+            }
+        }
+
+        return (updates, removals);
+    }
+
     private void ProcessTenantResponseBasedOnType(
         string tenantName,
-        Action<ApiResponseWithHeaders<TenantResponse>> actionWhenTenancyClientResponse,
+        Action<ApiResponse<TenantResource>> actionWhenTenancyClientResponse,
         Action<ITenant> actionWhenClientTenantProviderResponse)
     {
-        this.ProcessResponsesBasedOnType<ApiResponseWithHeaders<TenantResponse>, ITenant>(
+        this.ProcessResponsesBasedOnType<ApiResponse<TenantResource>, ITenant>(
             [tenantName],
             responses => actionWhenTenancyClientResponse(responses[0]),
             responses => actionWhenClientTenantProviderResponse(responses[0]));
@@ -232,10 +261,10 @@ public class CommonSteps : Steps
 
     private void ProcessTenantResponsesBasedOnType(
         string[] tenantNames,
-        Action<ApiResponseWithHeaders<TenantResponse>[]> actionWhenTenancyClientResponse,
+        Action<ApiResponse<TenantResource>[]> actionWhenTenancyClientResponse,
         Action<ITenant[]> actionWhenClientTenantProviderResponse)
     {
-        this.ProcessResponsesBasedOnType<ApiResponseWithHeaders<TenantResponse>, ITenant>(
+        this.ProcessResponsesBasedOnType<ApiResponse<TenantResource>, ITenant>(
             tenantNames,
             responses => actionWhenTenancyClientResponse(responses),
             responses => actionWhenClientTenantProviderResponse(responses));
@@ -243,10 +272,10 @@ public class CommonSteps : Steps
 
     private void ProcessGetChildrenResponseBasedOnType(
         string tenantName,
-        Action<ApiResponseWithHeaders<ChildTenantsResponse>> actionWhenTenancyClientResponse,
+        Action<ApiResponse<ChildTenantsResource>> actionWhenTenancyClientResponse,
         Action<TenantCollectionResult> actionWhenClientTenantProviderResponse)
     {
-        this.ProcessResponsesBasedOnType<ApiResponseWithHeaders<ChildTenantsResponse>, TenantCollectionResult>(
+        this.ProcessResponsesBasedOnType<ApiResponse<ChildTenantsResource>, TenantCollectionResult>(
             [tenantName],
             responses => actionWhenTenancyClientResponse(responses[0]),
             responses => actionWhenClientTenantProviderResponse(responses[0]));
@@ -254,7 +283,7 @@ public class CommonSteps : Steps
 
     private async Task ProcessTenantResponseBasedOnTypeAsync(
     string tenantName,
-    Func<ApiResponseWithHeaders<TenantResponse>, Task> actionWhenTenancyClientResponse,
+    Func<ApiResponse<TenantResource>, Task> actionWhenTenancyClientResponse,
     Func<ITenant, Task> actionWhenClientTenantProviderResponse)
     {
         await this.ProcessTenantResponsesBasedOnTypeAsync(
@@ -292,14 +321,14 @@ public class CommonSteps : Steps
 
     private async Task ProcessTenantResponsesBasedOnTypeAsync(
         string[] tenantNames,
-        Func<ApiResponseWithHeaders<TenantResponse>[], Task> actionWhenTenancyClientResponses,
+        Func<ApiResponse<TenantResource>[], Task> actionWhenTenancyClientResponses,
         Func<ITenant[], Task> actionWhenClientTenantProviderResponses)
     {
         RethrowLastExceptionIfPresent(this.ScenarioContext);
 
         IEnumerable<object> unknownResponses = [.. tenantNames.Select(x => this.ScenarioContext[x])];
 
-        ApiResponseWithHeaders<TenantResponse>[] tenancyClientResponses = [.. unknownResponses.OfType<ApiResponseWithHeaders<TenantResponse>>()];
+        ApiResponse<TenantResource>[] tenancyClientResponses = [.. unknownResponses.OfType<ApiResponse<TenantResource>>()];
         ITenant[] clientTenantProviderResponses = [.. unknownResponses.OfType<ITenant>()];
 
         if (tenancyClientResponses.Length != 0 && clientTenantProviderResponses.Length != 0)

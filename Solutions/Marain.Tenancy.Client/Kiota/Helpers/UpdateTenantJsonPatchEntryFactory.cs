@@ -1,4 +1,4 @@
-﻿namespace Marain.Tenancy.Client.Helpers;
+﻿namespace Kiota.Helpers;
 
 using System;
 using System.Collections.Generic;

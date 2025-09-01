@@ -26,7 +26,7 @@ public static class TenancyClientBindings
             featureContext,
             serviceCollection =>
             {
-                serviceCollection.AddUnauthenticatedTenancyClientWithCorvusSerialization(
+                serviceCollection.AddUnauthenticatedTenancyClient(
                     MinimalApiWebApplicationFactory.Current.Server.BaseAddress.ToString(),
                     MinimalApiWebApplicationFactory.Current.Server.CreateHandler());
             });

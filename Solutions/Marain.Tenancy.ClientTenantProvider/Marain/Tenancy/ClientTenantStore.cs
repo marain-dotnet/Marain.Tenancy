@@ -7,21 +7,24 @@ namespace Marain.Tenancy;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Net;
 using System.Threading.Tasks;
+using Corvus.Json;
 using Corvus.Json.Serialization;
 using Corvus.Tenancy;
 using Corvus.Tenancy.Exceptions;
+using Marain.Clients;
+using Marain.Clients.Hal;
 using Marain.Tenancy.Client;
-using Marain.Tenancy.Client.Helpers;
-using Marain.Tenancy.Client.Models;
+using Marain.Tenancy.Client.Resources;
 using Marain.Tenancy.Mappers;
-using Microsoft.Kiota.Http.HttpClientLibrary.Middleware.Options;
 
 /// <summary>
 /// An <see cref="ITenantProvider"/> built over a Marain tenancy instance.
 /// </summary>
 public class ClientTenantStore : ClientTenantProvider, ITenantStore
 {
+    private readonly IPropertyBagFactory propertyBagFactory;
     private readonly IJsonSerializerOptionsProvider serializerOptionsProvider;
 
     /// <summary>
@@ -30,14 +33,17 @@ public class ClientTenantStore : ClientTenantProvider, ITenantStore
     /// <param name="root">The Root tenant.</param>
     /// <param name="tenancyApiClient">The tenant service.</param>
     /// <param name="tenantMapper">The tenant mapper to use.</param>
+    /// <param name="propertyBagFactory">The current <see cref="IPropertyBagFactory"/>.</param>
     /// <param name="serializerOptionsProvider">The current <see cref="IJsonSerializerOptionsProvider"/>.</param>
     public ClientTenantStore(
         RootTenant root,
-        TenancyApiClient tenancyApiClient,
+        ITenancyClient tenancyApiClient,
         ITenantMapper tenantMapper,
+        IPropertyBagFactory propertyBagFactory,
         IJsonSerializerOptionsProvider serializerOptionsProvider)
         : base(root, tenancyApiClient, tenantMapper)
     {
+        this.propertyBagFactory = propertyBagFactory;
         this.serializerOptionsProvider = serializerOptionsProvider;
     }
 
@@ -59,17 +65,18 @@ public class ClientTenantStore : ClientTenantProvider, ITenantStore
         try
         {
             // Extract parent tenant ID from the full tenant ID path
-            string? parentTenantId = tenantId.GetParentId();
+            string parentTenantId = tenantId.GetParentId()
+                ?? throw new InvalidOperationException("Unable to extract parent tenant Id from supplied tenant Id");
 
-            await this.TenantApiClient[parentTenantId].Marain.Tenant.Children[tenantId].DeleteAsync().ConfigureAwait(false);
+            await this.TenantApiClient.DeleteChildTenantAsync(parentTenantId, tenantId).ConfigureAwait(false);
         }
-        catch (ProblemDetails ex) when (ex.Status == 404)
+        catch (MarainApiException ex) when (ex.StatusCode == HttpStatusCode.NotFound)
         {
             throw new TenantNotFoundException();
         }
-        catch (HttpValidationProblemDetails ex) when (ex.Status == 400)
+        catch (MarainApiException ex) when (ex.StatusCode == HttpStatusCode.BadRequest)
         {
-            throw new InvalidOperationException($"Invalid delete tenant request: {ex.Detail ?? ex.Title}");
+            throw new InvalidOperationException($"Invalid delete tenant request: {ex.Message}");
         }
     }
 
@@ -78,36 +85,27 @@ public class ClientTenantStore : ClientTenantProvider, ITenantStore
     {
         try
         {
-            ChildTenantsResponse? result = await this.TenantApiClient[tenantId].Marain.Tenant.Children.GetAsync(config =>
-            {
-                config.QueryParameters.ContinuationToken = continuationToken;
-                config.QueryParameters.MaxItems = limit;
-            }).ConfigureAwait(false);
-
-            if (result is null)
-            {
-                throw new TenantNotFoundException();
-            }
+            ApiResponse<ChildTenantsResource> response = await this.TenantApiClient.GetChildrenAsync(tenantId, continuationToken, limit).ConfigureAwait(false);
 
             // Extract tenant IDs from the linked tenants
-            List<LinkResponse> childLinkResponses = result?.Links?.GetTenant ?? [];
+            List<WebLink> childLinkResponses = response.Body.Links?.GetTenant ?? [];
             IEnumerable<string> childTenantIds = childLinkResponses
                 .Select(x => x.Href)
                 .Where(x => !string.IsNullOrEmpty(x))
                 .Select(x => this.TenantMapper.ExtractTenantIdFromAbsoluteUrl(x!));
 
             // Use the continuation token from the response for pagination
-            string? nextContinuationToken = result!.ContinuationToken;
+            string? nextContinuationToken = response.Body.ContinuationToken;
 
             return new TenantCollectionResult(childTenantIds, nextContinuationToken);
         }
-        catch (ProblemDetails ex) when (ex.Status == 404)
+        catch (MarainApiException ex) when (ex.StatusCode == HttpStatusCode.NotFound)
         {
             throw new TenantNotFoundException();
         }
-        catch (HttpValidationProblemDetails ex) when (ex.Status == 400)
+        catch (MarainApiException ex) when (ex.StatusCode == HttpStatusCode.BadRequest)
         {
-            throw new InvalidOperationException($"Invalid get children request: {ex.Detail ?? ex.Title}");
+            throw new InvalidOperationException($"Invalid get children request: {ex.Message}");
         }
     }
 
@@ -182,62 +180,31 @@ public class ClientTenantStore : ClientTenantProvider, ITenantStore
         IEnumerable<KeyValuePair<string, object>>? propertiesToSetOrAdd = null,
         IEnumerable<string>? propertiesToRemove = null)
     {
-        // Create a list of patch operations
-        var operations = new List<UpdateTenantJsonPatchEntry>();
-
-        if (name is not null)
-        {
-            operations.Add(
-                UpdateTenantJsonPatchEntryFactory.Create(
-                    UpdateTenantJsonPatchEntryOperation.Replace,
-                    "/name",
-                    name!));
-        }
-
-        if (propertiesToSetOrAdd is not null)
-        {
-            foreach (KeyValuePair<string, object> kv in propertiesToSetOrAdd)
-            {
-                operations.Add(
-                    UpdateTenantJsonPatchEntryFactory.Create(
-                        UpdateTenantJsonPatchEntryOperation.Add,
-                        "/properties/" + kv.Key,
-                        kv.Value,
-                        this.serializerOptionsProvider.Instance));
-            }
-        }
-
-        if (propertiesToRemove is not null)
-        {
-            foreach (string propertyName in propertiesToRemove)
-            {
-                operations.Add(
-                    UpdateTenantJsonPatchEntryFactory.CreateDeleteEntry("/properties/" + propertyName));
-            }
-        }
+        IPropertyBag? propertiesToAddOrUpdate = propertiesToSetOrAdd is null
+            ? null
+            : this.propertyBagFactory.Create(propertiesToSetOrAdd);
 
         try
         {
-            TenantResponse? result = await this.TenantApiClient[tenantId].Marain.Tenant.PatchAsync(operations).ConfigureAwait(false);
+            ApiResponse<TenantResource> response = await this.TenantApiClient.UpdateTenantAsync(
+                tenantId,
+                name,
+                propertiesToSetOrAdd,
+                propertiesToRemove).ConfigureAwait(false);
 
-            if (result == null)
-            {
-                throw new TenantNotFoundException();
-            }
-
-            return this.TenantMapper.MapTenant(result);
+            return this.TenantMapper.MapTenant(response.Body);
         }
-        catch (ProblemDetails ex) when (ex.Status == 404)
+        catch (MarainApiException ex) when (ex.StatusCode == HttpStatusCode.NotFound)
         {
             throw new TenantNotFoundException();
         }
-        catch (ProblemDetails ex) when (ex.Status == 405)
+        catch (MarainApiException ex) when (ex.StatusCode == HttpStatusCode.MethodNotAllowed)
         {
             throw new NotSupportedException("This tenant cannot be updated");
         }
-        catch (HttpValidationProblemDetails ex) when (ex.Status == 400)
+        catch (MarainApiException ex) when (ex.StatusCode == HttpStatusCode.BadRequest)
         {
-            throw new ArgumentException($"Invalid update tenant request: {ex.Detail ?? ex.Title}");
+            throw new ArgumentException($"Invalid update tenant request: {ex.Message}");
         }
     }
 
@@ -245,36 +212,26 @@ public class ClientTenantStore : ClientTenantProvider, ITenantStore
     {
         try
         {
-            CreateChildTenantRequest body = new()
-            {
-                TenantName = name,
-                WellKnownChildTenantGuid = wellKnownChildTenantGuid?.ToString(),
-            };
+            ApiResponse<TenantResource> response = await this.TenantApiClient.CreateChildTenantAsync(
+                parentTenantId,
+                name,
+                wellKnownChildTenantGuid?.ToString()).ConfigureAwait(false);
 
-            HeadersInspectionHandlerOption headersInspectionhandler = new() { InspectResponseHeaders = true };
+            response.Headers.TryGetValue("etag", out string? etag);
 
-            TenantResponse? createdTenant = await this.TenantApiClient[parentTenantId].Marain.Tenant.PostAsync(body, config => config.Options.Add(headersInspectionhandler));
-
-            if (createdTenant == null)
-            {
-                throw new InvalidOperationException("Failed to create child tenant - service returned null response");
-            }
-
-            headersInspectionhandler.ResponseHeaders.TryGetValue("ETag", out IEnumerable<string>? etagValues);
-
-            return this.TenantMapper.MapTenant(createdTenant, etagValues?.FirstOrDefault());
+            return this.TenantMapper.MapTenant(response.Body, etag);
         }
-        catch (ProblemDetails ex) when (ex.Status == 404)
+        catch (MarainApiException ex) when (ex.StatusCode == HttpStatusCode.NotFound)
         {
             throw new TenantNotFoundException();
         }
-        catch (ProblemDetails ex) when (ex.Status == 409)
+        catch (MarainApiException ex) when (ex.StatusCode == HttpStatusCode.Conflict)
         {
             throw new TenantConflictException();
         }
-        catch (HttpValidationProblemDetails ex) when (ex.Status == 400)
+        catch (MarainApiException ex) when (ex.StatusCode == HttpStatusCode.BadRequest)
         {
-            throw new ArgumentException($"Invalid create child tenant request: {ex.Detail ?? ex.Title}");
+            throw new ArgumentException($"Invalid create child tenant request: {ex.Message}");
         }
         catch (Exception ex)
         {

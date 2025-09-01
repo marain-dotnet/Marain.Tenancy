@@ -9,9 +9,8 @@ using System.Collections.Generic;
 using System.Linq;
 using Corvus.Json;
 using Corvus.Tenancy;
-using Marain.Tenancy.Client.Models;
+using Marain.Tenancy.Client.Resources;
 using Microsoft.AspNetCore.WebUtilities;
-using Newtonsoft.Json.Linq;
 
 /// <summary>
 /// Maps a client tenant to an API tenant.
@@ -31,26 +30,14 @@ public class TenantMapper : ITenantMapper
     }
 
     /// <inheritdoc/>
-    public ITenant MapTenant(TenantResponse source, string? etag)
+    public ITenant MapTenant(TenantResource source, string? etag)
     {
         return new Tenant(
             source.Id ?? string.Empty,
             source.Name ?? string.Empty,
-            this.propertyBagFactory.Create(source?.Properties?.AdditionalData ?? new Dictionary<string, object>()))
+            source.Properties ?? this.propertyBagFactory.Create(builder => builder))
         {
             ETag = etag,
-        };
-    }
-
-    /// <inheritdoc/>
-    public TenantResponse MapTenant(ITenant source)
-    {
-        return new TenantResponse
-        {
-            Id = source.Id,
-            Name = source.Name,
-            ContentType = source.ContentType,
-            Properties = ConvertToKiotaProperties(((JObject)source.Properties).ToObject<Dictionary<string, object>>()),
         };
     }
 
@@ -105,16 +92,5 @@ public class TenantMapper : ITenantMapper
         }
 
         return query["continuationToken"].FirstOrDefault();
-    }
-
-    private static Client.Models.TenantResponse_properties? ConvertToKiotaProperties(Dictionary<string, object>? properties)
-    {
-        if (properties == null)
-        {
-            return null;
-        }
-
-        // Create new Kiota properties object
-        return new Client.Models.TenantResponse_properties();
     }
 }

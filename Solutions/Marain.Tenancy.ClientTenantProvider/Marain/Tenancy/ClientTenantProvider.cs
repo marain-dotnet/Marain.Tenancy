@@ -5,15 +5,14 @@
 namespace Marain.Tenancy;
 
 using System;
-using System.Collections.Generic;
-using System.Linq;
+using System.Net;
 using System.Threading.Tasks;
 using Corvus.Tenancy;
 using Corvus.Tenancy.Exceptions;
+using Marain.Clients;
 using Marain.Tenancy.Client;
-using Marain.Tenancy.Client.Models;
+using Marain.Tenancy.Client.Resources;
 using Marain.Tenancy.Mappers;
-using Microsoft.Kiota.Abstractions;
 using Microsoft.Kiota.Http.HttpClientLibrary.Middleware.Options;
 
 /// <summary>
@@ -27,7 +26,7 @@ public class ClientTenantProvider : ITenantProvider
     /// <param name="root">The Root tenant.</param>
     /// <param name="apiClient">The tenant service.</param>
     /// <param name="tenantMapper">The tenant mapper to use.</param>
-    public ClientTenantProvider(RootTenant root, TenancyApiClient apiClient, ITenantMapper tenantMapper)
+    public ClientTenantProvider(RootTenant root, ITenancyClient apiClient, ITenantMapper tenantMapper)
     {
         this.Root = root ?? throw new ArgumentNullException(nameof(root));
         this.TenantApiClient = apiClient ?? throw new ArgumentNullException(nameof(apiClient));
@@ -40,7 +39,7 @@ public class ClientTenantProvider : ITenantProvider
     /// <summary>
     /// Gets the tenancy service.
     /// </summary>
-    protected TenancyApiClient TenantApiClient { get; }
+    protected ITenancyClient TenantApiClient { get; }
 
     /// <summary>
     /// Gets the tenant mapper.
@@ -61,34 +60,21 @@ public class ClientTenantProvider : ITenantProvider
         {
             HeadersInspectionHandlerOption headersInspectionhandler = new() { InspectResponseHeaders = true };
 
-            TenantResponse? tenant = await this.TenantApiClient[tenantId].Marain.Tenant.GetAsync(config =>
-            {
-                config.Options.Add(headersInspectionhandler);
+            ApiResponse<TenantResource> tenantResponse = await this.TenantApiClient.GetTenantAsync(tenantId, eTag).ConfigureAwait(false);
 
-                if (!string.IsNullOrEmpty(eTag))
-                {
-                    config.Headers.Add("If-None-Match", eTag);
-                }
-            }).ConfigureAwait(false);
+            tenantResponse.Headers.TryGetValue("etag", out string? etagValue);
 
-            if (tenant == null)
-            {
-                throw new TenantNotFoundException();
-            }
-
-            headersInspectionhandler.ResponseHeaders.TryGetValue("ETag", out IEnumerable<string>? etagValues);
-
-            return this.TenantMapper.MapTenant(tenant, etagValues?.FirstOrDefault());
+            return this.TenantMapper.MapTenant(tenantResponse.Body, etagValue);
         }
-        catch (ProblemDetails ex) when (ex.Status == 404)
+        catch (MarainApiException ex) when (ex.StatusCode == HttpStatusCode.NotFound)
         {
             throw new TenantNotFoundException();
         }
-        catch (HttpValidationProblemDetails ex) when (ex.Status == 400)
+        catch (MarainApiException ex) when (ex.StatusCode == HttpStatusCode.BadRequest)
         {
-            throw new ArgumentException($"Invalid tenant request: {ex.Detail ?? ex.Title}");
+            throw new ArgumentException($"Invalid tenant request: {ex.Message}");
         }
-        catch (ApiException ex) when (ex.ResponseStatusCode == 304)
+        catch (MarainApiException ex) when (ex.StatusCode == HttpStatusCode.NotModified)
         {
             throw new TenantNotModifiedException();
         }

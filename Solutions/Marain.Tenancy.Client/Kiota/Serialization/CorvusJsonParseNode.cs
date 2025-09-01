@@ -2,7 +2,7 @@
 // Copyright (c) Endjin Limited. All rights reserved.
 // </copyright>
 
-namespace Marain.Tenancy.Client.Serialization;
+namespace Kiota.Serialization;
 
 using System;
 using System.Collections.Generic;
@@ -58,7 +58,7 @@ public class CorvusJsonParseNode : IParseNode
             this.OnBeforeAssignFieldValues?.Invoke(instance);
             
             // Check if this object implements IAdditionalDataHolder
-            IAdditionalDataHolder? additionalDataHolder = instance as IAdditionalDataHolder;
+            var additionalDataHolder = instance as IAdditionalDataHolder;
             
             // Process each field in the JSON object
             foreach (JsonProperty property in this._jsonElement.EnumerateObject())

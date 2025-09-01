@@ -7,30 +7,28 @@ namespace Marain.Tenancy.Specs.Steps;
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text.Json;
 using System.Threading.Tasks;
+using Corvus.Json;
 using Corvus.Json.Serialization;
 using Corvus.Tenancy;
 using Corvus.Testing.ReqnRoll;
+using Marain.Clients;
+using Marain.Clients.Hal;
 using Marain.Tenancy.Client;
-using Marain.Tenancy.Client.Helpers;
-using Marain.Tenancy.Client.Models;
+using Marain.Tenancy.Client.Resources;
 using Marain.Tenancy.Specs.Bindings;
 using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Kiota.Abstractions;
-using Microsoft.Kiota.Http.HttpClientLibrary.Middleware.Options;
 using NUnit.Framework;
 using Reqnroll;
 
 [Binding]
 public class TenancyClientSteps : Steps
 {
-    private ApiResponseWithHeaders<TenantResponse>? lastTenantResponseWithHeaders;
-    private TenancyApiClient apiClient;
+    private ITenancyClient apiClient;
 
     public TenancyClientSteps(FeatureContext featureContext)
     {
-        this.apiClient = ContainerBindings.GetServiceProvider(featureContext).GetRequiredService<TenancyApiClient>();
+        this.apiClient = ContainerBindings.GetServiceProvider(featureContext).GetRequiredService<ITenancyClient>();
     }
 
     [When("I use the Tenancy Client to get a tenant with id {string}")]
@@ -59,14 +57,14 @@ public class TenancyClientSteps : Steps
         string childTenantId = this.ScenarioContext.Get<string>(childTenantIdName);
         string parentTenantId = this.ScenarioContext.Get<string>(parentTenantIdName);
 
-        await this.apiClient[parentTenantId].Marain.Tenant.Children[childTenantId].DeleteAsync().ConfigureAwait(false);
+        await this.apiClient.DeleteChildTenantAsync(parentTenantId, childTenantId).ConfigureAwait(false);
         TestTenantCleanup.RemoveTenantToDelete(parentTenantId, childTenantId);
     }
 
     [When("I use the Tenancy Client to delete a tenant using the DeleteTenant link at position {int} from the children called {string}")]
     public async Task WhenIUseTheTenancyClientToDeleteATenantUsingTheDeleteTenantLinkAtPositionFromTheChildrenCalled(int deleteTenantIndex, string resultName)
     {
-        ApiResponseWithHeaders<ChildTenantsResponse> response = this.ScenarioContext.Get<ApiResponseWithHeaders<ChildTenantsResponse>>(resultName);
+        ApiResponse<ChildTenantsResource> response = this.ScenarioContext.Get<ApiResponse<ChildTenantsResource>>(resultName);
         Assert.IsNotNull(response.Body?.Links?.DeleteTenant, $"Result {resultName} has no DeleteTenant link collection.");
         Assert.LessOrEqual(deleteTenantIndex + 1, response.Body!.Links!.DeleteTenant!.Count);
         string link = response.Body!.Links!.DeleteTenant[deleteTenantIndex].Href!;
@@ -75,29 +73,25 @@ public class TenancyClientSteps : Steps
         string[] linkSegments = linkPath.Split('/', StringSplitOptions.RemoveEmptyEntries);
         TestTenantCleanup.RemoveTenantToDelete(linkSegments[0], linkSegments[^1]);
 
-        await this.apiClient[string.Empty].Marain.Tenant.Children[string.Empty].WithUrl(link).DeleteAsync().ConfigureAwait(false);
+        await this.apiClient.DeleteChildTenantByLinkAsync(link).ConfigureAwait(false);
     }
 
     [Given("I get the children of the tenant called {string} using the children link and call them {string}")]
     public async Task GivenIGetTheChildrenOfTheTenantCalledUsingTheChildrenLinkAndCallThem(string tenantName, string resultName)
     {
-        ApiResponseWithHeaders<TenantResponse> tenant = this.ScenarioContext.Get<ApiResponseWithHeaders<TenantResponse>>(tenantName);
+        ApiResponse<TenantResource> tenant = this.ScenarioContext.Get<ApiResponse<TenantResource>>(tenantName);
         string link = tenant.Body?.Links?.Children?.Href ?? throw new InvalidOperationException($"The tenant with name {tenantName} does not have a children link.");
-        HeadersInspectionHandlerOption headersInspectionhandler = new() { InspectResponseHeaders = true };
-        ChildTenantsResponse? response = await this.apiClient[string.Empty].Marain.Tenant.Children.WithUrl(link).GetAsync(config => config.Options.Add(headersInspectionhandler)).ConfigureAwait(false);
-        this.ScenarioContext.Set(new ApiResponseWithHeaders<ChildTenantsResponse>(response, headersInspectionhandler.ResponseHeaders), resultName);
+        ApiResponse<ChildTenantsResource> response = await this.apiClient.GetChildrenByLinkAsync(link).ConfigureAwait(false);
+        this.ScenarioContext.Set(response, resultName);
     }
 
     [Given("I use the Tenancy Client to create a child tenant called {string} for the root tenant")]
     public async Task GivenICreateAChildTenantCalledForTheRootTenant(string tenantName)
     {
-        CreateChildTenantRequest request = new() { TenantName = tenantName };
-        HeadersInspectionHandlerOption headersInspectionhandler = new() { InspectResponseHeaders = true };
+        ApiResponse<TenantResource> response = await this.apiClient.CreateChildTenantAsync(RootTenant.RootTenantId, tenantName).ConfigureAwait(false);
 
-        TenantResponse? response = await this.apiClient[RootTenant.RootTenantId].Marain.Tenant.PostAsync(request, config => config.Options.Add(headersInspectionhandler)).ConfigureAwait(false);
-
-        TestTenantCleanup.AddTenantToDelete(RootTenant.RootTenantId, response?.Id);
-        this.ScenarioContext.Set(new ApiResponseWithHeaders<TenantResponse>(response, headersInspectionhandler.ResponseHeaders), tenantName);
+        TestTenantCleanup.AddTenantToDelete(RootTenant.RootTenantId, response.Body.Id);
+        this.ScenarioContext.Set(response, tenantName);
     }
 
     [When("I use the Tenancy Client to get the tenant with the id called {string} and the ETag called {string}")]
@@ -116,11 +110,11 @@ public class TenancyClientSteps : Steps
         IServiceProvider serviceProvider = ContainerBindings.GetServiceProvider(this.FeatureContext);
         IJsonSerializerOptionsProvider serializerOptionsProvider = serviceProvider.GetRequiredService<IJsonSerializerOptionsProvider>();
 
-        ApiResponseWithHeaders<TenantResponse> tenant = this.ScenarioContext.Get<ApiResponseWithHeaders<TenantResponse>>(tenantName);
+        ApiResponse<TenantResource> tenant = this.ScenarioContext.Get<ApiResponse<TenantResource>>(tenantName);
 
-        List<UpdateTenantJsonPatchEntry> updates = DataTableToUpdateTenantJsonPatchEntry(dataTable, serializerOptionsProvider.Instance);
+        (IDictionary<string, object>? propertiesToAddOrUpdate, IEnumerable<string>? propertiesToRemove) = CommonSteps.DataTableToUpdateTenantJsonPatchEntry(dataTable);
 
-        await this.apiClient[tenant.Body!.Id!].Marain.Tenant.PatchAsync(updates);
+        await this.apiClient.UpdateTenantAsync(tenant.Body.Id, null, propertiesToAddOrUpdate, propertiesToRemove).ConfigureAwait(false);
     }
 
     [When("I use the Tenancy Client to rename the tenant called {string} to {string} and update its properties")]
@@ -129,12 +123,18 @@ public class TenancyClientSteps : Steps
         IServiceProvider serviceProvider = ContainerBindings.GetServiceProvider(this.FeatureContext);
         IJsonSerializerOptionsProvider serializerOptionsProvider = serviceProvider.GetRequiredService<IJsonSerializerOptionsProvider>();
 
-        ApiResponseWithHeaders<TenantResponse> tenant = this.ScenarioContext.Get<ApiResponseWithHeaders<TenantResponse>>(tenantName);
+        ApiResponse<TenantResource> tenant = this.ScenarioContext.Get<ApiResponse<TenantResource>>(tenantName);
 
-        List<UpdateTenantJsonPatchEntry> updates = DataTableToUpdateTenantJsonPatchEntry(dataTable, serializerOptionsProvider.Instance);
-        updates.Add(UpdateTenantJsonPatchEntryFactory.Create(UpdateTenantJsonPatchEntryOperation.Replace, "/name", newName));
+        (IDictionary<string, object>? propertiesToAddOrUpdate, IEnumerable<string>? propertiesToRemove) = CommonSteps.DataTableToUpdateTenantJsonPatchEntry(dataTable);
 
-        await this.apiClient[tenant.Body!.Id!].Marain.Tenant.PatchAsync(updates);
+        try
+        {
+            await this.apiClient.UpdateTenantAsync(tenant.Body.Id, newName, propertiesToAddOrUpdate, propertiesToRemove).ConfigureAwait(false);
+        }
+        catch (Exception e)
+        {
+            CommonSteps.SetLastException(this.ScenarioContext, e);
+        }
     }
 
     [When("I use the Tenancy Client to update the properties of the tenant with id {string}")]
@@ -143,11 +143,11 @@ public class TenancyClientSteps : Steps
         IServiceProvider serviceProvider = ContainerBindings.GetServiceProvider(this.FeatureContext);
         IJsonSerializerOptionsProvider serializerOptionsProvider = serviceProvider.GetRequiredService<IJsonSerializerOptionsProvider>();
 
-        List<UpdateTenantJsonPatchEntry> updates = DataTableToUpdateTenantJsonPatchEntry(dataTable, serializerOptionsProvider.Instance);
+        (IDictionary<string, object>? propertiesToAddOrUpdate, IEnumerable<string>? propertiesToRemove) = CommonSteps.DataTableToUpdateTenantJsonPatchEntry(dataTable);
 
         try
         {
-            await this.apiClient[tenantId].Marain.Tenant.PatchAsync(updates);
+            await this.apiClient.UpdateTenantAsync(tenantId, null, propertiesToAddOrUpdate, propertiesToRemove).ConfigureAwait(false);
         }
         catch (Exception e)
         {
@@ -161,62 +161,46 @@ public class TenancyClientSteps : Steps
     {
         string tenantId = this.ScenarioContext.Get<string>(tenantIdName);
 
-        HeadersInspectionHandlerOption headersInspectionhandler = new() { InspectResponseHeaders = true };
-        ChildTenantsResponse? response = await this.apiClient[tenantId].Marain.Tenant.Children.GetAsync(config =>
-        {
-            config.Options.Add(headersInspectionhandler);
-            config.QueryParameters.MaxItems = maxItems;
-        });
+        ApiResponse<ChildTenantsResource> response = await this.apiClient.GetChildrenAsync(tenantId, null, maxItems).ConfigureAwait(false);
 
-        this.ScenarioContext.Set(new ApiResponseWithHeaders<ChildTenantsResponse>(response, headersInspectionhandler.ResponseHeaders), resultName);
+        this.ScenarioContext.Set(response, resultName);
     }
 
     [When("I use the Tenancy Client to get additional children using the next link from the children called {string} and call them {string}")]
     public async Task WhenIUseTheTenancyClientToGetAdditionalChildrenUsingTheNextLinkFromTheChildrenCalledAndCallThem(string childrenName, string resultName)
     {
-        ApiResponseWithHeaders<ChildTenantsResponse> previousResponse = this.ScenarioContext.Get<ApiResponseWithHeaders<ChildTenantsResponse>>(childrenName);
-        string link = previousResponse.Body?.Links?.Next?.Href ?? throw new InvalidOperationException($"The response named '{childrenName}' does not contain a next link.");
+        ApiResponse<ChildTenantsResource> previousResponse = this.ScenarioContext.Get<ApiResponse<ChildTenantsResource>>(childrenName);
+        string link = previousResponse.Body.Links?.Next?.Href ?? throw new InvalidOperationException($"The response named '{childrenName}' does not contain a next link.");
 
-        HeadersInspectionHandlerOption headersInspectionhandler = new() { InspectResponseHeaders = true };
-        ChildTenantsResponse? response = await this.apiClient[string.Empty].Marain.Tenant.Children.WithUrl(link).GetAsync(config =>
-        {
-            config.Options.Add(headersInspectionhandler);
-        });
+        ApiResponse<ChildTenantsResource> response = await this.apiClient.GetChildrenByLinkAsync(link).ConfigureAwait(false);
 
-        this.ScenarioContext.Set(new ApiResponseWithHeaders<ChildTenantsResponse>(response, headersInspectionhandler.ResponseHeaders), resultName);
+        this.ScenarioContext.Set(response, resultName);
     }
 
     [When("I use the Tenancy Client to get the children of the tenant with the id called {string} with maxItems {int} and continuation token from the children called {string} and call them {string}")]
     public async Task WhenIUseTheTenancyClientToGetTheChildrenOfTheTenantWithTheIdCalledWithMaxItemsAndContinuationTokenFromTheChildrenCalledAndCallThem(string tenantIdName, int maxItems, string continuationTokenResultName, string resultName)
     {
         string tenantId = this.ScenarioContext.Get<string>(tenantIdName);
-        ApiResponseWithHeaders<ChildTenantsResponse> previousResponse = this.ScenarioContext.Get<ApiResponseWithHeaders<ChildTenantsResponse>>(continuationTokenResultName);
+        ApiResponse<ChildTenantsResource> previousResponse = this.ScenarioContext.Get<ApiResponse<ChildTenantsResource>>(continuationTokenResultName);
         string continuationToken = previousResponse.Body?.ContinuationToken ?? throw new InvalidOperationException($"The response named '{continuationTokenResultName}' does not have a continuation token.");
 
-        HeadersInspectionHandlerOption headersInspectionhandler = new() { InspectResponseHeaders = true };
-        ChildTenantsResponse? response = await this.apiClient[tenantId].Marain.Tenant.Children.GetAsync(config =>
-        {
-            config.Options.Add(headersInspectionhandler);
-            config.QueryParameters.MaxItems = maxItems;
-            config.QueryParameters.ContinuationToken = continuationToken;
-        });
-
-        this.ScenarioContext.Set(new ApiResponseWithHeaders<ChildTenantsResponse>(response, headersInspectionhandler.ResponseHeaders), resultName);
+        ApiResponse<ChildTenantsResource> response = await this.apiClient.GetChildrenAsync(tenantId, continuationToken, maxItems).ConfigureAwait(false);
+        this.ScenarioContext.Set(response, resultName);
     }
 
     [Then("the tenant called {string} should have no properties")]
     public void ThenTheTenantCalledShouldHaveNoProperties(string tenantName)
     {
         CommonSteps.RethrowLastExceptionIfPresent(this.ScenarioContext);
-        ApiResponseWithHeaders<TenantResponse> response = this.ScenarioContext.Get<ApiResponseWithHeaders<TenantResponse>>(tenantName);
-        Assert.AreEqual(0, response.Body?.Properties?.AdditionalData.Count ?? 0);
+        ApiResponse<TenantResource> response = this.ScenarioContext.Get<ApiResponse<TenantResource>>(tenantName);
+        Assert.AreEqual(0, response.Body?.Properties?.AsDictionary().Count ?? 0);
     }
 
     [Then("the tenant called {string} should have a self link with path {string}")]
     public void ThenTheTenantCalledShouldHaveASelfLinkWithValue(string tenantName, string expectedPath)
     {
         CommonSteps.RethrowLastExceptionIfPresent(this.ScenarioContext);
-        ApiResponseWithHeaders<TenantResponse> response = this.ScenarioContext.Get<ApiResponseWithHeaders<TenantResponse>>(tenantName);
+        ApiResponse<TenantResource> response = this.ScenarioContext.Get<ApiResponse<TenantResource>>(tenantName);
         Assert.IsNotNull(response.Body?.Links?.Self?.Href, $"Tenant '{tenantName}' does not contain a self link.");
         Assert.IsTrue(response.Body!.Links!.Self!.Href!.EndsWith(expectedPath));
     }
@@ -225,7 +209,7 @@ public class TenancyClientSteps : Steps
     public void ThenTheTenantCalledShouldHaveAChildrenLinkWithValue(string tenantName, string expectedPath)
     {
         CommonSteps.RethrowLastExceptionIfPresent(this.ScenarioContext);
-        ApiResponseWithHeaders<TenantResponse> response = this.ScenarioContext.Get<ApiResponseWithHeaders<TenantResponse>>(tenantName);
+        ApiResponse<TenantResource> response = this.ScenarioContext.Get<ApiResponse<TenantResource>>(tenantName);
         Assert.IsNotNull(response.Body?.Links?.Children?.Href, $"Tenant '{tenantName}' does not contain a children link.");
         Assert.IsTrue(response.Body!.Links!.Children!.Href!.EndsWith(expectedPath));
     }
@@ -234,7 +218,7 @@ public class TenancyClientSteps : Steps
     public void ThenTheChildrenCalledShouldContainASelfLink(string childrenName)
     {
         CommonSteps.RethrowLastExceptionIfPresent(this.ScenarioContext);
-        ApiResponseWithHeaders<ChildTenantsResponse> response = this.ScenarioContext.Get<ApiResponseWithHeaders<ChildTenantsResponse>>(childrenName);
+        ApiResponse<ChildTenantsResource> response = this.ScenarioContext.Get<ApiResponse<ChildTenantsResource>>(childrenName);
         Assert.IsNotNull(response.Body?.Links?.Self);
     }
 
@@ -242,7 +226,7 @@ public class TenancyClientSteps : Steps
     public void ThenTheChildrenCalledShouldContainANextLinkWithNoValue(string childrenName)
     {
         CommonSteps.RethrowLastExceptionIfPresent(this.ScenarioContext);
-        ApiResponseWithHeaders<ChildTenantsResponse> response = this.ScenarioContext.Get<ApiResponseWithHeaders<ChildTenantsResponse>>(childrenName);
+        ApiResponse<ChildTenantsResource> response = this.ScenarioContext.Get<ApiResponse<ChildTenantsResource>>(childrenName);
         Assert.IsNull(response.Body?.Links?.Next);
     }
 
@@ -250,14 +234,14 @@ public class TenancyClientSteps : Steps
     public void ThenTheChildrenCalledShouldHaveTheMaxItemsPropertySetTo(string childrenName, int expectedMaxItems)
     {
         CommonSteps.RethrowLastExceptionIfPresent(this.ScenarioContext);
-        ApiResponseWithHeaders<ChildTenantsResponse> response = this.ScenarioContext.Get<ApiResponseWithHeaders<ChildTenantsResponse>>(childrenName);
+        ApiResponse<ChildTenantsResource> response = this.ScenarioContext.Get<ApiResponse<ChildTenantsResource>>(childrenName);
         Assert.AreEqual(expectedMaxItems, response.Body?.MaxItems);
     }
 
     [Then("there should be no links in the GetTenants link collection of the children called {string}")]
     public void ThenThereShouldBeNoLinksInTheGetTenantsLinkCollectionOfTheChildrenCalled(string resultName)
     {
-        ApiResponseWithHeaders<ChildTenantsResponse> result = this.ScenarioContext.Get<ApiResponseWithHeaders<ChildTenantsResponse>>(resultName);
+        ApiResponse<ChildTenantsResource> result = this.ScenarioContext.Get<ApiResponse<ChildTenantsResource>>(resultName);
         Assert.AreEqual(0, result.Body?.Links?.GetTenant?.Count);
     }
 
@@ -265,14 +249,14 @@ public class TenancyClientSteps : Steps
     public void ThenTheLinksInTheGetTenantsLinkCollectionOfTheChildrenCalledShouldMatchTheSelfLinksOfTheTenantsCalled(string resultName, DataTable dataTable)
     {
         CommonSteps.RethrowLastExceptionIfPresent(this.ScenarioContext);
-        ApiResponseWithHeaders<ChildTenantsResponse> result = this.ScenarioContext.Get<ApiResponseWithHeaders<ChildTenantsResponse>>(resultName);
+        ApiResponse<ChildTenantsResource> result = this.ScenarioContext.Get<ApiResponse<ChildTenantsResource>>(resultName);
         Assert.AreEqual(dataTable.RowCount, result.Body?.Links?.GetTenant?.Count);
 
-        List<LinkResponse> childTenantLinks = result.Body!.Links!.GetTenant!;
+        List<WebLink> childTenantLinks = result.Body!.Links!.GetTenant!;
 
         foreach (DataTableRow row in dataTable.Rows)
         {
-            ApiResponseWithHeaders<TenantResponse> tenant = this.ScenarioContext.Get<ApiResponseWithHeaders<TenantResponse>>(row[0]);
+            ApiResponse<TenantResource> tenant = this.ScenarioContext.Get<ApiResponse<TenantResource>>(row[0]);
             Assert.IsNotNull(tenant, $"Tenant with name '{row[0]}' not found.");
 
             Assert.IsTrue(childTenantLinks.Any(childLink => childLink.Href == tenant.Body?.Links?.Self?.Href));
@@ -282,17 +266,17 @@ public class TenancyClientSteps : Steps
     [Then("the links in the GetTenants link collections of the children called {string} and {string} should each match {int} of the self links of the tenants called")]
     public void ThenTheLinksInTheGetTenantsLinkCollectionsOfTheChildrenCalledAndShouldEachMatchOfTheSelfLinksOfTheTenantsCalled(string result1Name, string result2Name, int expectedMatchingItemsPerResult, DataTable dataTable)
    {
-        ApiResponseWithHeaders<ChildTenantsResponse> result1 = this.ScenarioContext.Get<ApiResponseWithHeaders<ChildTenantsResponse>>(result1Name);
+        ApiResponse<ChildTenantsResource> result1 = this.ScenarioContext.Get<ApiResponse<ChildTenantsResource>>(result1Name);
         Assert.AreEqual(expectedMatchingItemsPerResult, result1.Body?.Links?.GetTenant?.Count);
 
-        ApiResponseWithHeaders<ChildTenantsResponse> result2 = this.ScenarioContext.Get<ApiResponseWithHeaders<ChildTenantsResponse>>(result2Name);
+        ApiResponse<ChildTenantsResource> result2 = this.ScenarioContext.Get<ApiResponse<ChildTenantsResource>>(result2Name);
         Assert.AreEqual(expectedMatchingItemsPerResult, result2.Body?.Links?.GetTenant?.Count);
 
-        List<LinkResponse> childTenantLinks = [.. result1.Body!.Links!.GetTenant!, .. result2.Body!.Links!.GetTenant!];
+        List<WebLink> childTenantLinks = [.. result1.Body!.Links!.GetTenant!, .. result2.Body!.Links!.GetTenant!];
 
         foreach (DataTableRow row in dataTable.Rows)
         {
-            ApiResponseWithHeaders<TenantResponse> tenant = this.ScenarioContext.Get<ApiResponseWithHeaders<TenantResponse>>(row[0]);
+            ApiResponse<TenantResource> tenant = this.ScenarioContext.Get<ApiResponse<TenantResource>>(row[0]);
             Assert.IsNotNull(tenant, $"Tenant with name '{row[0]}' not found.");
 
             Assert.IsTrue(childTenantLinks.Any(childLink => childLink.Href == tenant.Body?.Links?.Self?.Href));
@@ -302,61 +286,16 @@ public class TenancyClientSteps : Steps
     [Then("the links in the GetTenants link collection of the children called {string} should contain {int} items")]
     public void ThenTheLinksInTheGetTenantsLinkCollectionOfTheChildrenCalledShouldContainItems(string resultName, int expectedItems)
     {
-        ApiResponseWithHeaders<ChildTenantsResponse> result = this.ScenarioContext.Get<ApiResponseWithHeaders<ChildTenantsResponse>>(resultName);
+        ApiResponse<ChildTenantsResource> result = this.ScenarioContext.Get<ApiResponse<ChildTenantsResource>>(resultName);
         Assert.AreEqual(expectedItems, result.Body?.Links?.GetTenant?.Count);
-    }
-
-    private static List<UpdateTenantJsonPatchEntry> DataTableToUpdateTenantJsonPatchEntry(DataTable dataTable, JsonSerializerOptions serializerOptions)
-    {
-        List<UpdateTenantJsonPatchEntry> updates = [];
-
-        foreach ((string key, string value, string type, UpdateTenantJsonPatchEntryOperation operation) in dataTable.CreateSet<(string Key, string Value, string Type, UpdateTenantJsonPatchEntryOperation Operation)>())
-        {
-            if (type == "integer")
-            {
-                updates.Add(UpdateTenantJsonPatchEntryFactory.Create(
-                    UpdateTenantJsonPatchEntryOperation.Add,
-                    $"/properties/{key}",
-                    int.Parse(value)));
-            }
-            else if (type == "datetimeoffset")
-            {
-                updates.Add(UpdateTenantJsonPatchEntryFactory.Create(
-                    UpdateTenantJsonPatchEntryOperation.Add,
-                    $"/properties/{key}",
-                    DateTimeOffset.Parse(value),
-                    serializerOptions));
-            }
-            else
-            {
-                updates.Add(UpdateTenantJsonPatchEntryFactory.Create(
-                    UpdateTenantJsonPatchEntryOperation.Add,
-                    $"/properties/{key}",
-                    value));
-            }
-        }
-
-        return updates;
     }
 
     private async Task GetTenantByIdAndStoreResponseWithHeadersAsync(string tenantId, string? etag, string? name = null)
     {
         try
         {
-            HeadersInspectionHandlerOption headersInspectionhandler = new() { InspectResponseHeaders = true };
-
-            TenantResponse? tenant = await this.apiClient[tenantId].Marain.Tenant.GetAsync(config =>
-            {
-                config.Options.Add(headersInspectionhandler);
-
-                if (!string.IsNullOrEmpty(etag))
-                {
-                    config.Headers.Add("If-None-Match", etag);
-                }
-            }).ConfigureAwait(false);
-
-            this.lastTenantResponseWithHeaders = new ApiResponseWithHeaders<TenantResponse>(tenant, headersInspectionhandler.ResponseHeaders);
-            this.ScenarioContext.Set(this.lastTenantResponseWithHeaders, name ?? tenantId);
+            ApiResponse<TenantResource> response = await this.apiClient.GetTenantAsync(tenantId, etag).ConfigureAwait(false);
+            this.ScenarioContext.Set(response, name ?? tenantId);
         }
         catch (Exception ex)
         {

@@ -835,6 +835,7 @@
       "marain.tenancy.client": {
         "type": "Project",
         "dependencies": {
+          "Corvus.Json.PropertyBag": "[2.0.0, )",
           "Corvus.Json.Serialization": "[2.0.0, )",
           "Microsoft.Extensions.DependencyInjection.Abstractions": "[8.0.*, )",
           "Microsoft.Extensions.Http": "[8.0.*, )",

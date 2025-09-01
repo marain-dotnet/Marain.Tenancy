@@ -2,7 +2,7 @@
 // Copyright (c) Endjin Limited. All rights reserved.
 // </copyright>
 
-namespace Marain.Tenancy.Client.Serialization;
+namespace Kiota.Serialization;
 
 using System;
 using System.Collections.Generic;

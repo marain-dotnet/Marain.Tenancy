@@ -7,12 +7,14 @@ namespace Microsoft.Extensions.DependencyInjection;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using Azure;
 using Corvus.ContentHandling;
 using Corvus.Json;
 using Corvus.Tenancy;
+using Marain.Clients;
 using Marain.Tenancy;
 using Marain.Tenancy.Client;
-using Marain.Tenancy.Client.Models;
+using Marain.Tenancy.Client.Resources;
 using Marain.Tenancy.Mappers;
 
 /// <summary>
@@ -21,7 +23,7 @@ using Marain.Tenancy.Mappers;
 public static class ClientTenantProviderServiceCollectionExtensions
 {
     /// <summary>
-    /// Adds the root tenant to the collection, using the <see cref="TenancyApiClient"/>.
+    /// Adds the root tenant to the collection, using the <see cref="ITenancyClient"/>.
     /// </summary>
     /// <param name="services">The service collection to which to add the root tenant.</param>
     /// <returns>The configured service collection.</returns>
@@ -38,12 +40,14 @@ public static class ClientTenantProviderServiceCollectionExtensions
         // root tenant ID.
         services.AddSingleton(s =>
         {
-            TenancyApiClient tenancyService = s.GetRequiredService<TenancyApiClient>();
+            ITenancyClient tenancyService = s.GetRequiredService<ITenancyClient>();
             ITenantMapper tenantMapper = s.GetRequiredService<ITenantMapper>();
             IPropertyBagFactory propertyBagFactory = s.GetRequiredService<IPropertyBagFactory>();
-            TenantResponse? rootTenantResponse = tenancyService[RootTenant.RootTenantId].Marain.Tenant.GetAsync().GetAwaiter().GetResult();
+
+            ApiResponse<TenantResource> rootTenantResponse = tenancyService.GetTenantAsync(RootTenant.RootTenantId).GetAwaiter().GetResult();
             ArgumentNullException.ThrowIfNull(rootTenantResponse, "Unable to retrieve root tenant from service");
-            ITenant fetchedRootTenant = tenantMapper.MapTenant(rootTenantResponse);
+            rootTenantResponse.Headers.TryGetKey("etag", out string? etag);
+            ITenant fetchedRootTenant = tenantMapper.MapTenant(rootTenantResponse.Body, etag);
             var localRootTenant = new RootTenant(propertyBagFactory);
             IReadOnlyDictionary<string, object> propertiesToSetOrAdd = fetchedRootTenant.Properties.AsDictionary();
             localRootTenant.UpdateProperties(propertiesToSetOrAdd);
