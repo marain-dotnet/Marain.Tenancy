@@ -31,7 +31,8 @@
       "WebFetch(domain:adolfi.dev)",
       "WebFetch(domain:cezarypiatek.github.io)",
       "WebFetch(domain:docs.nunit.org)",
-      "Bash(python test_untyped_node_serialization.py)"
+      "Bash(python test_untyped_node_serialization.py)",
+      "WebSearch"
     ],
     "deny": []
   }

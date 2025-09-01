@@ -182,7 +182,7 @@ public class CommonSteps : Steps
         this.ProcessTenantResponseBasedOnType(
             tenantName,
             response => actualProperties = response.Body?.Properties?.AdditionalData.ToDictionary() ?? throw new InvalidOperationException($"The tenant {tenantName} does not have any properties."),
-            response => actualProperties = response.Properties.AsDictionary().ToDictionary());
+            response => actualProperties = response.Properties.AsDictionaryRecursive().ToDictionary());
 
         IEnumerable<(string Key, string Value, string Type)> expectedProperties = dataTable.CreateSet<(string Key, string Value, string Type)>();
 
