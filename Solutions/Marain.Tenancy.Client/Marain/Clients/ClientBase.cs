@@ -39,10 +39,22 @@ public abstract class ClientBase(HttpClient httpClient, JsonSerializerOptions se
     protected JsonSerializerOptions SerializerOptions { get; } = serializerOptions;
 
     /// <summary>
+    /// Maps a <see cref="HttpResponseHeaders"/> to an <see cref="IImmutableDictionary{TKey, TValue}"/>.
+    /// </summary>
+    /// <param name="headers">The headers to map.</param>
+    /// <returns>An <see cref="IImmutableDictionary{TKey, TValue}"/> containing the mapped headers.</returns>
+    protected static IImmutableDictionary<string, string?> MapHttpResponseHeadersToDictionary(HttpResponseHeaders headers) =>
+        headers.ToImmutableDictionary(
+            x => x.Key,
+            x => x.Value.FirstOrDefault(),
+            StringComparer.OrdinalIgnoreCase);
+
+    /// <summary>
     /// Gets data from the API using a link returned from a previous request.
     /// </summary>
     /// <typeparam name="T">The expected type of the response body.</typeparam>
     /// <param name="relativePath">The Url to request.</param>
+    /// <param name="configureRequestMessage">A callback that can be used to add additional configuration to the request message.</param>
     /// <param name="cancellationToken">The cancellation token.</param>
     /// <returns>The response.</returns>
     protected Task<ApiResponse<T>> GetPathAsync<T>(
@@ -65,6 +77,7 @@ public abstract class ClientBase(HttpClient httpClient, JsonSerializerOptions se
     /// </summary>
     /// <typeparam name="T">The expected type of the response body.</typeparam>
     /// <param name="requestUri">The Uri to request.</param>
+    /// <param name="configureRequestMessage">A callback that can be used to add additional configuration to the request message.</param>
     /// <param name="cancellationToken">The cancellation token.</param>
     /// <returns>The response.</returns>
     protected async Task<ApiResponse<T>> GetPathAsync<T>(
@@ -240,12 +253,6 @@ public abstract class ClientBase(HttpClient httpClient, JsonSerializerOptions se
         using Stream content = await responseMessage.Content.ReadAsStreamAsync().ConfigureAwait(false);
         return JsonDocument.Parse(content);
     }
-
-    protected static IImmutableDictionary<string, string?> MapHttpResponseHeadersToDictionary(HttpResponseHeaders headers) =>
-        headers.ToImmutableDictionary(
-            x => x.Key,
-            x => x.Value.FirstOrDefault(),
-            StringComparer.OrdinalIgnoreCase);
 
     private async Task<ApiResponse> CallLongRunningOperationEndpointInternalAsync(
         HttpRequestMessage request,

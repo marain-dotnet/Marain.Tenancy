@@ -15,7 +15,7 @@ namespace Marain.Tenancy.Client
     /// Interface for a client for the Marain.Tenancy API.
     /// </summary>
     public interface ITenancyClient
-	{
+    {
         /// <summary>
         /// Gets a tenant by Id.
         /// </summary>

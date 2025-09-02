@@ -4,12 +4,12 @@
   <PropertyGroup>
     <TargetFramework>net8.0</TargetFramework>
     <Nullable>enable</Nullable>
+    <RestorePackagesWithLockFile>true</RestorePackagesWithLockFile>
+    <RestoreLockedMode Condition="$(ContinuousIntegrationBuild) == 'true'">true</RestoreLockedMode>
   </PropertyGroup>
 
   <PropertyGroup>
     <NoWarn>1701;1702;1591;1573</NoWarn>
-    <TreatWarningsAsErrors>false</TreatWarningsAsErrors>
-    <EndjinDisableCodeAnalysis>true</EndjinDisableCodeAnalysis>
   </PropertyGroup>
 
   <PropertyGroup>
@@ -23,15 +23,6 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <Compile Remove="Kiota\**" />
-    <Compile Remove="Legacy\**" />
-    <EmbeddedResource Remove="Kiota\**" />
-    <EmbeddedResource Remove="Legacy\**" />
-    <None Remove="Kiota\**" />
-    <None Remove="Legacy\**" />
-  </ItemGroup>
-
-  <ItemGroup>
     <PackageReference Include="CacheCow.Client" Version="2.13.1" />
     <PackageReference Include="Corvus.Identity.Azure" Version="4.0.2" />
     <PackageReference Include="Corvus.Json.Serialization" Version="2.0.0" />
@@ -43,10 +34,6 @@
     <PackageReference Include="Microsoft.Extensions.DependencyInjection.Abstractions" Version="[8.0.*,)" />
     <PackageReference Include="Microsoft.Extensions.Http" Version="[8.0.*,)" />
     <PackageReference Include="Microsoft.Extensions.Http.Resilience" Version="9.8.0" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <Folder Include="Microsoft\Extensions\DependencyInjection\" />
   </ItemGroup>
 
 </Project>

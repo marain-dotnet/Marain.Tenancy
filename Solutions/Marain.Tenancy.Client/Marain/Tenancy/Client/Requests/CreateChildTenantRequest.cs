@@ -10,12 +10,12 @@ namespace Marain.Tenancy.Client.Requests;
 public record CreateChildTenantRequest
 {
     /// <summary>
-    /// The name of the new tenant.
+    /// Gets the name of the new tenant.
     /// </summary>
     public required string TenantName { get; init; }
 
     /// <summary>
-    /// If required, a well known GUID to use when generating the tenant Id.
+    /// Gets a well known GUID to use when generating the tenant Id.
     /// </summary>
     public string? WellKnownChildTenantGuid { get; init; }
 }

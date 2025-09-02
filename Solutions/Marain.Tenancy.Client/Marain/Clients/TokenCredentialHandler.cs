@@ -1,4 +1,4 @@
-﻿// <copyright file="Class1.cs" company="Endjin Limited">
+﻿// <copyright file="TokenCredentialHandler.cs" company="Endjin Limited">
 // Copyright (c) Endjin Limited. All rights reserved.
 // </copyright>
 
@@ -11,11 +11,17 @@ using System.Threading;
 using System.Threading.Tasks;
 using Corvus.Identity.ClientAuthentication;
 
+/// <summary>
+/// HTTP message handler that automatically adds Azure access tokens to requests.
+/// </summary>
+/// <param name="accessTokenSource">The token source for obtaining access tokens.</param>
+/// <param name="resourceIdForMsiAuthentication">The resource ID to use for MSI authentication.</param>
 public class TokenCredentialHandler(IServiceIdentityAccessTokenSource accessTokenSource, string resourceIdForMsiAuthentication) : DelegatingHandler
 {
-    private AccessTokenDetail? cachedToken;
     private readonly SemaphoreSlim tokenLock = new(1, 1);
+    private AccessTokenDetail? cachedToken;
 
+    /// <inheritdoc/>
     protected override async Task<HttpResponseMessage> SendAsync(
         HttpRequestMessage request,
         CancellationToken cancellationToken)
@@ -36,10 +42,23 @@ public class TokenCredentialHandler(IServiceIdentityAccessTokenSource accessToke
         return response;
     }
 
+    /// <inheritdoc/>
+    protected override void Dispose(bool disposing)
+    {
+        if (disposing)
+        {
+            this.tokenLock?.Dispose();
+        }
+
+        base.Dispose(disposing);
+    }
+
     private async Task EnsureValidTokenAsync(CancellationToken cancellationToken)
     {
         if (this.cachedToken.HasValue && this.cachedToken.Value.ExpiresOn > DateTimeOffset.UtcNow.AddMinutes(5))
+        {
             return;
+        }
 
         await this.RefreshTokenAsync(cancellationToken);
     }
@@ -56,14 +75,5 @@ public class TokenCredentialHandler(IServiceIdentityAccessTokenSource accessToke
         {
             this.tokenLock.Release();
         }
-    }
-
-    protected override void Dispose(bool disposing)
-    {
-        if (disposing)
-        {
-            this.tokenLock?.Dispose();
-        }
-        base.Dispose(disposing);
     }
 }

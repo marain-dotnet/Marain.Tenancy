@@ -4,6 +4,9 @@
 
 namespace Marain.Tenancy;
 
+/// <summary>
+/// Configuration settings for the Tenancy API client.
+/// </summary>
 public class TenancyApiClientConfiguration
 {
     /// <summary>
