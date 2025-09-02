@@ -45,7 +45,7 @@ public abstract class ClientBase(HttpClient httpClient, JsonSerializerOptions se
     /// <param name="relativePath">The Url to request.</param>
     /// <param name="cancellationToken">The cancellation token.</param>
     /// <returns>The response.</returns>
-    protected async Task<ApiResponse<T>> GetPathAsync<T>(
+    protected Task<ApiResponse<T>> GetPathAsync<T>(
         string relativePath,
         Action<HttpRequestMessage>? configureRequestMessage,
         CancellationToken cancellationToken = default)
@@ -57,6 +57,21 @@ public abstract class ClientBase(HttpClient httpClient, JsonSerializerOptions se
 
         var requestUri = new Uri(relativePath, UriKind.Relative);
 
+        return this.GetPathAsync<T>(requestUri, configureRequestMessage, cancellationToken);
+    }
+
+    /// <summary>
+    /// Gets data from the API using the given link.
+    /// </summary>
+    /// <typeparam name="T">The expected type of the response body.</typeparam>
+    /// <param name="requestUri">The Uri to request.</param>
+    /// <param name="cancellationToken">The cancellation token.</param>
+    /// <returns>The response.</returns>
+    protected async Task<ApiResponse<T>> GetPathAsync<T>(
+        Uri requestUri,
+        Action<HttpRequestMessage>? configureRequestMessage,
+        CancellationToken cancellationToken = default)
+    {
         HttpRequestMessage request = this.BuildRequest(HttpMethod.Get, requestUri);
 
         if (configureRequestMessage is not null)
@@ -64,25 +79,9 @@ public abstract class ClientBase(HttpClient httpClient, JsonSerializerOptions se
             configureRequestMessage(request);
         }
 
-        HttpResponseMessage response = await this.SendRequestAndThrowOnFailure(request, cancellationToken).ConfigureAwait(false);
+        HttpResponseMessage response = await this.SendRequestAndThrowOnFailureAsync(request, cancellationToken).ConfigureAwait(false);
 
-        using Stream contentStream = await response.Content.ReadAsStreamAsync(cancellationToken).ConfigureAwait(false);
-        T? result = await JsonSerializer.DeserializeAsync<T>(contentStream, this.SerializerOptions, cancellationToken).ConfigureAwait(false);
-
-        if (result is null)
-        {
-            throw new InvalidOperationException("Unable to deserialize response body");
-        }
-
-        var headers = response.Headers.ToImmutableDictionary(
-            x => x.Key.ToLowerInvariant(),
-            x => x.Value.FirstOrDefault(),
-            null);
-
-        return new ApiResponse<T>(
-            response.StatusCode,
-            MapHttpResponseHeadersToDictionary(response.Headers),
-            result);
+        return await this.BuildApiResponseAsync<T>(response, cancellationToken).ConfigureAwait(false);
     }
 
     /// <summary>
@@ -114,6 +113,30 @@ public abstract class ClientBase(HttpClient httpClient, JsonSerializerOptions se
     protected HttpRequestMessage BuildRequest(HttpMethod method, Uri requestUri)
     {
         return new HttpRequestMessage(method, requestUri);
+    }
+
+    /// <summary>
+    /// Maps a <see cref="HttpResponseMessage"/> to an <see cref="ApiResponse{T}"/>.
+    /// </summary>
+    /// <typeparam name="T">The type that the response body should be deserialized into.</typeparam>
+    /// <param name="response">The <see cref="HttpResponseMessage"/>.</param>
+    /// <param name="cancellationToken">The <see cref="CancellationToken"/>.</param>
+    /// <returns>The mapped <see cref="ApiResponse{T}"/>.</returns>
+    /// <exception cref="InvalidOperationException">The response body could not be deserialized to the specified type.</exception>
+    protected async Task<ApiResponse<T>> BuildApiResponseAsync<T>(HttpResponseMessage response, CancellationToken cancellationToken)
+    {
+        using Stream contentStream = await response.Content.ReadAsStreamAsync(cancellationToken).ConfigureAwait(false);
+        T? result = await JsonSerializer.DeserializeAsync<T>(contentStream, this.SerializerOptions, cancellationToken).ConfigureAwait(false);
+
+        if (result is null)
+        {
+            throw new InvalidOperationException("Unable to deserialize response body");
+        }
+
+        return new ApiResponse<T>(
+            response.StatusCode,
+            MapHttpResponseHeadersToDictionary(response.Headers),
+            result);
     }
 
     /// <summary>
@@ -183,7 +206,7 @@ public abstract class ClientBase(HttpClient httpClient, JsonSerializerOptions se
     /// <param name="request">The request.</param>
     /// <param name="cancellationToken">The cancellation token.</param>
     /// <returns>The response.</returns>
-    protected async Task<HttpResponseMessage> SendRequestAndThrowOnFailure(HttpRequestMessage request, CancellationToken cancellationToken)
+    protected async Task<HttpResponseMessage> SendRequestAndThrowOnFailureAsync(HttpRequestMessage request, CancellationToken cancellationToken)
     {
         HttpResponseMessage? response = null;
 
@@ -218,18 +241,18 @@ public abstract class ClientBase(HttpClient httpClient, JsonSerializerOptions se
         return JsonDocument.Parse(content);
     }
 
+    protected static IImmutableDictionary<string, string?> MapHttpResponseHeadersToDictionary(HttpResponseHeaders headers) =>
+        headers.ToImmutableDictionary(
+            x => x.Key,
+            x => x.Value.FirstOrDefault(),
+            StringComparer.OrdinalIgnoreCase);
+
     private async Task<ApiResponse> CallLongRunningOperationEndpointInternalAsync(
         HttpRequestMessage request,
         CancellationToken cancellationToken = default)
     {
-        HttpResponseMessage response = await this.SendRequestAndThrowOnFailure(request, cancellationToken).ConfigureAwait(false);
+        HttpResponseMessage response = await this.SendRequestAndThrowOnFailureAsync(request, cancellationToken).ConfigureAwait(false);
 
         return new ApiResponse(response.StatusCode, MapHttpResponseHeadersToDictionary(response.Headers));
     }
-
-    private static IImmutableDictionary<string, string?> MapHttpResponseHeadersToDictionary(HttpResponseHeaders headers) =>
-        headers.ToImmutableDictionary(
-            x => x.Key.ToLowerInvariant(),
-            x => x.Value.FirstOrDefault(),
-            null);
 }

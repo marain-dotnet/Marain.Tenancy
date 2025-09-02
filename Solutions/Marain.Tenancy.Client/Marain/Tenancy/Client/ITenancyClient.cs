@@ -58,11 +58,13 @@ namespace Marain.Tenancy.Client
         /// Creates a new child tenant using a link to the parent tenant.
         /// </summary>
         /// <param name="parentTenantLink">The link to the parent tenant.</param>
+        /// <param name="tenantName">The name of the new tenant.</param>
         /// <param name="wellKnownChildTenantGuid">If required, the well-known GUID for the new tenant. Optional.</param>
         /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation.</param>
         /// <returns>A task representing the operation status.</returns>
         Task<ApiResponse<TenantResource>> CreateChildTenantByLinkAsync(
             string parentTenantLink,
+            string tenantName,
             string? wellKnownChildTenantGuid = null,
             CancellationToken cancellationToken = default);
 

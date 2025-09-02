@@ -45,7 +45,6 @@
   </ItemGroup>
 
   <ItemGroup>
-    <Folder Include="Marain\Tenancy\Client\Requests\" />
     <Folder Include="Microsoft\Extensions\DependencyInjection\" />
   </ItemGroup>
 

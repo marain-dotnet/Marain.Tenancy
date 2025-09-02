@@ -69,8 +69,7 @@ public class TenancyClientSteps : Steps
         Assert.LessOrEqual(deleteTenantIndex + 1, response.Body!.Links!.DeleteTenant!.Count);
         string link = response.Body!.Links!.DeleteTenant[deleteTenantIndex].Href!;
 
-        string linkPath = new Uri(link).LocalPath;
-        string[] linkSegments = linkPath.Split('/', StringSplitOptions.RemoveEmptyEntries);
+        string[] linkSegments = link.Split('/', StringSplitOptions.RemoveEmptyEntries);
         TestTenantCleanup.RemoveTenantToDelete(linkSegments[0], linkSegments[^1]);
 
         await this.apiClient.DeleteChildTenantByLinkAsync(link).ConfigureAwait(false);
