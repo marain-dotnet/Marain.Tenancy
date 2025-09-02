@@ -92,7 +92,7 @@ public class ClientTenantStore : ClientTenantProvider, ITenantStore
             IEnumerable<string> childTenantIds = childLinkResponses
                 .Select(x => x.Href)
                 .Where(x => !string.IsNullOrEmpty(x))
-                .Select(x => this.TenantMapper.ExtractTenantIdFromAbsoluteUrl(x!));
+                .Select(x => this.TenantMapper.ExtractTenantIdFromUrlPath(x!));
 
             // Use the continuation token from the response for pagination
             string? nextContinuationToken = response.Body.ContinuationToken;

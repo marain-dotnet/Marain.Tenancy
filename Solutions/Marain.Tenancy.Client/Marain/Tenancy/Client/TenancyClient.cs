@@ -6,7 +6,9 @@ namespace Marain.Tenancy.Client;
 
 using System;
 using System.Collections.Generic;
+using System.Collections.Immutable;
 using System.IO;
+using System.Linq;
 using System.Net.Http;
 using System.Text.Json;
 using System.Threading;
@@ -82,8 +84,25 @@ public class TenancyClient(HttpClient client, JsonSerializerOptions serializerOp
             request => request.Headers.Add("If-None-Match", etag),
             cancellationToken);
 
-    public Task<ApiResponse<TenantResource>> UpdateTenantAsync(string tenantId, string? newName, IEnumerable<KeyValuePair<string, object>>? propertiesToAddOrUpdate, IEnumerable<string>? propertiesToRemove, CancellationToken cancellationToken = default)
+    public async Task<ApiResponse<TenantResource>> UpdateTenantAsync(string tenantId, string? newName, IEnumerable<KeyValuePair<string, object>>? propertiesToAddOrUpdate, IEnumerable<string>? propertiesToRemove, CancellationToken cancellationToken = default)
     {
-        throw new System.NotImplementedException();
+        IEnumerable<UpdateTenantPatchEntry> addOrUpdateEntries = propertiesToAddOrUpdate?.Select(x => UpdateTenantPatchEntry.CreateAddOrUpdateOperation(x.Key, x.Value)) ?? [];
+        IEnumerable<UpdateTenantPatchEntry> removeEntries = propertiesToRemove?.Select(UpdateTenantPatchEntry.CreateDeleteOperation) ?? [];
+
+        List<UpdateTenantPatchEntry> updateTenantPatchEntries =
+            [
+                ..addOrUpdateEntries,
+                ..removeEntries
+            ];
+
+        if (!string.IsNullOrWhiteSpace(newName))
+        {
+            updateTenantPatchEntries.Add(UpdateTenantPatchEntry.CreateUpdateNameOperation(newName));
+        }
+
+        Uri uri = this.ConstructUri($"/{tenantId}/marain/tenant");
+        HttpRequestMessage request = this.BuildRequest(HttpMethod.Patch, uri, updateTenantPatchEntries);
+        HttpResponseMessage response = await this.SendRequestAndThrowOnFailureAsync(request, cancellationToken).ConfigureAwait(false);
+        return await this.BuildApiResponseAsync<TenantResource>(response, cancellationToken).ConfigureAwait(false);
     }
 }

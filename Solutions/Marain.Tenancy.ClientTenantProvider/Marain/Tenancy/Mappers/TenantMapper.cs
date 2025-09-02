@@ -11,6 +11,7 @@ using Corvus.Json;
 using Corvus.Tenancy;
 using Marain.Tenancy.Client.Resources;
 using Microsoft.AspNetCore.WebUtilities;
+using Microsoft.Extensions.Primitives;
 
 /// <summary>
 /// Maps a client tenant to an API tenant.
@@ -42,55 +43,40 @@ public class TenantMapper : ITenantMapper
     }
 
     /// <inheritdoc/>
-    public string ExtractTenantIdFromAbsoluteUrl(string absoluteUrl)
+    public string ExtractTenantIdFromUrlPath(string path)
     {
-        Uri uri = new(absoluteUrl, UriKind.Absolute);
-        string path = uri.AbsolutePath;
+        if (!path.StartsWith("/"))
+        {
+            throw new ArgumentException($"Url paths should start with a slash. The supplied path, [{path}], does not.");
+        }
 
-        // Path will start with a slash. The tenant Id is the first element in the path, and will always be followed
+        // Path starts with a slash. The tenant Id is the first element in the path, and will always be followed
         // by additional elements.
         return path[1..path.IndexOf('/', 1)];
     }
 
     /// <inheritdoc/>
-    public string ExtractTenantIdFrom(Uri baseUri, string location)
+    public string? ExtractContinationTokenFromUrlPathAndQuery(string pathAndQuery)
     {
-        int offset = 0;
-        string baseUriString = baseUri.AbsoluteUri;
-        if (location.StartsWith(baseUriString))
+        ArgumentException.ThrowIfNullOrEmpty(nameof(pathAndQuery));
+        if (!pathAndQuery.StartsWith("/"))
         {
-            offset = baseUriString.Length;
+            throw new ArgumentException($"Url paths should start with a slash. The supplied path, [{pathAndQuery}], does not.");
         }
 
-        // Remove the starting slash if present
-        if (location[0] == '/')
-        {
-            offset += 1;
-        }
+        int queryIndex = pathAndQuery.IndexOf("/");
 
-        return location[offset..location.IndexOf('/', offset)];
-    }
-
-    /// <inheritdoc/>
-    public string? ExtractContinationTokenFrom(Uri baseUri, string tokenUri)
-    {
-        if (string.IsNullOrEmpty(tokenUri))
+        if (queryIndex < 0)
         {
             return null;
         }
 
-        var uri = new Uri(tokenUri, UriKind.RelativeOrAbsolute);
-        if (!uri.IsAbsoluteUri)
-        {
-            uri = new Uri(baseUri, uri);
-        }
-
-        Dictionary<string, Microsoft.Extensions.Primitives.StringValues> query = QueryHelpers.ParseQuery(uri.Query);
-        if (!query.ContainsKey("continuationToken"))
+        Dictionary<string, StringValues> query = QueryHelpers.ParseQuery(pathAndQuery[(queryIndex + 1)..]);
+        if (!query.TryGetValue("continuationToken", out StringValues value))
         {
             return null;
         }
 
-        return query["continuationToken"].FirstOrDefault();
+        return value.FirstOrDefault();
     }
 }

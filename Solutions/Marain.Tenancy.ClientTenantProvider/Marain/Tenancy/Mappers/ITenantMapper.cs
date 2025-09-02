@@ -27,22 +27,13 @@ public interface ITenantMapper
     /// </summary>
     /// <param name="absoluteUrl">The absolute Url string.</param>
     /// <returns>The tenant Id.</returns>
-    string ExtractTenantIdFromAbsoluteUrl(string absoluteUrl);
-
-    /// <summary>
-    /// Extracts a tenant ID from a Marain location.
-    /// </summary>
-    /// <param name="baseUri">The base URI for the service.</param>
-    /// <param name="location">The location string.</param>
-    /// <returns>The tenant ID.</returns>
-    string ExtractTenantIdFrom(Uri baseUri, string location);
+    string ExtractTenantIdFromUrlPath(string absoluteUrl);
 
     /// <summary>
     /// Extracts a continuation token from a Marain URI.
     /// </summary>
-    /// <param name="baseUri">The base URI for the service.</param>
-    /// <param name="tokenUri">The uri containing the contination token.</param>
+    /// <param name="path">The path containing the contination token.</param>
     /// <returns>The tenant ID.</returns>
     /// <remarks>The continuation token should be in the <c>?continuationToken={}</c> parameter.</remarks>
-    string? ExtractContinationTokenFrom(Uri baseUri, string tokenUri);
+    string? ExtractContinationTokenFromUrlPathAndQuery(string path);
 }

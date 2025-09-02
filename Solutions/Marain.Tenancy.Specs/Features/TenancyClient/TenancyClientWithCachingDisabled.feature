@@ -190,4 +190,4 @@ Scenario: Updates to root tenant are prohibited
 	When I use the Tenancy Client to update the properties of the tenant with id "f26450ab1668784bb327951c8b08f347"
 	| Key       | Value                           | Type            | Action  |
 	| FirstKey  | 1                               | integer         | Add     |
-	Then it should throw an ApiException with Response Status Code 405
+	Then it should throw a MarainApiException with StatusCode "MethodNotAllowed"
