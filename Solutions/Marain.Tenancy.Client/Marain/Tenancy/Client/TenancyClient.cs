@@ -6,14 +6,11 @@ namespace Marain.Tenancy.Client;
 
 using System;
 using System.Collections.Generic;
-using System.Collections.Immutable;
-using System.IO;
 using System.Linq;
 using System.Net.Http;
 using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
-using Azure;
 using Marain.Clients;
 using Marain.Tenancy.Client.Requests;
 using Marain.Tenancy.Client.Resources;
