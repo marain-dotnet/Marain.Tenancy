@@ -79,7 +79,7 @@ public class TenancyClient(HttpClient client, JsonSerializerOptions serializerOp
     public Task<ApiResponse<TenantResource>> GetTenantByLinkAsync(string tenantLink, string? etag = null, CancellationToken cancellationToken = default) =>
         this.GetPathAsync<TenantResource>(
             tenantLink,
-            request => request.Headers.Add("If-Not-Modified", etag),
+            request => request.Headers.Add("If-None-Match", etag),
             cancellationToken);
 
     public Task<ApiResponse<TenantResource>> UpdateTenantAsync(string tenantId, string? newName, IEnumerable<KeyValuePair<string, object>>? propertiesToAddOrUpdate, IEnumerable<string>? propertiesToRemove, CancellationToken cancellationToken = default)

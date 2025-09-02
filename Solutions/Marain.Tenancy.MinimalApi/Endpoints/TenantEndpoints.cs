@@ -9,7 +9,6 @@ using System.Linq;
 using System.Text.Json;
 using System.Threading.Tasks;
 using Corvus.Json;
-using Corvus.Json.Serialization;
 using Corvus.Tenancy;
 using Corvus.Tenancy.Exceptions;
 using Marain.Tenancy.MinimalApi.ErrorHandling;
