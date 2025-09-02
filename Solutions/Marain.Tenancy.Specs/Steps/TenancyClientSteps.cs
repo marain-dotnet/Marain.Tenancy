@@ -289,6 +289,13 @@ public class TenancyClientSteps : Steps
         Assert.AreEqual(expectedItems, result.Body?.Links?.GetTenant?.Count);
     }
 
+    [Then("the tenant response called {string} was retrieved from the cache")]
+    public void ThenTheTenantResponseCalledWasRetrievedFromTheCache(string resultName)
+    {
+        ApiResponse<ChildTenantsResource> result = this.ScenarioContext.Get<ApiResponse<ChildTenantsResource>>(resultName);
+        throw new PendingStepException();
+    }
+
     private async Task GetTenantByIdAndStoreResponseWithHeadersAsync(string tenantId, string? etag, string? name = null)
     {
         try
