@@ -4,6 +4,7 @@
 
 namespace Marain.Tenancy.Client.Resources;
 
+using System.Text.Json.Serialization;
 using Corvus.Json;
 using Marain.Clients.Hal;
 
@@ -12,7 +13,8 @@ public record TenantResource
     public string? ContentType { get; init; }
     
     public required string Id { get; init; }
-    
+
+    [JsonPropertyName("_links")]
     public TenantLinksResource? Links { get; init; }
     
     public required string Name { get; init; }

@@ -13,7 +13,6 @@ using Marain.Clients;
 using Marain.Tenancy.Client;
 using Marain.Tenancy.Client.Resources;
 using Marain.Tenancy.Mappers;
-using Microsoft.Kiota.Http.HttpClientLibrary.Middleware.Options;
 
 /// <summary>
 /// An <see cref="ITenantProvider"/> built over a Marain tenancy instance.
@@ -58,8 +57,6 @@ public class ClientTenantProvider : ITenantProvider
 
         try
         {
-            HeadersInspectionHandlerOption headersInspectionhandler = new() { InspectResponseHeaders = true };
-
             ApiResponse<TenantResource> tenantResponse = await this.TenantApiClient.GetTenantAsync(tenantId, eTag).ConfigureAwait(false);
 
             tenantResponse.Headers.TryGetValue("etag", out string? etagValue);

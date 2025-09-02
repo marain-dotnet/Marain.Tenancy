@@ -5,6 +5,7 @@
 namespace Marain.Tenancy.Client.Resources;
 
 using System.Collections.Generic;
+using System.Text.Json.Serialization;
 using Marain.Clients.Hal;
 
 public record ChildTenantsResource
@@ -13,6 +14,7 @@ public record ChildTenantsResource
 
     public int? MaxItems { get; init; }
 
+    [JsonPropertyName("_links")]
     public ChildTenantsLinksResource? Links { get; init; }
 
     public record ChildTenantsLinksResource

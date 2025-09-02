@@ -8,6 +8,7 @@ using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Linq;
+using System.Net;
 using System.Runtime.ExceptionServices;
 using System.Threading.Tasks;
 using Corvus.Json;
@@ -18,8 +19,6 @@ using Marain.Tenancy.Client;
 using Marain.Tenancy.Client.Resources;
 using Marain.Tenancy.Specs.Bindings;
 using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Kiota.Abstractions;
-using Microsoft.Kiota.Http.HttpClientLibrary.Middleware.Options;
 using NUnit.Framework;
 using Reqnroll;
 
@@ -79,13 +78,15 @@ public class CommonSteps : Steps
         Assert.AreEqual(exceptionTypeName, lastException?.GetType().Name);
     }
 
-    [Then("it should throw an ApiException with Response Status Code {int}")]
-    public void ThenTheApiExceptionShouldHaveStatusCode(int expectedStatusCode)
+    [Then("it should throw a MarainApiException with StatusCode {string}")]
+    public void ThenItShouldThrowAWithStatusCode(string expectedStatusCodeName)
     {
         Exception? lastException = GetLastException(this.ScenarioContext);
-        Assert.IsInstanceOf<ApiException>(lastException);
-        var ex = (ApiException)lastException!;
-        Assert.AreEqual(expectedStatusCode, ex.ResponseStatusCode);
+        Assert.IsInstanceOf<MarainApiException>(lastException);
+        var ex = (MarainApiException)lastException!;
+
+        HttpStatusCode expectedStatusCode = Enum.Parse<HttpStatusCode>(expectedStatusCodeName, true);
+        Assert.AreEqual(expectedStatusCode, ex!.StatusCode);
     }
 
     public static void RethrowLastExceptionIfPresent(ScenarioContext context)

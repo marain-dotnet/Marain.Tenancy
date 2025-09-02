@@ -10,7 +10,7 @@ Feature: TenancyClient with caching disabled
 
 Scenario: Get a tenant that does not exist
 	When I use the Tenancy Client to get a tenant with id "NotFound"
-	Then it should throw a "ProblemDetails"
+	Then it should throw a MarainApiException with StatusCode "NotFound"
 
 Scenario: Create a child tenant of the root tenant
 	Given I use the Tenancy Client to create a child tenant called "ChildTenant1" for the root tenant
@@ -23,7 +23,7 @@ Scenario: Get a tenant with an etag retrieved from a created tenant
 	And I get the tenant id of the tenant called "ChildTenant1" and call it "ChildTenantId"
 	And I get the ETag of the tenant called "ChildTenant1" and call it "ChildTenantETag"
 	When I use the Tenancy Client to get the tenant with the id called "ChildTenantId" and the ETag called "ChildTenantETag"
-	Then it should throw an ApiException with Response Status Code 304
+	Then it should throw a MarainApiException with StatusCode "NotModified"
 
 Scenario: Get a tenant with an etag retrieved from a tenant got from the Get Tenant endpoint
 	Given I use the Tenancy Client to create a child tenant called "ChildTenant1" for the root tenant
@@ -31,7 +31,7 @@ Scenario: Get a tenant with an etag retrieved from a tenant got from the Get Ten
 	And I use the Tenancy Client to get the tenant with the id called "ChildTenantId" and call it "Result"
 	And I get the ETag of the tenant called "Result" and call it "ResultETag"
 	When I use the Tenancy Client to get the tenant with the id called "ChildTenantId" and the ETag called "ResultETag"
-	Then it should throw an ApiException with Response Status Code 304
+	Then it should throw a MarainApiException with StatusCode "NotModified"
 
 Scenario: Update a child tenant
 	Given I use the Tenancy Client to create a child tenant called "ChildTenant1" for the root tenant

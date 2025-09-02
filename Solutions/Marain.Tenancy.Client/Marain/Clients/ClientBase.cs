@@ -22,33 +22,21 @@ using System.Threading.Tasks;
 /// <summary>
 /// Base class for the clients.
 /// </summary>
-public abstract class ClientBase
+/// <remarks>
+/// Creates a new instance of the <see cref="ClientBase"/> class.
+/// </remarks>
+/// <param name="httpClient">The client to use for API requests.</param>
+public abstract class ClientBase(HttpClient httpClient, JsonSerializerOptions serializerOptions)
 {
-    /// <summary>
-    /// Creates a new instance of the <see cref="ClientBase"/> class.
-    /// </summary>
-    /// <param name="httpClient">The client to use for API requests.</param>
-    protected ClientBase(HttpClient httpClient)
-    {
-        this.SerializerOptions = new JsonSerializerOptions
-        {
-            PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
-        };
-
-        this.SerializerOptions.Converters.Add(new JsonStringEnumConverter(JsonNamingPolicy.CamelCase));
-
-        this.Client = httpClient;
-    }
-
     /// <summary>
     /// Gets the HTTP client.
     /// </summary>
-    public HttpClient Client { get; }
+    public HttpClient Client { get; } = httpClient;
 
     /// <summary>
     /// Gets the serialization options that will be used to serialize and deserialize data.
     /// </summary>
-    protected JsonSerializerOptions SerializerOptions { get; }
+    protected JsonSerializerOptions SerializerOptions { get; } = serializerOptions;
 
     /// <summary>
     /// Gets data from the API using a link returned from a previous request.
@@ -59,6 +47,7 @@ public abstract class ClientBase
     /// <returns>The response.</returns>
     protected async Task<ApiResponse<T>> GetPathAsync<T>(
         string relativePath,
+        Action<HttpRequestMessage>? configureRequestMessage,
         CancellationToken cancellationToken = default)
     {
         if (string.IsNullOrEmpty(relativePath))
@@ -69,6 +58,11 @@ public abstract class ClientBase
         var requestUri = new Uri(relativePath, UriKind.Relative);
 
         HttpRequestMessage request = this.BuildRequest(HttpMethod.Get, requestUri);
+
+        if (configureRequestMessage is not null)
+        {
+            configureRequestMessage(request);
+        }
 
         HttpResponseMessage response = await this.SendRequestAndThrowOnFailure(request, cancellationToken).ConfigureAwait(false);
 

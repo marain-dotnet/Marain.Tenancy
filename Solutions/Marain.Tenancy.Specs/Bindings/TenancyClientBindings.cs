@@ -26,8 +26,8 @@ public static class TenancyClientBindings
             featureContext,
             serviceCollection =>
             {
-                serviceCollection.AddUnauthenticatedTenancyClient(
-                    MinimalApiWebApplicationFactory.Current.Server.BaseAddress.ToString(),
+                serviceCollection.AddTenancyClient(
+                    _ => new() { BaseUri = MinimalApiWebApplicationFactory.Current.Server.BaseAddress.ToString() },
                     MinimalApiWebApplicationFactory.Current.Server.CreateHandler());
             });
     }
