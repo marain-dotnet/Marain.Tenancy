@@ -4,6 +4,7 @@
 
 namespace Marain.Tenancy.Specs.Bindings;
 
+using System.Linq;
 using Corvus.Testing.ReqnRoll;
 using Marain.Tenancy.Specs.Helpers;
 using Microsoft.Extensions.DependencyInjection;
@@ -26,8 +27,11 @@ public static class TenancyClientBindings
             featureContext,
             serviceCollection =>
             {
+                bool enableResponseCaching = !featureContext.FeatureInfo.Tags.Contains("disableTenantCaching");
+
                 serviceCollection.AddTenancyClient(
                     _ => new() { BaseUri = MinimalApiWebApplicationFactory.Current.Server.BaseAddress.ToString() },
+                    enableResponseCaching,
                     MinimalApiWebApplicationFactory.Current.Server.CreateHandler());
             });
     }

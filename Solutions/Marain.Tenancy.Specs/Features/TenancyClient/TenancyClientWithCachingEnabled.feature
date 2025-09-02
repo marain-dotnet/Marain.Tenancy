@@ -17,8 +17,9 @@ Scenario: Get a tenant that does not exist
 Scenario: Getting a tenant that has already been retrieved uses the cache
 	Given I use the Tenancy Client to create a child tenant called "ChildTenant1" for the root tenant
 	And I get the tenant id of the tenant called "ChildTenant1" and call it "ChildTenantId"
-	When I use the Tenancy Client to get the tenant with the id called "ChildTenantId" and call it "Result"
-	Then the tenant response called "Result" was retrieved from the cache
+	And I use the Tenancy Client to get the tenant with the id called "ChildTenantId" and call it "Result1"
+	When I use the Tenancy Client to get the tenant with the id called "ChildTenantId" and call it "Result2"
+	Then the tenant response called "Result2" was retrieved from the cache
 
 Scenario: Get a tenant with an etag retrieved from a created tenant
 	Given I use the Tenancy Client to create a child tenant called "ChildTenant1" for the root tenant

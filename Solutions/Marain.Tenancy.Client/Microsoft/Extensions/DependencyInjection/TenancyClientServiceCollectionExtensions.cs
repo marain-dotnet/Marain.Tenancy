@@ -6,6 +6,7 @@ namespace Microsoft.Extensions.DependencyInjection;
 
 using System;
 using System.Net.Http;
+using CacheCow.Client;
 using Corvus.Identity.ClientAuthentication;
 using Corvus.Json.Serialization;
 using Marain.Clients;
@@ -22,10 +23,13 @@ public static class TenancyClientServiceCollectionExtensions
     /// </summary>
     /// <param name="services">The service collection.</param>
     /// <param name="configurationCallback">A callback function that will retrieve the client configuration.</param>
+    /// <param name="enableResponseCaching">If true, responses will be cached based on the Cache-Control headers sent from the server.</param>
+    /// <param name="messageHandler">An optional default message handler for the underlying HttpClient. Primarily used for testing scenarios.</param>
     /// <returns>The modified service collection.</returns>
     public static IServiceCollection AddTenancyClient(
         this IServiceCollection services,
         Func<IServiceProvider, TenancyApiClientConfiguration> configurationCallback,
+        bool enableResponseCaching,
         HttpMessageHandler? messageHandler = null)
     {
         IHttpClientBuilder httpClientBuilder = services.AddHttpClient(nameof(TenancyClient)).ConfigureHttpClient((sp, client) =>
@@ -47,6 +51,11 @@ public static class TenancyClientServiceCollectionExtensions
                 IServiceIdentityAccessTokenSource tokenSource = sp.GetRequiredService<IServiceIdentityAccessTokenSource>();
                 var authHandler = new TokenCredentialHandler(tokenSource, configuration.ResourceIdForMsiAuthentication);
                 handlers.Add(authHandler);
+            }
+
+            if (enableResponseCaching)
+            {
+                handlers.Add(new CachingHandler());
             }
         });
 

@@ -292,8 +292,15 @@ public class TenancyClientSteps : Steps
     [Then("the tenant response called {string} was retrieved from the cache")]
     public void ThenTheTenantResponseCalledWasRetrievedFromTheCache(string resultName)
     {
-        ApiResponse<ChildTenantsResource> result = this.ScenarioContext.Get<ApiResponse<ChildTenantsResource>>(resultName);
-        throw new PendingStepException();
+        ApiResponse<TenantResource> result = this.ScenarioContext.Get<ApiResponse<TenantResource>>(resultName);
+
+        // Get the CacheCow header
+        result.Headers.TryGetValue("x-cachecow-client", out string? cacheCowHeader);
+        Assert.IsNotNull(cacheCowHeader, "x-cachecow-client header is not present in the response");
+
+        // We expect to see "retrieved-from-cache=True" if the item was retrieved from the cache.
+        int index = cacheCowHeader!.IndexOf("retrieved-from-cache=True", StringComparison.OrdinalIgnoreCase);
+        Assert.IsTrue(index >= 0, $"CacheCow header value [{cacheCowHeader}] shows the tenant was not retrieved from the cache.");
     }
 
     private async Task GetTenantByIdAndStoreResponseWithHeadersAsync(string tenantId, string? etag, string? name = null)

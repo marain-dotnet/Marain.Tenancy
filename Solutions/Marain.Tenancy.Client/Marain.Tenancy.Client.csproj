@@ -32,6 +32,7 @@
   </ItemGroup>
 
   <ItemGroup>
+    <PackageReference Include="CacheCow.Client" Version="2.13.1" />
     <PackageReference Include="Corvus.Identity.Azure" Version="4.0.2" />
     <PackageReference Include="Corvus.Json.Serialization" Version="2.0.0" />
     <PackageReference Include="Corvus.Json.PropertyBag" Version="2.0.0" />
