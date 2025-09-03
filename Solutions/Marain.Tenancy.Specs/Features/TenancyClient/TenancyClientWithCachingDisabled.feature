@@ -3,7 +3,7 @@
 @useTenancyClient
 @disableTenantCaching
 
-Feature: TenancyClient with caching disabled
+Feature: Tenancy API accessed via the Tenancy Client (with caching disabled)
 	In order to use Marain Tenant services
 	As a developer
 	I want to be able to access the standard ITenantProvider via the client API.

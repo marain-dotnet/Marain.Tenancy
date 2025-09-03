@@ -89,11 +89,13 @@ public class TenancyClient(HttpClient client, JsonSerializerOptions serializerOp
         this.GetTenantByLinkAsync($"/{tenantId}/marain/tenant", etag, cancellationToken);
 
     /// <inheritdoc/>
-    public Task<ApiResponse<TenantResource>> GetTenantByLinkAsync(string tenantLink, string? etag = null, CancellationToken cancellationToken = default) =>
-        this.GetPathAsync<TenantResource>(
+    public Task<ApiResponse<TenantResource>> GetTenantByLinkAsync(string tenantLink, string? etag = null, CancellationToken cancellationToken = default)
+    {
+        return this.GetPathAsync<TenantResource>(
             tenantLink,
             request => request.Headers.Add("If-None-Match", etag),
             cancellationToken);
+    }
 
     /// <inheritdoc/>
     public async Task<ApiResponse<TenantResource>> UpdateTenantAsync(string tenantId, string? newName, IEnumerable<KeyValuePair<string, object>>? propertiesToAddOrUpdate, IEnumerable<string>? propertiesToRemove, CancellationToken cancellationToken = default)

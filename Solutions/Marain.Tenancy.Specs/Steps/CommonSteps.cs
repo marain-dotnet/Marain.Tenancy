@@ -78,6 +78,13 @@ public class CommonSteps : Steps
         Assert.AreEqual(exceptionTypeName, lastException?.GetType().Name);
     }
 
+    [Then("it should not throw an exception")]
+    public void ThenItShouldNotThrowAnException()
+    {
+        Exception? lastException = GetLastException(this.ScenarioContext);
+        Assert.IsNull(lastException, $"Expected no exception but a {lastException?.GetType().Name} was thrown.");
+    }
+
     [Then("it should throw a MarainApiException with StatusCode {string}")]
     public void ThenItShouldThrowAWithStatusCode(string expectedStatusCodeName)
     {

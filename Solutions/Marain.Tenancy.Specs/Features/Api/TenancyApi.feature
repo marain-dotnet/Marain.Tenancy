@@ -1,7 +1,7 @@
 ﻿@perFeatureContainer
 @useTenancyApi
 
-Feature: Tenancy Api
+Feature: Tenancy Api accessed directly
 	In order to use Marain Tenant services
 	As a developer
 	I want to be able to access the Tenancy Api.

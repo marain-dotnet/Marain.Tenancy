@@ -30,9 +30,9 @@ public static class TenancyClientBindings
                 bool enableResponseCaching = !featureContext.FeatureInfo.Tags.Contains("disableTenantCaching");
 
                 serviceCollection.AddTenancyClient(
-                    _ => new() { BaseUri = MinimalApiWebApplicationFactory.Current.Server.BaseAddress.ToString() },
+                    _ => new() { BaseUri = ApiWebApplicationFactory.Current.Server.BaseAddress.ToString() },
                     enableResponseCaching,
-                    MinimalApiWebApplicationFactory.Current.Server.CreateHandler());
+                    ApiWebApplicationFactory.Current.Server.CreateHandler());
             });
     }
 }

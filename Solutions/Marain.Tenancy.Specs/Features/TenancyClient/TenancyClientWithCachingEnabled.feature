@@ -5,7 +5,7 @@
 # Note that this set of specs does not include "create, update and retrieve" scenarios that are present in the
 # "TenancyClient with caching disabled" specs. This is because we don't recommend using caching in "management
 # plane" scenarios where tenants are being created, updated and so on.
-Feature: TenancyClient with caching enabled
+Feature: Tenancy API accessed via the Tenancy Client (with caching enabled)
 	In order to use Marain Tenant services
 	As a developer
 	I want to be able to access the standard ITenantProvider via the client API.
@@ -28,13 +28,13 @@ Scenario: Get a tenant with an etag retrieved from a created tenant
 	When I use the Tenancy Client to get the tenant with the id called "ChildTenantId" and the ETag called "ChildTenantETag"
 	Then it should throw a MarainApiException with StatusCode "NotModified"
 
-Scenario: Get a tenant with an etag retrieved from a tenant got from the repo
+Scenario: Get a tenant with an etag retrieved from a tenant got from the get tenant method
 	Given I use the Tenancy Client to create a child tenant called "ChildTenant1" for the root tenant
 	And I get the tenant id of the tenant called "ChildTenant1" and call it "ChildTenantId"
 	And I use the Tenancy Client to get the tenant with the id called "ChildTenantId" and call it "Result"
 	And I get the ETag of the tenant called "Result" and call it "ResultETag"
 	When I use the Tenancy Client to get the tenant with the id called "ChildTenantId" and the ETag called "ResultETag"
-	Then it should throw a MarainApiException with StatusCode "NotModified"
+	Then it should not throw an exception
 
 Scenario: Get children
 	Given I use the Tenancy Client to create a child tenant called "ChildTenant1" for the root tenant

@@ -17,7 +17,7 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Marain.Tenancy.Storage.Azur
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Marain.Tenancy.Storage.Azure.BlobStorage.Specs", "Marain.Tenancy.Storage.Azure.BlobStorage.Specs\Marain.Tenancy.Storage.Azure.BlobStorage.Specs.csproj", "{B9D61A6F-9330-4590-98F2-3A033C96CD2E}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Marain.Tenancy.MinimalApi", "Marain.Tenancy.MinimalApi\Marain.Tenancy.MinimalApi.csproj", "{A5571B80-11F0-490B-A0FB-1C68156B6C12}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Marain.Tenancy.Api", "Marain.Tenancy.Api\Marain.Tenancy.Api.csproj", "{A5571B80-11F0-490B-A0FB-1C68156B6C12}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Marain.Tenancy.Client", "Marain.Tenancy.Client\Marain.Tenancy.Client.csproj", "{B5E7B737-DBF7-CC02-EA92-A83FC42AA697}"
 EndProject

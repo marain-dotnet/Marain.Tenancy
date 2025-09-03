@@ -242,7 +242,7 @@ public class TenancyApiSteps : Steps
             request.Headers.Add("If-None-Match", etag);
         }
 
-        HttpResponseMessage response = await MinimalApiWebApplicationFactory.Current.Client.SendAsync(request);
+        HttpResponseMessage response = await ApiWebApplicationFactory.Current.Client.SendAsync(request);
         await this.SetResponseAsync(response);
     }
 
@@ -263,7 +263,7 @@ public class TenancyApiSteps : Steps
             content = new StringContent(requestJson, System.Text.Encoding.UTF8, "application/json");
         }
 
-        HttpResponseMessage response = await MinimalApiWebApplicationFactory.Current.Client.PostAsync(path, content);
+        HttpResponseMessage response = await ApiWebApplicationFactory.Current.Client.PostAsync(path, content);
         await this.SetResponseAsync(response);
     }
 

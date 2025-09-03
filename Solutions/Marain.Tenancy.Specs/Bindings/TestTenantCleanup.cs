@@ -42,7 +42,7 @@ public static class TestTenantCleanup
         ////{
         ////    try
         ////    {
-        ////        HttpResponseMessage response = await MinimalApiWebApplicationFactory.Current.Client.DeleteAsync(
+        ////        HttpResponseMessage response = await ApiWebApplicationFactory.Current.Client.DeleteAsync(
         ////            $"/{parentId}/marain/tenant/children/{id}").ConfigureAwait(false);
         ////        response.EnsureSuccessStatusCode();
         ////    }

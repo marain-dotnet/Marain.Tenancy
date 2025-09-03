@@ -67,15 +67,15 @@ cd Solutions/Marain.Tenancy.Host.AspNetCore
 dotnet run
 ```
 
-### Running the MinimalApi Service Locally
-The MinimalApi provides a lightweight ASP.NET Core implementation of the tenancy service:
+### Running the API Service Locally
+The API provides a lightweight ASP.NET Core implementation of the tenancy service:
 
 ```bash
 # Quick start using the run script
-./run-minimalapi.sh
+./run-api.sh
 
 # Or manually navigate and run
-cd Solutions/Marain.Tenancy.MinimalApi
+cd Solutions/Marain.Tenancy.Api
 dotnet run
 
 # Run with specific profile
@@ -91,7 +91,7 @@ dotnet run --launch-profile https  # HTTP + HTTPS (ports 5138, 7124)
 - **Health Check**: http://localhost:5138/health
 
 **Dev Container Access:**
-When running in the dev container, the MinimalApi is accessible from the host machine on the same ports thanks to Docker port forwarding configured in `docker-compose.yml`.
+When running in the dev container, the API is accessible from the host machine on the same ports thanks to Docker port forwarding configured in `docker-compose.yml`.
 
 ## Architecture Notes
 

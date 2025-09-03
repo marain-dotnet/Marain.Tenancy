@@ -2,8 +2,9 @@
 @useTenancyApi
 @useTenancyClient
 @useClientTenantProvider
+@disableTenantCaching
 
-Feature: Tenancy Api
+Feature: Tenancy Api accessed via the Client Tenant Provider
 	In order to use Marain Tenant services
 	As a developer
 	I want to be able to use an implementation of ITenantStore that uses the Tenancy Api.
