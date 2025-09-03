@@ -29,7 +29,7 @@ public class TenancyClient(HttpClient client, JsonSerializerOptions serializerOp
         string? wellKnownChildTenantGuid = null,
         CancellationToken cancellationToken = default) =>
         this.CreateChildTenantByLinkAsync(
-            $"/{parentTenantId}/marain/tenant",
+            $"/{parentTenantId}/marain/tenant/children",
             tenantName,
             wellKnownChildTenantGuid,
             cancellationToken);

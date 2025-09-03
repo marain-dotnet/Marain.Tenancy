@@ -182,7 +182,7 @@ public class TenancyApiSteps : Steps
     private async Task CreateTenantAsync(string parentId, string name)
     {
         var requestBody = new { TenantName = name };
-        await this.SendPostRequest($"/{parentId}/marain/tenant", requestBody);
+        await this.SendPostRequest($"/{parentId}/marain/tenant/children", requestBody);
     }
 
     private async Task GetSwaggerAsync()

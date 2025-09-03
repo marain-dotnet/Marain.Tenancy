@@ -39,7 +39,7 @@ public static class TenantEndpoints
             .AddValidation<GetTenantParameters>()
             .AddEndpointFilter<CachingEndpointFilter>();
 
-        group.MapPost("/", CreateChildTenant)
+        group.MapPost("/children", CreateChildTenant)
             .WithName(EndpointNames.CreateChildTenant)
             .WithSummary("Create a child tenant")
             .WithDescription("Creates a new child tenant under the specified parent tenant.")
