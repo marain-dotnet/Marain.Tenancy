@@ -6,12 +6,9 @@ namespace Marain.Tenancy.Cli;
 
 using System;
 using System.Threading.Tasks;
-
+using Azure.Identity;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
-using Newtonsoft.Json;
-using Newtonsoft.Json.Converters;
-using Newtonsoft.Json.Serialization;
 
 /// <summary>
 /// The entry point for the application. Configures the commands.
@@ -29,14 +26,37 @@ public static class Program
 
         builder.ConfigureServices((ctx, services) =>
         {
-            services.AddJsonNetSerializerSettingsProvider();
-            services.AddJsonNetPropertyBag();
-            services.AddJsonNetCultureInfoConverter();
-            services.AddJsonNetDateTimeOffsetToIso8601AndUnixTimeConverter();
-            services.AddSingleton<JsonConverter>(new StringEnumConverter(new CamelCaseNamingStrategy()));
+            services.AddJsonSerializerOptionsProvider((_, options) => options.WriteIndented = true);
+
+            services.AddJsonCultureInfoConverter();
+            services.AddJsonDateTimeOffsetToIso8601AndUnixTimeConverter();
+            services.AddCamelCaseConverterForEnums();
+            services.AddJsonPropertyBagFactory();
 
             string tenancyServiceBaseUri = ctx.Configuration["TenancyClient:TenancyServiceBaseUri"]
                 ?? throw new InvalidOperationException("TenancyClient:TenancyServiceBaseUri configuration is required");
+            string? tenancyServiceResourceIdForMsiAuthentication = ctx.Configuration["TenancyClient:ResourceIdForMsiAuthentication"];
+
+            string? azureServicesAuthConnectionString = ctx.Configuration["AzureServicesAuthConnectionString"];
+
+            if (!string.IsNullOrEmpty(azureServicesAuthConnectionString))
+            {
+                services.AddServiceIdentityAzureTokenCredentialSourceFromLegacyConnectionString(azureServicesAuthConnectionString);
+            }
+            else
+            {
+                services.AddServiceIdentityAzureTokenCredentialSourceFromAzureCoreTokenCredential(new DefaultAzureCredential());
+            }
+
+            services.AddTenancyClient(
+                sp =>
+                {
+                    return new()
+                    {
+                        BaseUri = tenancyServiceBaseUri,
+                        ResourceIdForMsiAuthentication = tenancyServiceResourceIdForMsiAuthentication,
+                    };
+                });
 
             services.AddTenantProviderServiceClient();
         });

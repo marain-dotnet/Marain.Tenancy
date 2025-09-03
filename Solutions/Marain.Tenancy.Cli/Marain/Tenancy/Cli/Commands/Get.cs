@@ -4,11 +4,12 @@
 
 namespace Marain.Tenancy.Cli.Commands;
 
+using System.Text.Json;
 using System.Threading.Tasks;
 using Corvus.Extensions.Json;
+using Corvus.Json.Serialization;
 using Corvus.Tenancy;
 using McMaster.Extensions.CommandLineUtils;
-using Newtonsoft.Json;
 
 /// <summary>
 /// Retrieves all details for the specified tenant.
@@ -17,17 +18,17 @@ using Newtonsoft.Json;
 public class Get
 {
     private readonly ITenantProvider tenantProvider;
-    private readonly IJsonSerializerSettingsProvider serializationSettingsProvider;
+    private readonly IJsonSerializerOptionsProvider serializationSettingsProvider;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="Get"/> class.
     /// </summary>
     /// <param name="tenantProvider">The tenant provider that will be used to retrieve the information.</param>
-    /// <param name="serializationSettingsProvider">The serialization settings provider to use when writing output.</param>
-    public Get(ITenantProvider tenantProvider, IJsonSerializerSettingsProvider serializationSettingsProvider)
+    /// <param name="serializerOptionsProvider">The serialization settings provider to use when writing output.</param>
+    public Get(ITenantProvider tenantProvider, IJsonSerializerOptionsProvider serializerOptionsProvider)
     {
         this.tenantProvider = tenantProvider;
-        this.serializationSettingsProvider = serializationSettingsProvider;
+        this.serializationSettingsProvider = serializerOptionsProvider;
     }
 
     /// <summary>
@@ -54,9 +55,8 @@ public class Get
 
         ITenant tenant = await this.tenantProvider.GetTenantAsync(this.TenantId).ConfigureAwait(false);
 
-        string result = JsonConvert.SerializeObject(
+        string result = JsonSerializer.Serialize(
             tenant,
-            Formatting.Indented,
             this.serializationSettingsProvider.Instance);
 
         app.Out.WriteLine(result);

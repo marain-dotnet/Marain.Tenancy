@@ -29,7 +29,7 @@ public static class TenancyClientServiceCollectionExtensions
     public static IServiceCollection AddTenancyClient(
         this IServiceCollection services,
         Func<IServiceProvider, TenancyApiClientConfiguration> configurationCallback,
-        bool enableResponseCaching,
+        bool enableResponseCaching = true,
         HttpMessageHandler? messageHandler = null)
     {
         IHttpClientBuilder httpClientBuilder = services.AddHttpClient(nameof(TenancyClient)).ConfigureHttpClient((sp, client) =>

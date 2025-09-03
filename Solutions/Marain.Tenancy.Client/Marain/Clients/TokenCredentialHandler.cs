@@ -68,7 +68,7 @@ public class TokenCredentialHandler(IServiceIdentityAccessTokenSource accessToke
         await this.tokenLock.WaitAsync(cancellationToken);
         try
         {
-            AccessTokenRequest request = new([resourceIdForMsiAuthentication]);
+            AccessTokenRequest request = new([$"{resourceIdForMsiAuthentication}/.default"]);
             this.cachedToken = await accessTokenSource.GetAccessTokenAsync(request, cancellationToken).ConfigureAwait(false);
         }
         finally

@@ -1245,8 +1245,7 @@
           "Corvus.Extensions.Newtonsoft.Json": "[3.0.2, )",
           "Corvus.Tenancy.Abstractions": "[4.0.1, )",
           "Marain.Tenancy.Client": "[1.0.0, )",
-          "Microsoft.AspNetCore.WebUtilities": "[8.0.14, )",
-          "Newtonsoft.Json": "[13.0.3, )"
+          "Microsoft.AspNetCore.WebUtilities": "[8.0.14, )"
         }
       },
       "marain.tenancy.minimalapi": {

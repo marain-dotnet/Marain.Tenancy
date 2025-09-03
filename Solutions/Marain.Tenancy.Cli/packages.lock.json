@@ -11,15 +11,18 @@
           "Wcwidth": "1.0.0"
         }
       },
-      "Corvus.Identity.MicrosoftRest": {
+      "Corvus.Identity.Azure": {
         "type": "Direct",
-        "requested": "[3.3.0, )",
-        "resolved": "3.3.0",
-        "contentHash": "2eUKhNH14ai7XtVMcime0KlmHoIi7ITZ2XLPR73CnNvc0Cm9Rm6awfS83Qj3lh73riWwQVhQMVg3ZWOsq+KSXQ==",
+        "requested": "[4.0.2, )",
+        "resolved": "4.0.2",
+        "contentHash": "me0Db1brKBVooFRU9UUiKyCc2g19ulOSe9WEzTsjErbCyzBeo5wQDEf9QJ08GjIWV8N5r1kSCw++DNH1SgJrcg==",
         "dependencies": {
-          "Corvus.Identity.Azure": "3.3.0",
-          "Microsoft.Extensions.DependencyInjection.Abstractions": "6.0.0",
-          "Microsoft.Rest.ClientRuntime": "2.3.24"
+          "Azure.Identity": "1.14.0",
+          "Azure.Security.KeyVault.Secrets": "4.7.0",
+          "Corvus.Identity.Abstractions": "4.0.2",
+          "Corvus.Identity.Certificates": "4.0.2",
+          "Microsoft.Extensions.Caching.Memory": "8.0.1",
+          "Microsoft.Extensions.DependencyInjection.Abstractions": "8.0.2"
         }
       },
       "Endjin.RecommendedPractices.GitHub": {
@@ -189,19 +192,6 @@
         "type": "Transitive",
         "resolved": "4.0.2",
         "contentHash": "p/0oQ6uBAedZHZW+Se5YGn7e0PJ9cQrD9bE3OvBxZAPCBG0HNYlVMbcVSIipYpCtK0H68GxH3kJiyQLYZv3zmw=="
-      },
-      "Corvus.Identity.Azure": {
-        "type": "Transitive",
-        "resolved": "4.0.2",
-        "contentHash": "me0Db1brKBVooFRU9UUiKyCc2g19ulOSe9WEzTsjErbCyzBeo5wQDEf9QJ08GjIWV8N5r1kSCw++DNH1SgJrcg==",
-        "dependencies": {
-          "Azure.Identity": "1.14.0",
-          "Azure.Security.KeyVault.Secrets": "4.7.0",
-          "Corvus.Identity.Abstractions": "4.0.2",
-          "Corvus.Identity.Certificates": "4.0.2",
-          "Microsoft.Extensions.Caching.Memory": "8.0.1",
-          "Microsoft.Extensions.DependencyInjection.Abstractions": "8.0.2"
-        }
       },
       "Corvus.Identity.Certificates": {
         "type": "Transitive",
@@ -727,14 +717,6 @@
         "type": "Transitive",
         "resolved": "1.1.0",
         "contentHash": "aOZA3BWfz9RXjpzt0sRJJMjAscAUm3Hoa4UWAfceV9UTYxgwZ1lZt5nO2myFf+/jetYQo4uTP7zS8sJY67BBxg=="
-      },
-      "Microsoft.Rest.ClientRuntime": {
-        "type": "Transitive",
-        "resolved": "2.3.24",
-        "contentHash": "hZH7XgM3eV2jFrnq7Yf0nBD4WVXQzDrer2gEY7HMNiwio2hwDsTHO6LWuueNQAfRpNp4W7mKxcXpwXUiuVIlYw==",
-        "dependencies": {
-          "Newtonsoft.Json": "10.0.3"
-        }
       },
       "Microsoft.SourceLink.Common": {
         "type": "Transitive",
@@ -1779,8 +1761,7 @@
           "Corvus.Extensions.Newtonsoft.Json": "[3.0.2, )",
           "Corvus.Tenancy.Abstractions": "[4.0.1, )",
           "Marain.Tenancy.Client": "[1.0.0, )",
-          "Microsoft.AspNetCore.WebUtilities": "[8.0.14, )",
-          "Newtonsoft.Json": "[13.0.3, )"
+          "Microsoft.AspNetCore.WebUtilities": "[8.0.14, )"
         }
       }
     }

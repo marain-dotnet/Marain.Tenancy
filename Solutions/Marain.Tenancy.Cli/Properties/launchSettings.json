@@ -3,6 +3,10 @@
     "Cli: list": {
       "commandName": "Project",
       "commandLineArgs": "list"
+    },
+    "Cli: create": {
+      "commandName": "Project",
+      "commandLineArgs": "create -n=New"
     }
   }
 }
