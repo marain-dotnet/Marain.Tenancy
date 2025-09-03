@@ -7,13 +7,13 @@ namespace Marain.Tenancy.Cli.Commands;
 using System;
 using System.Threading.Tasks;
 using Corvus.Tenancy;
-using McMaster.Extensions.CommandLineUtils;
+using Spectre.Console;
+using Spectre.Console.Cli;
 
 /// <summary>
 /// Creates a new tenant.
 /// </summary>
-[Command(Name = "create", Description = "Create a new tenant.")]
-public class Create
+public class Create : AsyncCommand<CreateSettings>
 {
     private readonly ITenantStore tenantStore;
 
@@ -27,64 +27,34 @@ public class Create
     }
 
     /// <summary>
-    /// Gets or sets the Id of the tenant that should be the parent of the new tenant.
-    /// </summary>
-    /// <remarks>
-    /// If ommitted, the tenant will be created at the top level, as a child of the root.
-    /// </remarks>
-    [Option(
-        CommandOptionType.SingleOrNoValue,
-        ShortName = "t",
-        LongName = "tenant",
-        Description = "The Id of the parent tenant. Omit if the child should be a parent of the root tenant.")]
-    public string? TenantId { get; set; }
-
-    /// <summary>
-    /// Gets or sets the name of the new tenant.
-    /// </summary>
-    [Option(
-        CommandOptionType.SingleValue,
-        ShortName = "n",
-        LongName = "name",
-        Description = "The name of the new tenant.")]
-    public string? Name { get; set; }
-
-    /// <summary>
-    /// Gets or sets the well-known GUID of the new tenant.
-    /// </summary>
-    [Option(
-        CommandOptionType.SingleValue,
-        ShortName = "g",
-        LongName = "guid",
-        Description = "The well-known GUID of the new tenant.")]
-    public string? WellKnownTenantGuid { get; set; }
-
-    /// <summary>
     /// Executes the command.
     /// </summary>
-    /// <param name="app">The current <c>CommandLineApplication</c>.</param>
+    /// <param name="context">The command context.</param>
+    /// <param name="settings">The command settings.</param>
     /// <returns>A <see cref="Task"/> representing the asynchronous operation.</returns>
-    public async Task OnExecute(CommandLineApplication app)
+    public override async Task<int> ExecuteAsync(CommandContext context, CreateSettings settings)
     {
-        if (string.IsNullOrEmpty(this.TenantId))
+        string tenantId = string.IsNullOrEmpty(settings.TenantId)
+            ? this.tenantStore.Root.Id
+            : settings.TenantId;
+
+        if (string.IsNullOrEmpty(settings.Name))
         {
-            this.TenantId = this.tenantStore.Root.Id;
+            AnsiConsole.MarkupLine("[red]Error: Name must be supplied[/]");
+            return 1;
         }
 
-        if (string.IsNullOrEmpty(this.Name))
-        {
-            throw new InvalidOperationException("Name must be supplied");
-        }
-
-        Guid wellKnownGuid = string.IsNullOrEmpty(this.WellKnownTenantGuid)
+        Guid wellKnownGuid = string.IsNullOrEmpty(settings.WellKnownTenantGuid)
             ? Guid.NewGuid()
-            : Guid.Parse(this.WellKnownTenantGuid);
+            : Guid.Parse(settings.WellKnownTenantGuid);
 
         ITenant child = await this.tenantStore.CreateWellKnownChildTenantAsync(
-            this.TenantId,
+            tenantId,
             wellKnownGuid,
-            this.Name).ConfigureAwait(false);
+            settings.Name).ConfigureAwait(false);
 
-        app.Out.WriteLine($"Created new child tenant with Id {child.Id} and name {child.Name}");
+        AnsiConsole.MarkupLine($"[green]Created new child tenant with Id {child.Id} and name {child.Name}[/]");
+
+        return 0;
     }
 }

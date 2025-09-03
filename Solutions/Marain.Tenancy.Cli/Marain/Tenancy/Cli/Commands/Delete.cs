@@ -4,16 +4,15 @@
 
 namespace Marain.Tenancy.Cli.Commands;
 
-using System;
 using System.Threading.Tasks;
 using Corvus.Tenancy;
-using McMaster.Extensions.CommandLineUtils;
+using Spectre.Console;
+using Spectre.Console.Cli;
 
 /// <summary>
 /// Deletes a tenant.
 /// </summary>
-[Command(Name = "delete", Description = "Deletes a tenant.")]
-public class Delete
+public class Delete : AsyncCommand<DeleteSettings>
 {
     private readonly ITenantStore tenantStore;
 
@@ -27,39 +26,42 @@ public class Delete
     }
 
     /// <summary>
-    /// Gets or sets the Id of the tenant to be deleted.
-    /// </summary>
-    [Option(
-        CommandOptionType.SingleValue,
-        ShortName = "t",
-        LongName = "tenant",
-        Description = "The Id of the parent tenant.")]
-    public string? TenantId { get; set; }
-
-    /// <summary>
     /// Executes the command.
     /// </summary>
-    /// <param name="app">The current <c>CommandLineApplication</c>.</param>
+    /// <param name="context">The command context.</param>
+    /// <param name="settings">The command settings.</param>
     /// <returns>A <see cref="Task"/> representing the asynchronous operation.</returns>
-    public async Task OnExecute(CommandLineApplication app)
+    public override async Task<int> ExecuteAsync(CommandContext context, DeleteSettings settings)
     {
-        if (string.IsNullOrEmpty(this.TenantId))
+        if (string.IsNullOrEmpty(settings.TenantId))
         {
-            throw new ArgumentException("Tenant Id must be provided.");
+            AnsiConsole.MarkupLine("[red]Error: Tenant Id must be provided.[/]");
+            return 1;
         }
 
-        TenantCollectionResult children = await this.tenantStore.GetChildrenAsync(this.TenantId, 1).ConfigureAwait(false);
+        // Check for children before deletion
+        TenantCollectionResult children = await this.tenantStore.GetChildrenAsync(settings.TenantId, 1).ConfigureAwait(false);
 
         if (children.Tenants.Count > 0)
         {
-            app.Error.WriteLine(
-                $"Cannot delete tenant with Id {this.TenantId} as it has children. Remove the child tenants first.");
-
-            return;
+            AnsiConsole.MarkupLine(
+                $"[red]Cannot delete tenant with Id {settings.TenantId} as it has children. Remove the child tenants first.[/]");
+            return 1;
         }
 
-        await this.tenantStore.DeleteTenantAsync(this.TenantId).ConfigureAwait(false);
+        // Confirmation prompt
+        bool confirmed = AnsiConsole.Confirm($"Are you sure you want to delete tenant '{settings.TenantId}'?", false);
 
-        app.Out.WriteLine("Deleted tenant with Id " + this.TenantId);
+        if (!confirmed)
+        {
+            AnsiConsole.MarkupLine("[yellow]Deletion cancelled.[/]");
+            return 0;
+        }
+
+        await this.tenantStore.DeleteTenantAsync(settings.TenantId).ConfigureAwait(false);
+
+        AnsiConsole.MarkupLine($"[green]Deleted tenant with Id {settings.TenantId}[/]");
+
+        return 0;
     }
 }

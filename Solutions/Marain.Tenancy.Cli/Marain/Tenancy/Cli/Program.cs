@@ -7,8 +7,10 @@ namespace Marain.Tenancy.Cli;
 using System;
 using System.Threading.Tasks;
 using Azure.Identity;
+using Marain.Tenancy.Cli.Commands;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
+using Spectre.Console.Cli;
 
 /// <summary>
 /// The entry point for the application. Configures the commands.
@@ -59,8 +61,34 @@ public static class Program
                 });
 
             services.AddTenantProviderServiceClient();
+
+            // Register CLI commands
+            services.AddTransient<Get>();
+            services.AddTransient<List>();
+            services.AddTransient<Create>();
+            services.AddTransient<Delete>();
         });
 
-        await builder.RunCommandLineApplicationAsync<TenancyCliCommand>(args).ConfigureAwait(false);
+        IHost host = builder.Build();
+        IServiceProvider services = host.Services;
+
+        var app = new CommandApp(new TypeRegistrar(services));
+
+        app.Configure(config =>
+        {
+            config.AddCommand<Get>("get")
+                  .WithDescription("Gets tenant details");
+
+            config.AddCommand<List>("list")
+                  .WithDescription("List tenants");
+
+            config.AddCommand<Create>("create")
+                  .WithDescription("Create a new tenant");
+
+            config.AddCommand<Delete>("delete")
+                  .WithDescription("Deletes a tenant");
+        });
+
+        await app.RunAsync(args).ConfigureAwait(false);
     }
 }

@@ -2,7 +2,7 @@
   "profiles": {
     "Cli: list": {
       "commandName": "Project",
-      "commandLineArgs": "list"
+      "commandLineArgs": "list -n -p=StorageConfiguration__corvustenancy"
     },
     "Cli: create": {
       "commandName": "Project",
