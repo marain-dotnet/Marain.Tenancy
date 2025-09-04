@@ -93,6 +93,20 @@ public class TenancyClientSteps : Steps
         this.ScenarioContext.Set(response, tenantName);
     }
 
+    [When("I use the Tenancy Client to create a child tenant called {string} for the tenant with Id {string}")]
+    public async Task WhenIUseTheTenancyClientToCreateAChildTenantCalledForTheTenantWithId(string tenantName, string parentTenantId)
+    {
+        await CommonSteps.ExecuteAndStoreExceptionIfThrownAsync(
+            async () =>
+            {
+                ApiResponse<TenantResource> response = await this.apiClient.CreateChildTenantAsync(parentTenantId, tenantName).ConfigureAwait(false);
+
+                TestTenantCleanup.AddTenantToDelete(RootTenant.RootTenantId, response.Body.Id);
+                this.ScenarioContext.Set(response, tenantName);
+            },
+            this.ScenarioContext).ConfigureAwait(false);
+    }
+
     [When("I use the Tenancy Client to get the tenant with the id called {string} and the ETag called {string}")]
     public async Task WhenIUseTheTenancyClientToGetTheTenantWithTheIdAndTheETagCalled(string tenantIdName, string tenantETagName)
     {

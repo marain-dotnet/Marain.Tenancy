@@ -53,11 +53,11 @@ public class ClientTenantStore(
         }
         catch (MarainApiException ex) when (ex.StatusCode == HttpStatusCode.NotFound)
         {
-            throw new TenantNotFoundException();
+            throw new TenantNotFoundException(ex.Message, ex);
         }
         catch (MarainApiException ex) when (ex.StatusCode == HttpStatusCode.BadRequest)
         {
-            throw new InvalidOperationException($"Invalid delete tenant request: {ex.Message}");
+            throw new InvalidOperationException($"Invalid delete tenant request: {ex.Message}", ex);
         }
     }
 
@@ -82,11 +82,11 @@ public class ClientTenantStore(
         }
         catch (MarainApiException ex) when (ex.StatusCode == HttpStatusCode.NotFound)
         {
-            throw new TenantNotFoundException();
+            throw new TenantNotFoundException(ex.Message, ex);
         }
         catch (MarainApiException ex) when (ex.StatusCode == HttpStatusCode.BadRequest)
         {
-            throw new InvalidOperationException($"Invalid get children request: {ex.Message}");
+            throw new InvalidOperationException($"Invalid get children request: {ex.Message}", ex);
         }
     }
 
@@ -177,15 +177,15 @@ public class ClientTenantStore(
         }
         catch (MarainApiException ex) when (ex.StatusCode == HttpStatusCode.NotFound)
         {
-            throw new TenantNotFoundException();
+            throw new TenantNotFoundException(ex.Message, ex);
         }
         catch (MarainApiException ex) when (ex.StatusCode == HttpStatusCode.MethodNotAllowed)
         {
-            throw new NotSupportedException("This tenant cannot be updated");
+            throw new NotSupportedException("This tenant cannot be updated", ex);
         }
         catch (MarainApiException ex) when (ex.StatusCode == HttpStatusCode.BadRequest)
         {
-            throw new ArgumentException($"Invalid update tenant request: {ex.Message}");
+            throw new ArgumentException($"Invalid update tenant request: {ex.Message}", ex);
         }
     }
 
@@ -204,15 +204,15 @@ public class ClientTenantStore(
         }
         catch (MarainApiException ex) when (ex.StatusCode == HttpStatusCode.NotFound)
         {
-            throw new TenantNotFoundException();
+            throw new TenantNotFoundException(ex.Message, ex);
         }
         catch (MarainApiException ex) when (ex.StatusCode == HttpStatusCode.Conflict)
         {
-            throw new TenantConflictException();
+            throw new TenantConflictException(ex.Message, ex);
         }
         catch (MarainApiException ex) when (ex.StatusCode == HttpStatusCode.BadRequest)
         {
-            throw new ArgumentException($"Invalid create child tenant request: {ex.Message}");
+            throw new ArgumentException($"Invalid create child tenant request: {ex.Message}", ex);
         }
         catch (Exception ex)
         {

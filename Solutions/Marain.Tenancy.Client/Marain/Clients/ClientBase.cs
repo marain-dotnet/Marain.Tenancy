@@ -233,12 +233,30 @@ public abstract class ClientBase(HttpClient httpClient, JsonSerializerOptions se
                 ? string.Empty
                 : await response.Content.ReadAsStringAsync(cancellationToken).ConfigureAwait(false);
 
+            ProblemDetails? problemDetails = this.TryConvertToProblemDetails(responseContent);
+
             throw new MarainApiException("Unexpected error when calling service; see InnerException for details.", ex)
             {
                 StatusCode = response?.StatusCode,
-                ResponseMessage = responseContent,
+                ResponseMessage = problemDetails?.Title ?? responseContent,
+                ProblemDetails = problemDetails,
             };
         }
+    }
+
+    /// <summary>
+    /// Attempts to deserialize the given string to a <see cref="ProblemDetails"/> instance.
+    /// </summary>
+    /// <param name="responseContent">The content string.</param>
+    /// <returns>A <see cref="ProblemDetails"/>, or null if it is not possible to deserialize the content.</returns>
+    protected ProblemDetails? TryConvertToProblemDetails(string responseContent)
+    {
+        if (string.IsNullOrEmpty(responseContent))
+        {
+            return null;
+        }
+
+        return JsonSerializer.Deserialize<ProblemDetails>(responseContent);
     }
 
     /// <summary>
@@ -248,7 +266,7 @@ public abstract class ClientBase(HttpClient httpClient, JsonSerializerOptions se
     /// <returns>The resulting JsonDocument.</returns>
     protected async Task<JsonDocument> GetResponseJsonDocumentAsync(HttpResponseMessage responseMessage)
     {
-        using Stream content = await responseMessage.Content.ReadAsStreamAsync().ConfigureAwait(false);
+        await using Stream content = await responseMessage.Content.ReadAsStreamAsync().ConfigureAwait(false);
         return JsonDocument.Parse(content);
     }
 

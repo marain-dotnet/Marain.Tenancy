@@ -80,6 +80,10 @@ Scenario: Create a child of a child
 	And I use the Tenancy Client to get the tenant with the id called "ChildTenantId" and call it "Result"
 	Then the tenant called "ChildTenant2" should have the same ID as the tenant called "Result"
 
+Scenario: Create a child of a tenant that does not exist
+	When I use the Tenancy Client to create a child tenant called "ChildTenant1" for the tenant with Id "a26450ab1668784bb327951c8b08f347"
+	Then it should throw a MarainApiException with StatusCode "NotFound"
+
 Scenario: Get children when no child tenants exist using the parent tenant Id
 	Given I use the Tenancy Client to create a child tenant called "ChildTenant1" for the root tenant
 	When I get the tenant id of the tenant called "ChildTenant1" and call it "ChildTenantId"

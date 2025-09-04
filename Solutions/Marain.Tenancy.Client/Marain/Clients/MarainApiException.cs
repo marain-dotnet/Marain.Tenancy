@@ -41,4 +41,9 @@ public class MarainApiException : Exception
     /// Gets or sets the response message.
     /// </summary>
     public string? ResponseMessage { get; set; }
+
+    /// <summary>
+    /// Gets or sets the associated <see cref="ProblemDetails"/>, if available.
+    /// </summary>
+    public ProblemDetails? ProblemDetails { get; set; }
 }
