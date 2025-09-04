@@ -12,19 +12,8 @@ using Spectre.Console.Cli;
 /// <summary>
 /// Deletes a tenant.
 /// </summary>
-public class Delete : AsyncCommand<DeleteSettings>
+public class Delete(ITenantStore tenantStore) : AsyncCommand<DeleteSettings>
 {
-    private readonly ITenantStore tenantStore;
-
-    /// <summary>
-    /// Initializes a new instance of the <see cref="Delete"/> class.
-    /// </summary>
-    /// <param name="tenantStore">The tenant store that will be used to delete the tenant.</param>
-    public Delete(ITenantStore tenantStore)
-    {
-        this.tenantStore = tenantStore;
-    }
-
     /// <summary>
     /// Executes the command.
     /// </summary>
@@ -40,7 +29,7 @@ public class Delete : AsyncCommand<DeleteSettings>
         }
 
         // Check for children before deletion
-        TenantCollectionResult children = await this.tenantStore.GetChildrenAsync(settings.TenantId, 1).ConfigureAwait(false);
+        TenantCollectionResult children = await tenantStore.GetChildrenAsync(settings.TenantId, 1).ConfigureAwait(false);
 
         if (children.Tenants.Count > 0)
         {
@@ -58,7 +47,7 @@ public class Delete : AsyncCommand<DeleteSettings>
             return 0;
         }
 
-        await this.tenantStore.DeleteTenantAsync(settings.TenantId).ConfigureAwait(false);
+        await tenantStore.DeleteTenantAsync(settings.TenantId).ConfigureAwait(false);
 
         AnsiConsole.MarkupLine($"[green]Deleted tenant with Id {settings.TenantId}[/]");
 

@@ -14,22 +14,8 @@ using Spectre.Console.Cli;
 /// <summary>
 /// Retrieves all details for the specified tenant.
 /// </summary>
-public class Get : AsyncCommand<GetSettings>
+public class Get(ITenantProvider tenantProvider, IJsonSerializerOptionsProvider serializationSettingsProvider) : AsyncCommand<GetSettings>
 {
-    private readonly ITenantProvider tenantProvider;
-    private readonly IJsonSerializerOptionsProvider serializationSettingsProvider;
-
-    /// <summary>
-    /// Initializes a new instance of the <see cref="Get"/> class.
-    /// </summary>
-    /// <param name="tenantProvider">The tenant provider that will be used to retrieve the information.</param>
-    /// <param name="serializerOptionsProvider">The serialization settings provider to use when writing output.</param>
-    public Get(ITenantProvider tenantProvider, IJsonSerializerOptionsProvider serializerOptionsProvider)
-    {
-        this.tenantProvider = tenantProvider;
-        this.serializationSettingsProvider = serializerOptionsProvider;
-    }
-
     /// <summary>
     /// Executes the command.
     /// </summary>
@@ -39,14 +25,14 @@ public class Get : AsyncCommand<GetSettings>
     public override async Task<int> ExecuteAsync(CommandContext context, GetSettings settings)
     {
         string tenantId = string.IsNullOrEmpty(settings.TenantId)
-            ? this.tenantProvider.Root.Id
+            ? tenantProvider.Root.Id
             : settings.TenantId;
 
-        ITenant tenant = await this.tenantProvider.GetTenantAsync(tenantId).ConfigureAwait(false);
+        ITenant tenant = await tenantProvider.GetTenantAsync(tenantId).ConfigureAwait(false);
 
         string result = JsonSerializer.Serialize(
             tenant,
-            this.serializationSettingsProvider.Instance);
+            serializationSettingsProvider.Instance);
 
         AnsiConsole.WriteLine(result);
 

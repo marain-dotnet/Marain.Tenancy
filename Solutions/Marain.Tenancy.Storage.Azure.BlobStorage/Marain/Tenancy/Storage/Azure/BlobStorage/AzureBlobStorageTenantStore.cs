@@ -30,7 +30,11 @@ using global::Azure.Storage.Blobs.Specialized;
 /// <summary>
 /// Tenant store implemented on Azure Blob Storage.
 /// </summary>
-internal class AzureBlobStorageTenantStore : ITenantStore
+internal class AzureBlobStorageTenantStore(
+    AzureBlobStorageTenantStoreConfiguration configuration,
+    IBlobContainerSourceWithTenantLegacyTransition containerSource,
+    IJsonSerializerOptionsProvider serializerOptionsProvider,
+    IPropertyBagFactory propertyBagFactory) : ITenantStore
 {
     private const string TenancyContainerName = "corvustenancy";
     private const string TenancyV2ConfigKey = "StorageConfiguration__" + TenancyContainerName;
@@ -38,39 +42,16 @@ internal class AzureBlobStorageTenantStore : ITenantStore
     private const string LiveTenantsPrefix = "live/";
     private const string DeletedTenantsPrefix = "deleted/";
     private static readonly Encoding UTF8WithoutBom = new UTF8Encoding(false);
-    private readonly IBlobContainerSourceWithTenantLegacyTransition containerSource;
-    private readonly IPropertyBagFactory propertyBagFactory;
-    private readonly JsonSerializerOptions jsonSerializerOptions;
-    private readonly bool propagateRootStorageConfigAsV2;
+    private readonly IBlobContainerSourceWithTenantLegacyTransition containerSource = containerSource;
+    private readonly IPropertyBagFactory propertyBagFactory = propertyBagFactory;
+    private readonly JsonSerializerOptions jsonSerializerOptions = serializerOptionsProvider.Instance;
+    private readonly bool propagateRootStorageConfigAsV2 = configuration.PropagateRootTenancyStorageConfigAsV2;
     private Task? rootContainerExistsCheck;
 
     /// <summary>
-    /// Creates a <see cref="AzureBlobStorageTenantStore"/>.
+    /// Gets the root tenant.
     /// </summary>
-    /// <param name="configuration">Configuration settings.</param>
-    /// <param name="containerSource">Provides access to tenanted blob storage.</param>
-    /// <param name="serializerOptionsProvider">Settings for tenant serialization.</param>
-    /// <param name="propertyBagFactory">Property bag services.</param>
-    public AzureBlobStorageTenantStore(
-        AzureBlobStorageTenantStoreConfiguration configuration,
-        IBlobContainerSourceWithTenantLegacyTransition containerSource,
-        IJsonSerializerOptionsProvider serializerOptionsProvider,
-        IPropertyBagFactory propertyBagFactory)
-    {
-        this.containerSource = containerSource;
-        this.propertyBagFactory = propertyBagFactory;
-        this.jsonSerializerOptions = serializerOptionsProvider.Instance;
-        this.propagateRootStorageConfigAsV2 = configuration.PropagateRootTenancyStorageConfigAsV2;
-
-        // The root tenant is necessarily synthetic because we can't get access to storage
-        // without it. And regardless of what stage of v2 to v3 transition we're in with
-        // the store, we always configure the root tenant in v3 mode.
-        this.Root = new RootTenant(propertyBagFactory);
-        this.Root.UpdateProperties(values => values.Append(new KeyValuePair<string, object>(TenancyV3ConfigKey, configuration.RootStorageConfiguration)));
-    }
-
-    /// <inheritdoc/>
-    public RootTenant Root { get; }
+    public RootTenant Root { get; } = CreateRootTenant(propertyBagFactory, configuration);
 
     /// <inheritdoc/>
     public Task<ITenant> CreateChildTenantAsync(string parentTenantId, string name)
@@ -287,6 +268,16 @@ internal class AzureBlobStorageTenantStore : ITenantStore
         }
 
         return updatedTenant;
+    }
+
+    private static RootTenant CreateRootTenant(IPropertyBagFactory propertyBagFactory, AzureBlobStorageTenantStoreConfiguration configuration)
+    {
+        // The root tenant is necessarily synthetic because we can't get access to storage
+        // without it. And regardless of what stage of v2 to v3 transition we're in with
+        // the store, we always configure the root tenant in v3 mode.
+        RootTenant root = new(propertyBagFactory);
+        root.UpdateProperties(values => values.Append(new KeyValuePair<string, object>(TenancyV3ConfigKey, configuration.RootStorageConfiguration)));
+        return root;
     }
 
     private static BlockBlobClient GetLiveTenantBlockBlobReference(string tenantId, BlobContainerClient container)

@@ -10,19 +10,8 @@ using Microsoft.AspNetCore.Mvc;
 /// <summary>
 /// Global exception handler for the application.
 /// </summary>
-public sealed class GlobalExceptionHandler : IExceptionHandler
+public sealed class GlobalExceptionHandler(ILogger<GlobalExceptionHandler> logger) : IExceptionHandler
 {
-    private readonly ILogger<GlobalExceptionHandler> logger;
-
-    /// <summary>
-    /// Initializes a new instance of the <see cref="GlobalExceptionHandler"/> class.
-    /// </summary>
-    /// <param name="logger">The logger instance.</param>
-    public GlobalExceptionHandler(ILogger<GlobalExceptionHandler> logger)
-    {
-        this.logger = logger;
-    }
-
     /// <summary>
     /// Handles exceptions and returns appropriate problem details responses.
     /// </summary>
@@ -35,7 +24,7 @@ public sealed class GlobalExceptionHandler : IExceptionHandler
         Exception exception,
         CancellationToken cancellationToken)
     {
-        this.logger.LogError(exception, "An unhandled exception occurred");
+        logger.LogError(exception, "An unhandled exception occurred");
 
         ProblemDetails problemDetails = exception switch
         {

@@ -10,22 +10,11 @@ using Spectre.Console.Cli;
 /// <summary>
 /// Type resolver for bridging Microsoft DI with Spectre.Console.
 /// </summary>
-public sealed class TypeResolver : ITypeResolver
+public sealed class TypeResolver(IServiceProvider serviceProvider) : ITypeResolver
 {
-    private readonly IServiceProvider serviceProvider;
-
-    /// <summary>
-    /// Initializes a new instance of the <see cref="TypeResolver"/> class.
-    /// </summary>
-    /// <param name="serviceProvider">The service provider.</param>
-    public TypeResolver(IServiceProvider serviceProvider)
-    {
-        this.serviceProvider = serviceProvider;
-    }
-
     /// <inheritdoc />
     public object? Resolve(Type? type)
     {
-        return type is null ? null : this.serviceProvider.GetService(type);
+        return type is null ? null : serviceProvider.GetService(type);
     }
 }

@@ -16,19 +16,9 @@ using Microsoft.Extensions.Primitives;
 /// <summary>
 /// Maps a client tenant to an API tenant.
 /// </summary>
-public class TenantMapper : ITenantMapper
+public class TenantMapper(IPropertyBagFactory propertyBagFactory) : ITenantMapper
 {
-    private readonly IPropertyBagFactory propertyBagFactory;
-
-    /// <summary>
-    /// Initializes a new instance of the <see cref="TenantMapper"/> class.
-    /// </summary>
-    /// <param name="propertyBagFactory">Enables property bag building.</param>
-    public TenantMapper(
-        IPropertyBagFactory propertyBagFactory)
-    {
-        this.propertyBagFactory = propertyBagFactory ?? throw new ArgumentNullException(nameof(propertyBagFactory));
-    }
+    private readonly IPropertyBagFactory propertyBagFactory = propertyBagFactory ?? throw new ArgumentNullException(nameof(propertyBagFactory));
 
     /// <inheritdoc/>
     public ITenant MapTenant(TenantResource source, string? etag)

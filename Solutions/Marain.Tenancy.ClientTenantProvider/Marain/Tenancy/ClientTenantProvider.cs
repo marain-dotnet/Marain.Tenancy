@@ -17,33 +17,22 @@ using Marain.Tenancy.Mappers;
 /// <summary>
 /// An <see cref="ITenantProvider"/> built over a Marain tenancy instance.
 /// </summary>
-public class ClientTenantProvider : ITenantProvider
+public class ClientTenantProvider(RootTenant root, ITenancyClient apiClient, ITenantMapper tenantMapper) : ITenantProvider
 {
     /// <summary>
-    /// Initializes a new instance of the <see cref="ClientTenantProvider"/> class.
+    /// Gets the root tenant.
     /// </summary>
-    /// <param name="root">The Root tenant.</param>
-    /// <param name="apiClient">The tenant service.</param>
-    /// <param name="tenantMapper">The tenant mapper to use.</param>
-    public ClientTenantProvider(RootTenant root, ITenancyClient apiClient, ITenantMapper tenantMapper)
-    {
-        this.Root = root ?? throw new ArgumentNullException(nameof(root));
-        this.TenantApiClient = apiClient ?? throw new ArgumentNullException(nameof(apiClient));
-        this.TenantMapper = tenantMapper ?? throw new ArgumentNullException(nameof(tenantMapper));
-    }
-
-    /// <inheritdoc/>
-    public RootTenant Root { get; }
+    public RootTenant Root { get; } = root ?? throw new ArgumentNullException(nameof(root));
 
     /// <summary>
     /// Gets the tenancy service.
     /// </summary>
-    protected ITenancyClient TenantApiClient { get; }
+    protected ITenancyClient TenantApiClient { get; } = apiClient ?? throw new ArgumentNullException(nameof(apiClient));
 
     /// <summary>
     /// Gets the tenant mapper.
     /// </summary>
-    protected ITenantMapper TenantMapper { get; }
+    protected ITenantMapper TenantMapper { get; } = tenantMapper ?? throw new ArgumentNullException(nameof(tenantMapper));
 
     /// <inheritdoc/>
     public async Task<ITenant> GetTenantAsync(string tenantId, string? eTag = null)

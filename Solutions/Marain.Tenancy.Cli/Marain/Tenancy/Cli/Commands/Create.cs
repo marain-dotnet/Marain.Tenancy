@@ -13,19 +13,8 @@ using Spectre.Console.Cli;
 /// <summary>
 /// Creates a new tenant.
 /// </summary>
-public class Create : AsyncCommand<CreateSettings>
+public class Create(ITenantStore tenantStore) : AsyncCommand<CreateSettings>
 {
-    private readonly ITenantStore tenantStore;
-
-    /// <summary>
-    /// Initializes a new instance of the <see cref="Create"/> class.
-    /// </summary>
-    /// <param name="tenantStore">The tenant store that will be used to create the new tenant.</param>
-    public Create(ITenantStore tenantStore)
-    {
-        this.tenantStore = tenantStore;
-    }
-
     /// <summary>
     /// Executes the command.
     /// </summary>
@@ -35,7 +24,7 @@ public class Create : AsyncCommand<CreateSettings>
     public override async Task<int> ExecuteAsync(CommandContext context, CreateSettings settings)
     {
         string tenantId = string.IsNullOrEmpty(settings.TenantId)
-            ? this.tenantStore.Root.Id
+            ? tenantStore.Root.Id
             : settings.TenantId;
 
         if (string.IsNullOrEmpty(settings.Name))
@@ -48,7 +37,7 @@ public class Create : AsyncCommand<CreateSettings>
             ? Guid.NewGuid()
             : Guid.Parse(settings.WellKnownTenantGuid);
 
-        ITenant child = await this.tenantStore.CreateWellKnownChildTenantAsync(
+        ITenant child = await tenantStore.CreateWellKnownChildTenantAsync(
             tenantId,
             wellKnownGuid,
             settings.Name).ConfigureAwait(false);

@@ -16,7 +16,7 @@ public class TenantProperties
         this.DiContainer = diContainer;
     }
 
-    public Dictionary<string, ITenant> Tenants { get; } = new Dictionary<string, ITenant>();
+    public Dictionary<string, ITenant> Tenants { get; } = [];
 
     public Dictionary<string, Guid> WellKnownGuids { get; } = new();
 

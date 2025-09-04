@@ -22,31 +22,12 @@ using Marain.Tenancy.Mappers;
 /// <summary>
 /// An <see cref="ITenantProvider"/> built over a Marain tenancy instance.
 /// </summary>
-public class ClientTenantStore : ClientTenantProvider, ITenantStore
+public class ClientTenantStore(
+    RootTenant root,
+    ITenancyClient tenancyApiClient,
+    ITenantMapper tenantMapper,
+    IPropertyBagFactory propertyBagFactory) : ClientTenantProvider(root, tenancyApiClient, tenantMapper), ITenantStore
 {
-    private readonly IPropertyBagFactory propertyBagFactory;
-    private readonly IJsonSerializerOptionsProvider serializerOptionsProvider;
-
-    /// <summary>
-    /// Initializes a new instance of the <see cref="ClientTenantProvider"/> class.
-    /// </summary>
-    /// <param name="root">The Root tenant.</param>
-    /// <param name="tenancyApiClient">The tenant service.</param>
-    /// <param name="tenantMapper">The tenant mapper to use.</param>
-    /// <param name="propertyBagFactory">The current <see cref="IPropertyBagFactory"/>.</param>
-    /// <param name="serializerOptionsProvider">The current <see cref="IJsonSerializerOptionsProvider"/>.</param>
-    public ClientTenantStore(
-        RootTenant root,
-        ITenancyClient tenancyApiClient,
-        ITenantMapper tenantMapper,
-        IPropertyBagFactory propertyBagFactory,
-        IJsonSerializerOptionsProvider serializerOptionsProvider)
-        : base(root, tenancyApiClient, tenantMapper)
-    {
-        this.propertyBagFactory = propertyBagFactory;
-        this.serializerOptionsProvider = serializerOptionsProvider;
-    }
-
     /// <inheritdoc/>
     public Task<ITenant> CreateChildTenantAsync(string parentTenantId, string name)
     {
@@ -182,7 +163,7 @@ public class ClientTenantStore : ClientTenantProvider, ITenantStore
     {
         IPropertyBag? propertiesToAddOrUpdate = propertiesToSetOrAdd is null
             ? null
-            : this.propertyBagFactory.Create(propertiesToSetOrAdd);
+            : propertyBagFactory.Create(propertiesToSetOrAdd);
 
         try
         {

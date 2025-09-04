@@ -10,23 +10,12 @@ using Spectre.Console.Cli;
 /// <summary>
 /// Type registrar for bridging Microsoft DI with Spectre.Console.
 /// </summary>
-public sealed class TypeRegistrar : ITypeRegistrar
+public sealed class TypeRegistrar(IServiceProvider serviceProvider) : ITypeRegistrar
 {
-    private readonly IServiceProvider serviceProvider;
-
-    /// <summary>
-    /// Initializes a new instance of the <see cref="TypeRegistrar"/> class.
-    /// </summary>
-    /// <param name="serviceProvider">The service provider.</param>
-    public TypeRegistrar(IServiceProvider serviceProvider)
-    {
-        this.serviceProvider = serviceProvider;
-    }
-
     /// <inheritdoc />
     public ITypeResolver Build()
     {
-        return new TypeResolver(this.serviceProvider);
+        return new TypeResolver(serviceProvider);
     }
 
     /// <inheritdoc />

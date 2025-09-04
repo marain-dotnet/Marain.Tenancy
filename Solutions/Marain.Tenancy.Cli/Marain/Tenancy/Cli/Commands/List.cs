@@ -16,22 +16,8 @@ using Spectre.Console.Cli;
 /// <summary>
 /// Lists children of the specified tenant.
 /// </summary>
-public class List : AsyncCommand<ListSettings>
+public class List(ITenantStore tenantStore, IJsonSerializerOptionsProvider serializationSettingsProvider) : AsyncCommand<ListSettings>
 {
-    private readonly ITenantStore tenantStore;
-    private readonly IJsonSerializerOptionsProvider serializationSettingsProvider;
-
-    /// <summary>
-    /// Initializes a new instance of the <see cref="List"/> class.
-    /// </summary>
-    /// <param name="tenantStore">The tenant store that will be used to retrieve the information.</param>
-    /// <param name="serializerOptionsProvider">The serialization settings provider to use when writing output.</param>
-    public List(ITenantStore tenantStore, IJsonSerializerOptionsProvider serializerOptionsProvider)
-    {
-        this.tenantStore = tenantStore;
-        this.serializationSettingsProvider = serializerOptionsProvider;
-    }
-
     /// <summary>
     /// Executes the command.
     /// </summary>
@@ -41,16 +27,16 @@ public class List : AsyncCommand<ListSettings>
     public override async Task<int> ExecuteAsync(CommandContext context, ListSettings settings)
     {
         string tenantId = string.IsNullOrEmpty(settings.TenantId)
-            ? this.tenantStore.Root.Id
+            ? tenantStore.Root.Id
             : settings.TenantId;
 
         string? continuationToken = null;
 
-        var childTenantIds = new List<string>();
+        List<string> childTenantIds = [];
 
         do
         {
-            TenantCollectionResult children = await this.tenantStore.GetChildrenAsync(
+            TenantCollectionResult children = await tenantStore.GetChildrenAsync(
                 tenantId,
                 20,
                 continuationToken).ConfigureAwait(false);
@@ -85,11 +71,11 @@ public class List : AsyncCommand<ListSettings>
 
     private async Task LoadAndOutputTenantDetailsAsync(List<string> children, ListSettings settings)
     {
-        IEnumerable<Task<ITenant>> detailsTasks = children.Select(x => this.tenantStore.GetTenantAsync(x));
+        IEnumerable<Task<ITenant>> detailsTasks = children.Select(x => tenantStore.GetTenantAsync(x));
 
         ITenant[] tenants = await Task.WhenAll(detailsTasks).ConfigureAwait(false);
 
-        var headings = new List<string> { "Id" };
+        List<string> headings = ["Id"];
 
         if (settings.Name)
         {
@@ -110,7 +96,7 @@ public class List : AsyncCommand<ListSettings>
 
         foreach (ITenant tenant in tenants)
         {
-            var result = new List<string> { tenant.Id };
+            List<string> result = [tenant.Id];
 
             if (settings.Name)
             {
@@ -122,11 +108,11 @@ public class List : AsyncCommand<ListSettings>
                 foreach (string prop in settings.IncludeProperties)
                 {
                     tenant.Properties.TryGet(prop, out JsonNode propValue);
-                    result.Add(propValue.ToJsonString(this.serializationSettingsProvider.Instance) ?? "{not set}");
+                    result.Add(propValue.ToJsonString(serializationSettingsProvider.Instance) ?? "{not set}");
                 }
             }
 
-            table.AddRow(result.ToArray());
+            table.AddRow([.. result]);
         }
 
         AnsiConsole.Write(table);
