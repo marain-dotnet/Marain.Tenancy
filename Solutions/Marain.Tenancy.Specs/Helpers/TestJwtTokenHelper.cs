@@ -21,7 +21,30 @@ public static class TestJwtTokenHelper
     /// <param name="email">The email address to add to the token.</param>
     /// <param name="roles">The list of roles to add to the token.</param>
     /// <returns>A token string.</returns>
-    public static string CreateToken(string userId = "test-user", string email = "test@example.com", params string[] roles)
+    public static string CreateTokenString(string userId = "test-user", string email = "test@example.com", params string[] roles)
+    {
+        JwtSecurityToken token = CreateToken(userId, email, roles);
+        return ConvertToTokenString(token);
+    }
+
+    /// <summary>
+    /// Converts a <see cref="JwtSecurityToken"/> to a string.
+    /// </summary>
+    /// <param name="token">The token.</param>
+    /// <returns>The encoded token string.</returns>
+    public static string ConvertToTokenString(JwtSecurityToken token)
+    {
+        return new JwtSecurityTokenHandler().WriteToken(token);
+    }
+
+    /// <summary>
+    /// Creates a fake token.
+    /// </summary>
+    /// <param name="userId">The User Id to add to the token.</param>
+    /// <param name="email">The email address to add to the token.</param>
+    /// <param name="roles">The list of roles to add to the token.</param>
+    /// <returns>A token string.</returns>
+    public static JwtSecurityToken CreateToken(string userId = "test-user", string email = "test@example.com", params string[] roles)
     {
         var claims = new List<Claim>
         {
@@ -36,13 +59,11 @@ public static class TestJwtTokenHelper
             claims.Add(new Claim(ClaimTypes.Role, role));
         }
 
-        var token = new JwtSecurityToken(
+        return new JwtSecurityToken(
             issuer: "test-issuer",
             audience: "test-audience",
             expires: DateTime.UtcNow.AddHours(1),
             claims: claims,
             signingCredentials: null); // No signature required due to validation bypass
-
-        return new JwtSecurityTokenHandler().WriteToken(token);
     }
 }

@@ -5,6 +5,7 @@
 namespace Marain.Tenancy.Specs.Bindings;
 
 using System.Linq;
+using Corvus.Identity.ClientAuthentication;
 using Corvus.Testing.ReqnRoll;
 using Marain.Tenancy.Specs.Helpers;
 using Microsoft.Extensions.DependencyInjection;
@@ -29,8 +30,16 @@ public static class TenancyClientBindings
             {
                 bool enableResponseCaching = !featureContext.FeatureInfo.Tags.Contains("disableTenantCaching");
 
+                TenancyApiClientConfiguration config = new()
+                {
+                    BaseUri = ApiWebApplicationFactory.Current.Server.BaseAddress.ToString(),
+                    ResourceIdForMsiAuthentication = "placeholder", // To ensure auth is configured
+                };
+
+                serviceCollection.AddSingleton<IServiceIdentityAccessTokenSource, TestAccessTokenSource>();
+
                 serviceCollection.AddTenancyClient(
-                    _ => new() { BaseUri = ApiWebApplicationFactory.Current.Server.BaseAddress.ToString() },
+                    _ => config,
                     enableResponseCaching,
                     ApiWebApplicationFactory.Current.Server.CreateHandler());
             });

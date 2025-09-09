@@ -244,7 +244,7 @@ public class TenancyApiSteps : Steps
             request.Headers.IfNoneMatch.Add(new(etag));
         }
 
-        string token = TestJwtTokenHelper.CreateToken();
+        string token = TestJwtTokenHelper.CreateTokenString();
         request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", token);
 
         HttpResponseMessage response = await ApiWebApplicationFactory.Current.Client.SendAsync(request);
@@ -268,7 +268,7 @@ public class TenancyApiSteps : Steps
             request.Content = new StringContent(requestJson, System.Text.Encoding.UTF8, "application/json");
         }
 
-        string token = TestJwtTokenHelper.CreateToken();
+        string token = TestJwtTokenHelper.CreateTokenString();
         request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", token);
 
         HttpResponseMessage response = await ApiWebApplicationFactory.Current.Client.SendAsync(request);
