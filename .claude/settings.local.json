@@ -33,7 +33,8 @@
       "WebFetch(domain:docs.nunit.org)",
       "Bash(python test_untyped_node_serialization.py)",
       "WebSearch",
-      "Bash(timeout:*)"
+      "Bash(timeout:*)",
+      "WebFetch(domain:mazeez.dev)"
     ],
     "deny": []
   }

@@ -45,6 +45,31 @@ public static class ApiExtensions
 
             options.SupportNonNullableReferenceTypes();
 
+            // Add JWT Bearer authentication to Swagger
+            options.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
+            {
+                Description = "JWT Authorization header using the Bearer scheme. Enter 'Bearer' [space] and then your token in the text input below.",
+                Name = "Authorization",
+                In = ParameterLocation.Header,
+                Type = SecuritySchemeType.ApiKey,
+                Scheme = "Bearer",
+            });
+
+            options.AddSecurityRequirement(new OpenApiSecurityRequirement
+            {
+                {
+                    new OpenApiSecurityScheme
+                    {
+                        Reference = new OpenApiReference
+                        {
+                            Type = ReferenceType.SecurityScheme,
+                            Id = "Bearer",
+                        },
+                    },
+                    Array.Empty<string>()
+                },
+            });
+
             // Add Swagger support for the custom JsonConverters added to the serialization setup in ConfigureUnifiedJsonSerialization.
             options.AddJsonDateTimeOffsetToIso8601AndUnixTimeStampConverterSwaggerGen();
             options.AddJsonCultureInfoConverterSwaggerGen();
@@ -69,8 +94,10 @@ public static class ApiExtensions
     {
         ArgumentNullException.ThrowIfNull(app);
 
-        RouteGroupBuilder tenants = app.MapGroup("/{tenantId}/marain/tenant")
-            .WithTags("Tenancy");
+        RouteGroupBuilder tenants = app
+            .MapGroup("/{tenantId}/marain/tenant")
+            .WithTags("Tenancy")
+            .RequireAuthorization();
 
         tenants.RegisterTenantEndpoints();
 
@@ -96,7 +123,7 @@ public static class ApiExtensions
 
             context.Response.ContentType = "application/json";
             await context.Response.WriteAsync(json);
-        });
+        }).AllowAnonymous();
 
         return app;
     }

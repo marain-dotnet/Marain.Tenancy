@@ -94,4 +94,32 @@ public static class ErrorHandlingExtensions
             title: "Unsupported Media Type",
             type: "https://tools.ietf.org/html/rfc7231#section-6.5.13",
             instance: instance);
+
+    /// <summary>
+    /// Creates a problem details response for unauthorized access.
+    /// </summary>
+    /// <param name="detail">The detailed error message.</param>
+    /// <param name="instance">The instance URI.</param>
+    /// <returns>An unauthorized problem details response.</returns>
+    public static ProblemHttpResult UnauthorizedProblem(string detail, string? instance = null) =>
+        TypedResults.Problem(
+            detail: detail,
+            statusCode: StatusCodes.Status401Unauthorized,
+            title: "Unauthorized",
+            type: "https://tools.ietf.org/html/rfc7235#section-3.1",
+            instance: instance);
+
+    /// <summary>
+    /// Creates a problem details response for forbidden access.
+    /// </summary>
+    /// <param name="detail">The detailed error message.</param>
+    /// <param name="instance">The instance URI.</param>
+    /// <returns>A forbidden problem details response.</returns>
+    public static ProblemHttpResult ForbiddenProblem(string detail, string? instance = null) =>
+        TypedResults.Problem(
+            detail: detail,
+            statusCode: StatusCodes.Status403Forbidden,
+            title: "Forbidden",
+            type: "https://tools.ietf.org/html/rfc7231#section-6.5.3",
+            instance: instance);
 }

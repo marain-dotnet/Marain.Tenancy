@@ -5,14 +5,16 @@
 namespace Marain.Tenancy.Specs.Helpers;
 
 using System;
-using System.Collections.Generic;
 using System.Net.Http;
 using System.Threading.Tasks;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc.Testing;
-using Microsoft.CodeAnalysis.CSharp.Syntax;
-using Microsoft.Extensions.Configuration;
+using Microsoft.AspNetCore.TestHost;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
+using Microsoft.IdentityModel.JsonWebTokens;
+using Microsoft.IdentityModel.Tokens;
 using Testcontainers.Azurite;
 
 /// <summary>
@@ -68,38 +70,22 @@ internal class ApiWebApplicationFactory : WebApplicationFactory<Program>, IDispo
         Environment.SetEnvironmentVariable("RootBlobStorageConfiguration:ConnectionStringPlainText", connectionString);
 
         builder.UseEnvironment(Environments.Development);
+
+        // Configure test services to bypass JWT validation. This means the API will accept any token that has the correct structure.
+        builder.ConfigureTestServices(services =>
+        {
+            services.PostConfigure<JwtBearerOptions>(JwtBearerDefaults.AuthenticationScheme, options =>
+            {
+                options.TokenValidationParameters = new TokenValidationParameters
+                {
+                    ValidateIssuer = false,
+                    ValidateAudience = false,
+                    ValidateLifetime = false,
+                    ValidateIssuerSigningKey = false,
+                    RequireSignedTokens = false,
+                    SignatureValidator = (token, parameters) => new JsonWebToken(token), // Accept any token without signature validation
+                };
+            });
+        });
     }
-
-    /////// <inheritdoc/>
-    ////protected override IHostBuilder CreateHostBuilder()
-    ////{
-    ////    // Get the MinimalApi assembly
-    ////    var apiAssembly = Assembly.Load("Marain.Tenancy.Api");
-
-    ////    return Host.CreateDefaultBuilder()
-    ////        .ConfigureWebHostDefaults(webBuilder =>
-    ////        {
-    ////            webBuilder.UseStartup<ApiTestStartup>();
-    ////            webBuilder.ConfigureAppConfiguration((context, config) =>
-    ////            {
-    ////                config.AddJsonFile("local.settings.json", optional: true);
-    ////                config.AddEnvironmentVariables();
-    ////            });
-    ////            webBuilder.UseContentRoot(GetContentRoot(minimalApiAssembly));
-    ////        });
-    ////}
-
-    ////private static string GetContentRoot(Assembly assembly)
-    ////{
-    ////    // Find the content root by looking for the Api project directory
-    ////    string assemblyLocation = assembly.Location;
-    ////    DirectoryInfo? directory = new FileInfo(assemblyLocation).Directory;
-
-    ////    while (directory != null && !File.Exists(Path.Combine(directory.FullName, "Program.cs")))
-    ////    {
-    ////        directory = directory.Parent;
-    ////    }
-
-    ////    return directory?.FullName ?? Environment.CurrentDirectory;
-    ////}
 }

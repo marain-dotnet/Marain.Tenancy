@@ -4,6 +4,7 @@
 
 namespace Marain.Tenancy.Api.ErrorHandling;
 
+using System.Security.Authentication;
 using Microsoft.AspNetCore.Diagnostics;
 using Microsoft.AspNetCore.Mvc;
 
@@ -28,6 +29,22 @@ public sealed class GlobalExceptionHandler(ILogger<GlobalExceptionHandler> logge
 
         ProblemDetails problemDetails = exception switch
         {
+            AuthenticationException => new ProblemDetails
+            {
+                Type = "https://tools.ietf.org/html/rfc7235#section-3.1",
+                Title = "Unauthorized",
+                Status = StatusCodes.Status401Unauthorized,
+                Detail = "Authentication is required to access this resource.",
+                Instance = httpContext.Request.Path,
+            },
+            UnauthorizedAccessException => new ProblemDetails
+            {
+                Type = "https://tools.ietf.org/html/rfc7231#section-6.5.3",
+                Title = "Forbidden",
+                Status = StatusCodes.Status403Forbidden,
+                Detail = "You do not have permission to access this resource.",
+                Instance = httpContext.Request.Path,
+            },
             ArgumentException => new ProblemDetails
             {
                 Type = "https://tools.ietf.org/html/rfc7231#section-6.5.1",

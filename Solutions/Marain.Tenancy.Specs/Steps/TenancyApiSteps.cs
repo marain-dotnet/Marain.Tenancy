@@ -8,6 +8,7 @@ using System;
 using System.Collections.Generic;
 using System.Net;
 using System.Net.Http;
+using System.Net.Http.Headers;
 using System.Text.Json;
 using System.Text.Json.Nodes;
 using System.Threading.Tasks;
@@ -239,8 +240,12 @@ public class TenancyApiSteps : Steps
 
         if (!string.IsNullOrEmpty(etag))
         {
-            request.Headers.Add("If-None-Match", etag);
+            //// request.Headers.Add("If-None-Match", etag);
+            request.Headers.IfNoneMatch.Add(new(etag));
         }
+
+        string token = TestJwtTokenHelper.CreateToken();
+        request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", token);
 
         HttpResponseMessage response = await ApiWebApplicationFactory.Current.Client.SendAsync(request);
         await this.SetResponseAsync(response);
@@ -251,7 +256,7 @@ public class TenancyApiSteps : Steps
         IServiceProvider serviceProvider = ContainerBindings.GetServiceProvider(this.FeatureContext);
         IJsonSerializerOptionsProvider serializationOptionsProvider = serviceProvider.GetRequiredService<IJsonSerializerOptionsProvider>();
 
-        HttpContent? content = null;
+        using HttpRequestMessage request = new(HttpMethod.Post, path);
 
         if (data is not null)
         {
@@ -260,10 +265,13 @@ public class TenancyApiSteps : Steps
             TestContext.WriteLine($"Serialized request body for POST {path}:");
             TestContext.WriteLine(requestJson);
 
-            content = new StringContent(requestJson, System.Text.Encoding.UTF8, "application/json");
+            request.Content = new StringContent(requestJson, System.Text.Encoding.UTF8, "application/json");
         }
 
-        HttpResponseMessage response = await ApiWebApplicationFactory.Current.Client.PostAsync(path, content);
+        string token = TestJwtTokenHelper.CreateToken();
+        request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", token);
+
+        HttpResponseMessage response = await ApiWebApplicationFactory.Current.Client.SendAsync(request);
         await this.SetResponseAsync(response);
     }
 

@@ -5,6 +5,12 @@
 using Corvus.Storage.Azure.BlobStorage;
 using Marain.Tenancy.Api.Extensions;
 using Marain.Tenancy.Api.Models;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.Identity.Web;
+using Microsoft.OpenApi.Models;
+using Microsoft.OpenApi.Writers;
+using Swashbuckle.AspNetCore.Swagger;
 
 WebApplicationBuilder builder = WebApplication.CreateBuilder(args);
 
@@ -15,6 +21,10 @@ builder.Configuration.AddEnvironmentVariables();
 builder.Logging.ClearProviders();
 builder.Logging.AddConsole();
 builder.Logging.AddDebug();
+
+// Add authentication services
+builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
+    .AddMicrosoftIdentityWebApi(builder.Configuration.GetSection("AzureAd"));
 
 // Add tenancy minimal API services
 builder.AddTenancyApi();
@@ -82,6 +92,18 @@ if (app.Environment.IsDevelopment())
     });
     app.UseDeveloperExceptionPage();
 }
+
+// Override Swagger endpoints to be anonymous
+if (app.Environment.IsDevelopment())
+{
+    app.MapGet("/swagger/{documentName}/swagger.json", (string documentName, ISwaggerProvider swaggerProvider) =>
+    {
+        OpenApiDocument swagger = swaggerProvider.GetSwagger(documentName);
+        using var stringWriter = new StringWriter();
+        swagger.SerializeAsV3(new OpenApiJsonWriter(stringWriter));
+        return Results.Content(stringWriter.ToString(), "application/json");
+    }).ExcludeFromDescription();
+}
 else
 {
     app.UseHsts();
@@ -96,7 +118,7 @@ if (app.Environment.IsDevelopment())
     app.UseHttpLogging();
 }
 
-// Add health check endpoint
+// Add health check endpoint (allow anonymous access for monitoring)
 app.MapHealthChecks("/health");
 app.MapCustomSwaggerEndpoint();
 app.MapTenancyEndpoints();

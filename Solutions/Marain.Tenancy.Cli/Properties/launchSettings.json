@@ -3,10 +3,10 @@
     "Cli: list": {
       "commandName": "Project",
       "commandLineArgs": "list -n -p=StorageConfiguration__corvustenancy"
-    },
-    "Cli: create": {
-      "commandName": "Project",
-      "commandLineArgs": "create -n=New"
     }
+    //"Cli: create": {
+    //  "commandName": "Project",
+    //  "commandLineArgs": "create -n=New"
+    //}
   }
 }
