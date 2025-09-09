@@ -34,7 +34,9 @@
       "Bash(python test_untyped_node_serialization.py)",
       "WebSearch",
       "Bash(timeout:*)",
-      "WebFetch(domain:mazeez.dev)"
+      "WebFetch(domain:mazeez.dev)",
+      "Bash(csc:*)",
+      "Bash(./debug_test.exe)"
     ],
     "deny": []
   }
