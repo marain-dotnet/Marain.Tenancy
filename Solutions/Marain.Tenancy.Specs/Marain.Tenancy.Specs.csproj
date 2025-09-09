@@ -5,6 +5,7 @@
     <TargetFramework>net8.0</TargetFramework>
     <LangVersion>latest</LangVersion>
     <IsPackable>false</IsPackable>
+    <IsTestProject>true</IsTestProject>
     <RootNamespace>Marain.Tenancy.Specs</RootNamespace>
     <Nullable>enable</Nullable>
     <!-- Disabling SA1204 because it prioritizes static/non-static over public/non-public, which doesn't fit very well
@@ -69,3 +70,4 @@
     </None>
   </ItemGroup>
 </Project>
+
