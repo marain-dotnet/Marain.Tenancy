@@ -8,6 +8,7 @@ using System;
 using System.Threading.Tasks;
 using Azure.Identity;
 using Marain.Tenancy.Cli.Commands;
+using Marain.Tenancy.Shared.Extensions;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Spectre.Console.Cli;
@@ -34,6 +35,9 @@ public static class Program
             services.AddJsonDateTimeOffsetToIso8601AndUnixTimeConverter();
             services.AddCamelCaseConverterForEnums();
             services.AddJsonPropertyBagFactory();
+
+            // Add OpenTelemetry and telemetry for CLI
+            services.AddMarainTelemetry(ctx.Configuration);
 
             string tenancyServiceBaseUri = ctx.Configuration["TenancyClient:TenancyServiceBaseUri"]
                 ?? throw new InvalidOperationException("TenancyClient:TenancyServiceBaseUri configuration is required");

@@ -125,6 +125,27 @@
           "System.Memory": "4.5.5"
         }
       },
+      "Azure.Monitor.OpenTelemetry.AspNetCore": {
+        "type": "Transitive",
+        "resolved": "1.1.0",
+        "contentHash": "lG55DqT+VvRoaRuvxJddFDlrzrmprbFmagELQMWx0BW4sVow/9slI29uLpslnUSjccsufG9B45i74yXkusC63A==",
+        "dependencies": {
+          "Azure.Monitor.OpenTelemetry.Exporter": "1.2.0",
+          "OpenTelemetry.Extensions.Hosting": "1.7.0",
+          "OpenTelemetry.Instrumentation.AspNetCore": "1.7.0",
+          "OpenTelemetry.Instrumentation.Http": "1.7.0"
+        }
+      },
+      "Azure.Monitor.OpenTelemetry.Exporter": {
+        "type": "Transitive",
+        "resolved": "1.2.0",
+        "contentHash": "dxjmDrdzujv0UK6Sixqr/tonyDc0mQUjNuMGYjGuUJZtiQBdiQcXkI9pEm9ErdaJsfqmA6c3pvDnw3nTxJZJOA==",
+        "dependencies": {
+          "Azure.Core": "1.37.0",
+          "OpenTelemetry": "1.7.0",
+          "OpenTelemetry.PersistentStorage.FileSystem": "1.0.0"
+        }
+      },
       "Azure.Security.KeyVault.Certificates": {
         "type": "Transitive",
         "resolved": "4.6.0",
@@ -1210,6 +1231,91 @@
           "Microsoft.Testing.Platform.MSBuild": "1.5.3"
         }
       },
+      "OpenTelemetry": {
+        "type": "Transitive",
+        "resolved": "1.8.1",
+        "contentHash": "70pb4YyPJnoV3vZOxpusEzBqgY6NyLwyruhas5d3bUO10GnldRWGE8DF4UusbinxnTLOpSmNzsaOb5R1v+Mt0g==",
+        "dependencies": {
+          "Microsoft.Extensions.Diagnostics.Abstractions": "8.0.0",
+          "Microsoft.Extensions.Logging.Configuration": "8.0.0",
+          "OpenTelemetry.Api.ProviderBuilderExtensions": "1.8.1"
+        }
+      },
+      "OpenTelemetry.Api": {
+        "type": "Transitive",
+        "resolved": "1.8.1",
+        "contentHash": "QCwCJp/ndXzlTBiTJjcpkpi4tntv1qSRJMXv0YNKcptE/FRMufiIA7IWTegS7C1/r3YQQwGiwdHARcZcS41JMw==",
+        "dependencies": {
+          "System.Diagnostics.DiagnosticSource": "8.0.0"
+        }
+      },
+      "OpenTelemetry.Api.ProviderBuilderExtensions": {
+        "type": "Transitive",
+        "resolved": "1.8.1",
+        "contentHash": "/M1vkPg2i2UpnHMlV8kFS4ct9O2cg3C+KVgPI/6G/tp99AzwGIvZZv0NswnjKBqis/Lr9Lv2eeF1yvG1KpBP/w==",
+        "dependencies": {
+          "Microsoft.Extensions.DependencyInjection.Abstractions": "8.0.0",
+          "OpenTelemetry.Api": "1.8.1"
+        }
+      },
+      "OpenTelemetry.Exporter.Console": {
+        "type": "Transitive",
+        "resolved": "1.8.1",
+        "contentHash": "XmMaxVoJjVYwEpV3XCvntSGbmRelhQv0gT1JSTRK5BRXgq7OunU18GJtJsgkQW0bRf1y4nevkxo5QDts62j41Q==",
+        "dependencies": {
+          "OpenTelemetry": "1.8.1",
+          "System.Text.Encodings.Web": "4.7.2",
+          "System.Text.Json": "4.7.2"
+        }
+      },
+      "OpenTelemetry.Extensions.Hosting": {
+        "type": "Transitive",
+        "resolved": "1.8.1",
+        "contentHash": "vAiiKFPGDUkCUu+edSZf95n33AC7VdynDG+wF+KolTQL+8YphlvQ5wn06PDegD0CJVqk8imwqN+LCb/JjsGxKA==",
+        "dependencies": {
+          "Microsoft.Extensions.Hosting.Abstractions": "8.0.0",
+          "OpenTelemetry": "1.8.1"
+        }
+      },
+      "OpenTelemetry.Instrumentation.AspNetCore": {
+        "type": "Transitive",
+        "resolved": "1.8.1",
+        "contentHash": "dRb1LEXSH95LGEubk96kYyBmGuny9/qycH9KqL8FXcOv446Xi53EW56TVE4wTMv4HPfn+rL3B9pPQ5RX7zD4Yw==",
+        "dependencies": {
+          "OpenTelemetry.Api.ProviderBuilderExtensions": "1.8.0"
+        }
+      },
+      "OpenTelemetry.Instrumentation.Http": {
+        "type": "Transitive",
+        "resolved": "1.8.1",
+        "contentHash": "l1KaO1U+v11X/kfZ8tcONc5l1qoP6nPk6yPrXBJNH0Wb6NEBTdEgI1dtJBbqOnjOrI2XS09le0ZGooh9ZVkZ3Q==",
+        "dependencies": {
+          "Microsoft.Extensions.Configuration": "8.0.0",
+          "Microsoft.Extensions.Options": "8.0.0",
+          "OpenTelemetry.Api.ProviderBuilderExtensions": "1.8.0"
+        }
+      },
+      "OpenTelemetry.Instrumentation.Runtime": {
+        "type": "Transitive",
+        "resolved": "1.8.0",
+        "contentHash": "Ma7TL1leE/8qtD1mg8iiNND9VxmPpb81JCVfuSHKZImtaFHCfwKBtVB9SJ42/hHdy6I0Oi/TBQzWnfZvx0or2A==",
+        "dependencies": {
+          "OpenTelemetry.Api": "[1.8.0, 2.0.0)"
+        }
+      },
+      "OpenTelemetry.PersistentStorage.Abstractions": {
+        "type": "Transitive",
+        "resolved": "1.0.0",
+        "contentHash": "7ZtgGFPCovixOwJ+azTsMTkadM5u1SPYRKOXqYz0jWNbrzVGJmvktLr7eS4ncwcve86BW9nAZW++vjdfIXyt7g=="
+      },
+      "OpenTelemetry.PersistentStorage.FileSystem": {
+        "type": "Transitive",
+        "resolved": "1.0.0",
+        "contentHash": "MBz/D9Lo2tKfVMmk5tPVQ1RwiWL+if4b6wv7KJOeBmio5lv0twRLAQxkBHfnLpcf66oWAQS6AaFykmn1Atww1Q==",
+        "dependencies": {
+          "OpenTelemetry.PersistentStorage.Abstractions": "1.0.0"
+        }
+      },
       "Polly.Core": {
         "type": "Transitive",
         "resolved": "8.4.2",
@@ -1339,11 +1445,8 @@
       },
       "System.Diagnostics.DiagnosticSource": {
         "type": "Transitive",
-        "resolved": "6.0.1",
-        "contentHash": "KiLYDu2k2J82Q9BJpWiuQqCkFjRBWVq4jDzKKWawVi9KWzyD0XG3cmfX0vqTQlL14Wi9EufJrbL0+KCLTbqWiQ==",
-        "dependencies": {
-          "System.Runtime.CompilerServices.Unsafe": "6.0.0"
-        }
+        "resolved": "8.0.0",
+        "contentHash": "c9xLpVz6PL9lp/djOWtk5KPDZq3cSYpmXoJQY524EOtuFl5z9ZtsotpsyrDW40U1DRnQSYvcPKEUV0X//u6gkQ=="
       },
       "System.Diagnostics.EventLog": {
         "type": "Transitive",
@@ -1397,11 +1500,6 @@
           "System.Collections.Immutable": "8.0.0"
         }
       },
-      "System.Runtime.CompilerServices.Unsafe": {
-        "type": "Transitive",
-        "resolved": "6.0.0",
-        "contentHash": "/iUeP3tq1S0XdNNoMz5C9twLSrM/TH+qElHkXWaPvuNOt+99G75NrV0OS2EqHx5wMN7popYjpc8oTjC1y16DLg=="
-      },
       "System.Security.Cryptography.Pkcs": {
         "type": "Transitive",
         "resolved": "8.0.0",
@@ -1422,6 +1520,11 @@
         "dependencies": {
           "System.Security.Cryptography.Pkcs": "8.0.0"
         }
+      },
+      "System.Text.Encodings.Web": {
+        "type": "Transitive",
+        "resolved": "4.7.2",
+        "contentHash": "iTUgB/WtrZ1sWZs84F2hwyQhiRH6QNjQv2DkwrH+WP6RoFga2Q1m3f9/Q7FG8cck8AdHitQkmkXSY8qylcDmuA=="
       },
       "System.Text.Json": {
         "type": "Transitive",
@@ -1456,14 +1559,21 @@
       "marain.tenancy.api": {
         "type": "Project",
         "dependencies": {
+          "Azure.Monitor.OpenTelemetry.AspNetCore": "[1.1.0, )",
+          "Azure.Monitor.OpenTelemetry.Exporter": "[1.2.0, )",
           "FluentValidation": "[12.0.0, )",
           "FluentValidation.DependencyInjectionExtensions": "[12.0.0, )",
+          "Marain.Tenancy.Shared": "[1.0.0, )",
           "Marain.Tenancy.Storage.Azure.BlobStorage": "[1.0.0, )",
           "Microsoft.AspNetCore.Authentication.JwtBearer": "[8.0.0, )",
           "Microsoft.AspNetCore.JsonPatch": "[8.0.0, )",
           "Microsoft.Identity.Web": "[3.14.0, )",
           "Microsoft.IdentityModel.Tokens": "[8.14.0, )",
           "Microsoft.VisualStudio.Azure.Containers.Tools.Targets": "[1.21.2, )",
+          "OpenTelemetry": "[1.8.1, )",
+          "OpenTelemetry.Extensions.Hosting": "[1.8.1, )",
+          "OpenTelemetry.Instrumentation.AspNetCore": "[1.8.1, )",
+          "OpenTelemetry.Instrumentation.Http": "[1.8.1, )",
           "Swashbuckle.AspNetCore": "[9.0.3, )"
         }
       },
@@ -1474,9 +1584,12 @@
           "Corvus.Identity.Azure": "[4.0.2, )",
           "Corvus.Json.PropertyBag": "[2.0.0, )",
           "Corvus.Json.Serialization": "[2.0.0, )",
+          "Marain.Tenancy.Shared": "[1.0.0, )",
           "Microsoft.Extensions.DependencyInjection.Abstractions": "[8.0.*, )",
           "Microsoft.Extensions.Http": "[8.0.*, )",
-          "Microsoft.Extensions.Http.Resilience": "[9.8.0, )"
+          "Microsoft.Extensions.Http.Resilience": "[9.8.0, )",
+          "OpenTelemetry": "[1.8.1, )",
+          "OpenTelemetry.Instrumentation.Http": "[1.8.1, )"
         }
       },
       "marain.tenancy.clienttenantprovider": {
@@ -1485,14 +1598,32 @@
           "Corvus.Extensions.Newtonsoft.Json": "[3.0.2, )",
           "Corvus.Tenancy.Abstractions": "[4.0.1, )",
           "Marain.Tenancy.Client": "[1.0.0, )",
-          "Microsoft.AspNetCore.WebUtilities": "[8.0.14, )"
+          "Marain.Tenancy.Shared": "[1.0.0, )",
+          "Microsoft.AspNetCore.WebUtilities": "[8.0.14, )",
+          "OpenTelemetry": "[1.8.1, )"
+        }
+      },
+      "marain.tenancy.shared": {
+        "type": "Project",
+        "dependencies": {
+          "Azure.Monitor.OpenTelemetry.Exporter": "[1.2.0, )",
+          "Microsoft.Extensions.Configuration.Abstractions": "[8.0.*, )",
+          "Microsoft.Extensions.DependencyInjection.Abstractions": "[8.0.*, )",
+          "Microsoft.Extensions.Hosting.Abstractions": "[8.0.*, )",
+          "OpenTelemetry": "[1.8.1, )",
+          "OpenTelemetry.Exporter.Console": "[1.8.1, )",
+          "OpenTelemetry.Extensions.Hosting": "[1.8.1, )",
+          "OpenTelemetry.Instrumentation.Http": "[1.8.1, )",
+          "OpenTelemetry.Instrumentation.Runtime": "[1.8.0, )"
         }
       },
       "marain.tenancy.storage.azure.blobstorage": {
         "type": "Project",
         "dependencies": {
           "Corvus.Storage.Azure.BlobStorage.Tenancy": "[4.0.1, )",
-          "Microsoft.Extensions.DependencyInjection.Abstractions": "[8.0.*, )"
+          "Marain.Tenancy.Shared": "[1.0.0, )",
+          "Microsoft.Extensions.DependencyInjection.Abstractions": "[8.0.*, )",
+          "OpenTelemetry": "[1.8.1, )"
         }
       }
     }

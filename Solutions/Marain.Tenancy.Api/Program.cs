@@ -5,6 +5,7 @@
 using Corvus.Storage.Azure.BlobStorage;
 using Marain.Tenancy.Api.Extensions;
 using Marain.Tenancy.Api.Models;
+using Marain.Tenancy.Shared.Extensions;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.Identity.Web;
@@ -51,6 +52,10 @@ if (rootStorageConfiguration is not null)
 }
 
 builder.ConfigureUnifiedJsonSerialization();
+
+// Configure OpenTelemetry and Application Insights
+builder.Services.AddMarainTelemetry(builder.Configuration, builder.Environment);
+builder.AddApiTelemetry();
 
 // Configure HTTPS redirection and HSTS in production
 if (!builder.Environment.IsDevelopment())
