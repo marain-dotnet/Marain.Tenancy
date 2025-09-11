@@ -8,19 +8,19 @@
 	"portsAttributes": {
 		"5138": {
 			"label": "MinimalApi HTTP",
-			"onAutoForward": "openBrowser"
+			"onAutoForward": "notify"
 		},
 		"7124": {
 			"label": "MinimalApi HTTPS",
-			"onAutoForward": "openBrowser"
+			"onAutoForward": "notify"
 		},
 		"8080": {
 			"label": "MinimalApi Docker HTTP",
-			"onAutoForward": "openBrowser"
+			"onAutoForward": "notify"
 		},
 		"8081": {
 			"label": "MinimalApi Docker HTTPS",
-			"onAutoForward": "openBrowser"
+			"onAutoForward": "notify"
 		}
 	},
 

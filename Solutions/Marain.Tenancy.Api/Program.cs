@@ -7,13 +7,31 @@ using Marain.Tenancy.Api.Extensions;
 using Marain.Tenancy.Api.Models;
 using Marain.Tenancy.Shared.Extensions;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
-using Microsoft.AspNetCore.Authorization;
 using Microsoft.Identity.Web;
 using Microsoft.OpenApi.Models;
 using Microsoft.OpenApi.Writers;
 using Swashbuckle.AspNetCore.Swagger;
 
 WebApplicationBuilder builder = WebApplication.CreateBuilder(args);
+
+// Configure URLs for container environments
+if (Environment.GetEnvironmentVariable("DOTNET_RUNNING_IN_CONTAINER") == "true" &&
+    Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT") == "Development")
+{
+    // In development with devcontainers, bind to all interfaces to allow host access
+    string httpPort = Environment.GetEnvironmentVariable("ASPNETCORE_HTTP_PORT") ?? "5138";
+
+    // For devcontainer simplicity, use HTTP only unless HTTPS specifically requested
+    if (Environment.GetEnvironmentVariable("ASPNETCORE_HTTPS_PORT") != null)
+    {
+        string httpsPort = Environment.GetEnvironmentVariable("ASPNETCORE_HTTPS_PORT") ?? "7124";
+        builder.WebHost.UseUrls($"http://0.0.0.0:{httpPort}", $"https://0.0.0.0:{httpsPort}");
+    }
+    else
+    {
+        builder.WebHost.UseUrls($"http://0.0.0.0:{httpPort}");
+    }
+}
 
 // Add environment variables configuration
 builder.Configuration.AddEnvironmentVariables();
@@ -22,6 +40,19 @@ builder.Configuration.AddEnvironmentVariables();
 builder.Logging.ClearProviders();
 builder.Logging.AddConsole();
 builder.Logging.AddDebug();
+
+// Add Application Insights logging for trace correlation
+string? applicationInsightsConnectionString = builder.Configuration.GetConnectionString("ApplicationInsights");
+if (!string.IsNullOrEmpty(applicationInsightsConnectionString))
+{
+    builder.Services.AddApplicationInsightsTelemetry(options =>
+    {
+        options.ConnectionString = applicationInsightsConnectionString;
+    });
+    builder.Logging.AddApplicationInsights(
+        configureTelemetryConfiguration: (config) => config.ConnectionString = applicationInsightsConnectionString,
+        configureApplicationInsightsLoggerOptions: (options) => { });
+}
 
 // Add authentication services
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
