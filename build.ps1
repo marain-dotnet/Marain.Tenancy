@@ -118,4 +118,4 @@ Write-Host "Using ZeroFailed module version: $ver"
 $PSModuleAutoloadingPreference = 'none'
 
 # Load the build configuration
-. $here/.zf/config.ps1
+. $here/.zf/build-config.ps1
