@@ -12,10 +12,6 @@ using Marain.Tenancy.Shared.Telemetry;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
-using OpenTelemetry;
-using OpenTelemetry.Exporter;
-using OpenTelemetry.Instrumentation.Http;
-using OpenTelemetry.Instrumentation.Runtime;
 using OpenTelemetry.Metrics;
 using OpenTelemetry.Resources;
 using OpenTelemetry.Trace;
@@ -58,7 +54,21 @@ public static class TelemetryExtensions
                        .AddSource(TelemetryConstants.ClientActivitySource)
                        .AddSource(TelemetryConstants.BusinessActivitySource)
                        .AddSource(TelemetryConstants.StorageActivitySource)
-                       .AddHttpClientInstrumentation();
+                       .AddHttpClientInstrumentation(options =>
+                       {
+                           // Filter out Application Insights dependency calls to prevent recursive logging
+                           options.FilterHttpRequestMessage = (httpRequestMessage) =>
+                           {
+                               string? requestUri = httpRequestMessage.RequestUri?.ToString();
+                               if (string.IsNullOrEmpty(requestUri))
+                               {
+                                   return true;
+                               }
+
+                               // Filter out calls to Application Insights ingestion endpoints
+                               return !IsApplicationInsightsEndpoint(requestUri, connectionString);
+                           };
+                       });
 
                 if (!string.IsNullOrEmpty(connectionString))
                 {
@@ -147,5 +157,46 @@ public static class TelemetryExtensions
         }
 
         return activity;
+    }
+
+    /// <summary>
+    /// Checks if the given URI is an Application Insights endpoint.
+    /// </summary>
+    /// <param name="requestUri">The request URI to check.</param>
+    /// <param name="connectionString">The Application Insights connection string.</param>
+    /// <returns>True if the URI is an Application Insights endpoint, false otherwise.</returns>
+    private static bool IsApplicationInsightsEndpoint(string requestUri, string? connectionString)
+    {
+        // Check for common Application Insights telemetry endpoints
+        if (requestUri.Contains("/v2/track", StringComparison.OrdinalIgnoreCase) ||
+            requestUri.Contains("/v2.1/track", StringComparison.OrdinalIgnoreCase))
+        {
+            return true;
+        }
+
+        // Check against the configured ingestion endpoint
+        if (!string.IsNullOrEmpty(connectionString))
+        {
+            string[] parts = connectionString.Split(';', StringSplitOptions.RemoveEmptyEntries);
+            foreach (string part in parts)
+            {
+                string trimmedPart = part.Trim();
+                if (trimmedPart.StartsWith("IngestionEndpoint=", StringComparison.OrdinalIgnoreCase))
+                {
+                    string endpoint = trimmedPart.Substring("IngestionEndpoint=".Length);
+                    if (Uri.TryCreate(endpoint, UriKind.Absolute, out Uri? uri) &&
+                        requestUri.Contains(uri.Host, StringComparison.OrdinalIgnoreCase))
+                    {
+                        return true;
+                    }
+                }
+            }
+        }
+
+        // Check against common Application Insights hostnames
+        return requestUri.Contains("dc.applicationinsights.azure.com", StringComparison.OrdinalIgnoreCase) ||
+               requestUri.Contains("dc.services.visualstudio.com", StringComparison.OrdinalIgnoreCase) ||
+               requestUri.Contains("rt.services.visualstudio.com", StringComparison.OrdinalIgnoreCase) ||
+               requestUri.Contains(".in.applicationinsights.azure.com", StringComparison.OrdinalIgnoreCase);
     }
 }

@@ -5,6 +5,7 @@
 using Corvus.Storage.Azure.BlobStorage;
 using Marain.Tenancy.Api.Extensions;
 using Marain.Tenancy.Api.Models;
+using Marain.Tenancy.Api.Telemetry;
 using Marain.Tenancy.Shared.Extensions;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.Identity.Web;
@@ -52,6 +53,9 @@ if (!string.IsNullOrEmpty(applicationInsightsConnectionString))
     builder.Logging.AddApplicationInsights(
         configureTelemetryConfiguration: (config) => config.ConnectionString = applicationInsightsConnectionString,
         configureApplicationInsightsLoggerOptions: (options) => { });
+
+    // Add telemetry processor to filter out Application Insights dependency calls
+    builder.Services.AddApplicationInsightsTelemetryProcessor<ApplicationInsightsDependencyFilter>();
 }
 
 // Add authentication services
