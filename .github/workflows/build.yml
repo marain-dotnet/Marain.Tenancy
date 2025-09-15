@@ -7,7 +7,8 @@ on:
     - '*'
   pull_request:
     branches:
-    - main
+      - main
+      - feature/dotnet8-reqnroll-hosting-rework
   workflow_dispatch:
     inputs:
       forcePublish:
