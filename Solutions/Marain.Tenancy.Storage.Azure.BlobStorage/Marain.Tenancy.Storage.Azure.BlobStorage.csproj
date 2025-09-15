@@ -17,11 +17,17 @@
 
   <ItemGroup>
     <PackageReference Include="Corvus.Storage.Azure.BlobStorage.Tenancy" Version="4.0.1" />
+    <!-- OpenTelemetry packages for storage layer instrumentation -->
+    <PackageReference Include="OpenTelemetry" Version="1.8.1" />
     <PackageReference Include="Endjin.RecommendedPractices.GitHub" Version="2.1.18">
       <PrivateAssets>all</PrivateAssets>
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
     </PackageReference>
     <PackageReference Include="Microsoft.Extensions.DependencyInjection.Abstractions" Version="[8.0.*,)" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Marain.Tenancy.Shared\Marain.Tenancy.Shared.csproj" />
   </ItemGroup>
 
 </Project>

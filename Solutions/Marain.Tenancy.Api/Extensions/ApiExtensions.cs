@@ -4,19 +4,17 @@
 
 namespace Marain.Tenancy.Api.Extensions;
 
-using System.Globalization;
 using System.Text.Json;
 using System.Text.Json.Serialization;
-using Corvus.Json;
 using Corvus.Json.Serialization;
 using FluentValidation;
 using Marain.Tenancy.Api.Endpoints;
 using Marain.Tenancy.Api.ErrorHandling;
-using Marain.Tenancy.Api.Models;
+using Marain.Tenancy.Api.Telemetry;
 using Marain.Tenancy.Api.Validation;
-using Microsoft.CodeAnalysis.CSharp.Syntax;
 using Microsoft.OpenApi.Models;
 using Microsoft.OpenApi.Writers;
+using OpenTelemetry.Trace;
 using Swashbuckle.AspNetCore.Swagger;
 
 /// <summary>
@@ -80,8 +78,34 @@ public static class ApiExtensions
         builder.Services.AddExceptionHandler<GlobalExceptionHandler>();
         builder.Services.AddProblemDetails();
 
+        // Register API telemetry service
+        builder.Services.AddSingleton<ApiTelemetryService>();
+
         // Note: ITenantStore should be registered by the hosting application
         // using AddTenantStoreOnAzureBlobStorage() or similar extension method
+        return builder;
+    }
+
+    /// <summary>
+    /// Adds API-specific OpenTelemetry instrumentation.
+    /// </summary>
+    /// <param name="builder">The web application builder.</param>
+    /// <returns>The web application builder for chaining.</returns>
+    public static WebApplicationBuilder AddApiTelemetry(this WebApplicationBuilder builder)
+    {
+        ArgumentNullException.ThrowIfNull(builder);
+
+        builder.Services.AddOpenTelemetry()
+            .WithTracing(tracing =>
+            {
+                tracing.AddAspNetCoreInstrumentation(options =>
+                {
+                    options.RecordException = true;
+                    options.Filter = httpContext =>
+                        !httpContext.Request.Path.StartsWithSegments("/health");
+                });
+            });
+
         return builder;
     }
 
