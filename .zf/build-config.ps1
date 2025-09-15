@@ -59,17 +59,13 @@ $ContainersToBuild = @(
         ContextDir = './_packages/Marain.Tenancy.Api'
         Arguments  = @{
             # Arguments with a scriptblock value are evaluated at runtime, rather than when the script is
-            # loaded. This means any variable overrides via 'BUILDVAR_' environment variables will be used.
+            # loaded. This means any runtime variable overrides will be available.
             Configuration = { $Configuration }
             BaseImage = { $Configuration -eq 'Debug' ? 'sdk' : 'aspnet' }
             SrcDir = '.'
         }
     }
 )
-$UseAzCliAuthForAzureArtifacts = $true
-$ContainerRegistryType = "acr"
-$ContainerRegistryFqdn = "endjin.azurecr.io"
-$AcrSubscription = "9a1d877d-6acd-40d3-92a1-ee057e8dcda4"
 $ContainerRegistryPublishPrefix = ""
 $ContainerImageVersionOverride = "dev"     # ensure a static tag for local builds (overridden on build server)
 
@@ -78,24 +74,6 @@ $MinimumBicepCliVersion = "0.37.4"
 
 
 # Customise the build process
-task installAzureFunctionsSDK {
-    
-    $existingVersion = ""
-    if ((Get-Command func -ErrorAction Ignore)) {
-        $existingVersion = exec { & func --version }
-    }
-
-    if (!$existingVersion -or $existingVersion -notlike "4.*") {
-        Write-Build White "Installing/updating Azure Functions Core Tools..."
-        if ($IsWindows) {
-            exec { & npm install -g azure-functions-core-tools@ --unsafe-perm true }
-        }
-        else {
-            Write-Build Yellow "NOTE: May require 'sudo' on Linux/MacOS"
-            exec { & sudo npm install -g azure-functions-core-tools@ --unsafe-perm true }
-        }
-    } 
-}
 
 task . FullBuild
 
@@ -116,7 +94,7 @@ task PublishContainerWrapper -After PublishCore PublishContainerImages
 # task PostVersion {}
 # task PreBuild {}
 # task PostBuild {}
-task PreTest Init,installAzureFunctionsSDK
+# task PreTest Init {}
 # task PostTest {}
 # task PreTestReport {}
 # task PostTestReport {}

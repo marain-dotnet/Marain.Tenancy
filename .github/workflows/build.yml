@@ -52,11 +52,15 @@ jobs:
       with:
         environmentVariablesYaml: |
           ZF_NUGET_PUBLISH_SOURCE: ${{ (startsWith(github.ref, 'refs/tags/') || github.event.inputs.forcePublicNugetDestination == 'true') && 'https://api.nuget.org/v3/index.json' || format('https://nuget.pkg.github.com/{0}/index.json', github.repository_owner) }}
+          BUILDVAR_ContainerRegistryType: ${{ vars.BUILD_CONTAINER_REGISTRY_TYPE }}
+          BUILDVAR_ContainerRegistryFqdn: ${{ vars.BUILD_CONTAINER_REGISTRY_FQDN }}
+          BUILDVAR_UseAcrTasks: true
         secretsYaml: |
           NUGET_API_KEY: "${{ startsWith(github.ref, 'refs/tags/') && secrets.NUGET_APIKEY || secrets.BUILD_PUBLISHER_PAT }}"
           RootBlobStorageConfiguration__ConnectionStringPlainText: "${{ secrets.TESTS_AZURESTORAGECONNECTIONSTRING }}"
           TenantCacheConfiguration__GetTenantResponseCacheControlHeaderValue: max-age=300
           TenantCloudBlobContainerFactoryOptions__AzureServicesAuthConnectionString: RunAs=Developer;DeveloperTool=AzureCli
+          BUILDVAR_AcrSubscription: ${{ secrets.BUILD_ACR_SUBSCRIPTION_ID }}
         secretsEncryptionKey: ${{ secrets.SHARED_WORKFLOW_KEY }}
 
   build:
