@@ -66,6 +66,8 @@ $ContainersToBuild = @(
         }
     }
 )
+$ContainerRegistryType = 'docker'
+$ContainerRegistryFqdn = "docker.io"
 $ContainerRegistryPublishPrefix = ""
 $ContainerImageVersionOverride = "dev"     # ensure a static tag for local builds (overridden on build server)
 
