@@ -41,8 +41,10 @@
     <RestoreLockedMode Condition="'$(ContinuousIntegrationBuild)' == 'true'">true</RestoreLockedMode>
   </PropertyGroup>
 
+
   <ItemGroup>
     <PackageReference Include="Corvus.Extensions.System.Text.Json" Version="1.0.7" />
+    <PackageReference Include="Corvus.Storage.Azure.BlobStorage.Tenancy" Version="4.0.1" />
     <PackageReference Include="Corvus.Testing.ReqnRoll.NUnit" Version="4.0.5" />
     <PackageReference Include="Endjin.RecommendedPractices.GitHub" Version="2.1.18">
       <PrivateAssets>all</PrivateAssets>
@@ -52,6 +54,8 @@
     <PackageReference Include="Microsoft.Extensions.Configuration" Version="[8.0.*,)" />
     <PackageReference Include="Microsoft.Extensions.Configuration.EnvironmentVariables" Version="[8.0.*,)" />
     <PackageReference Include="Microsoft.Extensions.Configuration.Json" Version="[8.0.*,)" />
+    <PackageReference Include="Moq" Version="4.20.72" />
+    <PackageReference Include="NSubstitute" Version="[5.1.*,)" />
     <PackageReference Include="Testcontainers.Azurite" Version="[3.6.*,)" />
   </ItemGroup>
 
@@ -59,6 +63,7 @@
     <ProjectReference Include="..\Marain.Tenancy.ClientTenantProvider\Marain.Tenancy.ClientTenantProvider.csproj" />
     <ProjectReference Include="..\Marain.Tenancy.Api\Marain.Tenancy.Api.csproj" />
     <ProjectReference Include="..\Marain.Tenancy.Client\Marain.Tenancy.Client.csproj" />
+    <ProjectReference Include="..\Marain.Tenancy.Storage.Azure.BlobStorage\Marain.Tenancy.Storage.Azure.BlobStorage.csproj" />
   </ItemGroup>
 
   <ItemGroup>

@@ -2,7 +2,7 @@
 // Copyright (c) Endjin Limited. All rights reserved.
 // </copyright>
 
-namespace Marain.Tenancy.Api.ErrorHandling;
+namespace Marain.Tenancy.Api.Extensions.ErrorHandling;
 
 using System.Security.Authentication;
 using Microsoft.AspNetCore.Diagnostics;

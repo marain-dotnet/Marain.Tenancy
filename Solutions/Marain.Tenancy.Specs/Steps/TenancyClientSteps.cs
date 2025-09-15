@@ -278,7 +278,7 @@ public class TenancyClientSteps : Steps
 
     [Then("the links in the GetTenants link collections of the children called {string} and {string} should each match {int} of the self links of the tenants called")]
     public void ThenTheLinksInTheGetTenantsLinkCollectionsOfTheChildrenCalledAndShouldEachMatchOfTheSelfLinksOfTheTenantsCalled(string result1Name, string result2Name, int expectedMatchingItemsPerResult, DataTable dataTable)
-   {
+    {
         ApiResponse<ChildTenantsResource> result1 = this.ScenarioContext.Get<ApiResponse<ChildTenantsResource>>(result1Name);
         Assert.AreEqual(expectedMatchingItemsPerResult, result1.Body?.Links?.GetTenant?.Count);
 

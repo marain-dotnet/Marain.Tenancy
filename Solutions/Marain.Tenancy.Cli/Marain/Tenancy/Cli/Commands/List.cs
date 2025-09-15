@@ -4,20 +4,27 @@
 
 namespace Marain.Tenancy.Cli.Commands;
 
+using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Text.Json.Nodes;
 using System.Threading.Tasks;
 using Corvus.Json.Serialization;
 using Corvus.Tenancy;
+using Marain.Tenancy.Shared.Extensions;
+using Marain.Tenancy.Shared.Telemetry;
+using Microsoft.Extensions.Logging;
 using Spectre.Console;
 using Spectre.Console.Cli;
 
 /// <summary>
 /// Lists children of the specified tenant.
 /// </summary>
-public class List(ITenantStore tenantStore, IJsonSerializerOptionsProvider serializationSettingsProvider) : AsyncCommand<ListSettings>
+public class List(ITenantStore tenantStore, IJsonSerializerOptionsProvider serializationSettingsProvider, ILogger<List> logger) : AsyncCommand<ListSettings>
 {
+    private static readonly ActivitySource ActivitySource = new(TelemetryConstants.CliActivitySource);
+
     /// <summary>
     /// Executes the command.
     /// </summary>
@@ -26,37 +33,85 @@ public class List(ITenantStore tenantStore, IJsonSerializerOptionsProvider seria
     /// <returns>A <see cref="Task"/> representing the asynchronous operation.</returns>
     public override async Task<int> ExecuteAsync(CommandContext context, ListSettings settings)
     {
+        using Activity? activity = ActivitySource.StartActivity("cli.list-tenants");
+
         string tenantId = string.IsNullOrEmpty(settings.TenantId)
             ? tenantStore.Root.Id
             : settings.TenantId;
 
-        string? continuationToken = null;
+        activity?.SetCommandOperationTags("list", tenantId);
+        activity?.SetTag("list.include_name", settings.Name);
+        activity?.SetTag("list.include_properties", settings.IncludeProperties?.Length > 0);
+        activity?.SetTag("list.properties_count", settings.IncludeProperties?.Length ?? 0);
 
-        List<string> childTenantIds = [];
+        var stopwatch = Stopwatch.StartNew();
 
-        do
+        try
         {
-            TenantCollectionResult children = await tenantStore.GetChildrenAsync(
+            logger.LogInformation("Listing child tenants for {TenantId}", tenantId);
+
+            string? continuationToken = null;
+            List<string> childTenantIds = [];
+            int totalPages = 0;
+
+            do
+            {
+                totalPages++;
+                TenantCollectionResult children = await tenantStore.GetChildrenAsync(
+                    tenantId,
+                    20,
+                    continuationToken).ConfigureAwait(false);
+
+                childTenantIds.AddRange(children.Tenants);
+                continuationToken = children.ContinuationToken;
+            }
+            while (!string.IsNullOrEmpty(continuationToken));
+
+            activity?.SetTag("result.total_children", childTenantIds.Count);
+            activity?.SetTag("result.pages_fetched", totalPages);
+
+            logger.LogInformation(
+                "Found {ChildCount} child tenants for {TenantId} across {PageCount} pages",
+                childTenantIds.Count,
                 tenantId,
-                20,
-                continuationToken).ConfigureAwait(false);
+                totalPages);
 
-            childTenantIds.AddRange(children.Tenants);
+            if (settings.Name || settings.IncludeProperties?.Length > 0)
+            {
+                await this.LoadAndOutputTenantDetailsAsync(childTenantIds, settings).ConfigureAwait(false);
+            }
+            else
+            {
+                OutputTenantIds(childTenantIds);
+            }
 
-            continuationToken = children.ContinuationToken;
+            stopwatch.Stop();
+            activity?.SetStatus(ActivityStatusCode.Ok);
+            activity?.SetTag("operation.duration_ms", stopwatch.ElapsedMilliseconds);
+
+            logger.LogInformation(
+                "Successfully listed {ChildCount} child tenants for {TenantId} in {Duration}ms",
+                childTenantIds.Count,
+                tenantId,
+                stopwatch.ElapsedMilliseconds);
+
+            return 0;
         }
-        while (!string.IsNullOrEmpty(continuationToken));
-
-        if (settings.Name || settings.IncludeProperties?.Length > 0)
+        catch (Exception ex)
         {
-            await this.LoadAndOutputTenantDetailsAsync(childTenantIds, settings).ConfigureAwait(false);
-        }
-        else
-        {
-            OutputTenantIds(childTenantIds);
-        }
+            stopwatch.Stop();
+            activity?.SetStatus(ActivityStatusCode.Error, ex.Message);
+            activity?.SetTag("operation.duration_ms", stopwatch.ElapsedMilliseconds);
 
-        return 0;
+            logger.LogError(
+                ex,
+                "Failed to list child tenants for {TenantId} after {Duration}ms",
+                tenantId,
+                stopwatch.ElapsedMilliseconds);
+
+            AnsiConsole.WriteException(ex);
+            return 1;
+        }
     }
 
     private static void OutputTenantIds(List<string> children)

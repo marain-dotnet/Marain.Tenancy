@@ -6,6 +6,8 @@ namespace Marain.Tenancy.Storage.Azure.BlobStorage;
 
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
+using System.Diagnostics.Metrics;
 using System.IO;
 using System.Linq;
 using System.Net;
@@ -27,6 +29,11 @@ using global::Azure.Storage.Blobs;
 using global::Azure.Storage.Blobs.Models;
 using global::Azure.Storage.Blobs.Specialized;
 
+using Marain.Tenancy.Shared.Extensions;
+using Marain.Tenancy.Shared.Telemetry;
+
+using Microsoft.Extensions.Logging;
+
 /// <summary>
 /// Tenant store implemented on Azure Blob Storage.
 /// </summary>
@@ -34,7 +41,8 @@ internal class AzureBlobStorageTenantStore(
     AzureBlobStorageTenantStoreConfiguration configuration,
     IBlobContainerSourceWithTenantLegacyTransition containerSource,
     IJsonSerializerOptionsProvider serializerOptionsProvider,
-    IPropertyBagFactory propertyBagFactory) : ITenantStore
+    IPropertyBagFactory propertyBagFactory,
+    ILogger<AzureBlobStorageTenantStore> logger) : ITenantStore
 {
     private const string TenancyContainerName = "corvustenancy";
     private const string TenancyV2ConfigKey = "StorageConfiguration__" + TenancyContainerName;
@@ -42,10 +50,27 @@ internal class AzureBlobStorageTenantStore(
     private const string LiveTenantsPrefix = "live/";
     private const string DeletedTenantsPrefix = "deleted/";
     private static readonly Encoding UTF8WithoutBom = new UTF8Encoding(false);
+
+    // Telemetry infrastructure
+    private static readonly ActivitySource ActivitySource = new(TelemetryConstants.StorageActivitySource);
+    private static readonly Meter Meter = new(TelemetryConstants.TenancyMeter);
+    private static readonly Counter<long> TenantOperationsCounter =
+        Meter.CreateCounter<long>("tenant.storage.operations.total", "operations", "Total storage operations");
+
+    private static readonly Histogram<double> TenantOperationDuration =
+        Meter.CreateHistogram<double>("tenant.storage.operation.duration", "ms", "Storage operation duration");
+
+    private static readonly Counter<long> StorageErrorsCounter =
+        Meter.CreateCounter<long>("tenant.storage.errors.total", "errors", "Total storage errors");
+
+    private static readonly Histogram<long> BlobSizeHistogram =
+        Meter.CreateHistogram<long>("tenant.storage.blob.size", "bytes", "Tenant blob sizes");
+
     private readonly IBlobContainerSourceWithTenantLegacyTransition containerSource = containerSource;
     private readonly IPropertyBagFactory propertyBagFactory = propertyBagFactory;
     private readonly JsonSerializerOptions jsonSerializerOptions = serializerOptionsProvider.Instance;
     private readonly bool propagateRootStorageConfigAsV2 = configuration.PropagateRootTenancyStorageConfigAsV2;
+    private readonly ILogger<AzureBlobStorageTenantStore> logger = logger;
     private Task? rootContainerExistsCheck;
 
     /// <summary>
@@ -60,214 +85,463 @@ internal class AzureBlobStorageTenantStore(
     /// <inheritdoc/>
     public async Task<ITenant> CreateWellKnownChildTenantAsync(string parentTenantId, Guid wellKnownChildTenantGuid, string name)
     {
-        (ITenant parentTenant, BlobContainerClient container) = await this.GetContainerAndTenantForChildTenantsOfAsync(parentTenantId).ConfigureAwait(false);
+        using Activity? activity = ActivitySource.StartActivity("storage.tenant.create");
+        activity?.SetStorageOperationTags(TelemetryConstants.OperationTypes.Create, parentTenantId, TenancyContainerName);
+        activity?.SetTag(TelemetryConstants.AttributeKeys.ChildTenantGuid, wellKnownChildTenantGuid.ToString());
+        activity?.SetTag(TelemetryConstants.AttributeKeys.TenantName, name);
 
-        // We need to copy blob storage settings for the Tenancy container definition from the parent to the new child
-        // to support the tenant blob store provider. We would expect this to be overridden by clients that wanted to
-        // establish their own settings.
-        bool configIsInV3 = true;
-        LegacyV2BlobStorageConfiguration? v2TenancyStorageConfiguration = null;
-        if (!parentTenant.Properties.TryGet(TenancyV3ConfigKey, out BlobContainerConfiguration tenancyStorageConfiguration))
-        {
-            configIsInV3 = false;
-            if (!parentTenant.Properties.TryGet(TenancyV2ConfigKey, out v2TenancyStorageConfiguration))
-            {
-                throw new InvalidOperationException($"No configuration found for ${TenancyV3ConfigKey} or ${TenancyV2ConfigKey}");
-            }
-        }
+        var stopwatch = System.Diagnostics.Stopwatch.StartNew();
 
-        IPropertyBag childProperties;
-        if (parentTenantId == this.Root.Id && this.propagateRootStorageConfigAsV2)
-        {
-            configIsInV3 = false;
-            v2TenancyStorageConfiguration = new LegacyV2BlobStorageConfiguration
-            {
-                Container = tenancyStorageConfiguration.Container,
-            };
-            if (tenancyStorageConfiguration.ConnectionStringPlainText != null)
-            {
-                v2TenancyStorageConfiguration.AccountName = tenancyStorageConfiguration.ConnectionStringPlainText;
-            }
-            else if (tenancyStorageConfiguration.AccountName != null)
-            {
-                v2TenancyStorageConfiguration.AccountName = tenancyStorageConfiguration.AccountName;
-                v2TenancyStorageConfiguration.KeyVaultName = tenancyStorageConfiguration.AccessKeyInKeyVault?.VaultName;
-                v2TenancyStorageConfiguration.AccountKeySecretName = tenancyStorageConfiguration.AccessKeyInKeyVault?.SecretName;
-            }
-        }
-
-        if (configIsInV3)
-        {
-            childProperties = this.propertyBagFactory.Create(values =>
-                values.Append(new KeyValuePair<string, object>(TenancyV3ConfigKey, tenancyStorageConfiguration)));
-        }
-        else
-        {
-            childProperties = this.propertyBagFactory.Create(values =>
-                values.Append(new KeyValuePair<string, object>(TenancyV2ConfigKey, v2TenancyStorageConfiguration!)));
-        }
-
-        var child = new Tenant(
-            parentTenantId.CreateChildId(wellKnownChildTenantGuid),
+        this.logger.LogInformation(
+            "Creating child tenant {ChildTenantGuid} with name {TenantName} under parent {ParentTenantId}",
+            wellKnownChildTenantGuid,
             name,
-            childProperties);
+            parentTenantId);
 
-        // TODO: this needs thinking through.
-        BlobContainerClient newTenantBlobContainer = await this.GetBlobContainer(child).ConfigureAwait(false);
-        await newTenantBlobContainer.CreateIfNotExistsAsync().ConfigureAwait(false);
-
-        // As we create the new blob, we need to ensure there isn't already a tenant with the same Id. We do this by
-        // providing an If-None-Match header passing a "*", which will cause a storage exception with a 409 status
-        // code if a blob with the same Id already exists.
-        BlockBlobClient blob = GetLiveTenantBlockBlobReference(child.Id, container);
-        var content = new MemoryStream();
-
-        // TODO: Hack: Figure out how this should be done properly. HvR 2025-06-11
-        using (var sw = new StreamWriter(content, UTF8WithoutBom, leaveOpen: true))
-        {
-            await JsonSerializer.SerializeAsync(sw.BaseStream, child, this.jsonSerializerOptions);
-        }
-
-        content.Position = 0;
         try
         {
-            Response<BlobContentInfo> response = await blob.UploadAsync(
-                    content,
-                    new BlobUploadOptions { Conditions = new BlobRequestConditions { IfNoneMatch = ETag.All } })
-                .ConfigureAwait(false);
-            child.ETag = response.Value.ETag.ToString("H");
-        }
-        catch (global::Azure.RequestFailedException x)
-            when (x.ErrorCode == "BlobAlreadyExists")
-        {
-            // This exception is thrown because there's already a tenant with the same Id. This should never happen when
-            // this method has been called from CreateChildTenantAsync as the Guid will have been generated and the
-            // chances of it matching one previously generated are miniscule. However, it could happen when calling this
-            // method directly with a wellKnownChildTenantGuid that's already in use. In this case, the fault is with
-            // the client code - creating tenants with well known Ids is something one would expect to happen under
-            // controlled conditions, so it's only likely that a conflict will occur when either the client code has made
-            // a mistake or someone is actively trying to cause problems.
-            throw new ArgumentException($"A child tenant of '{parentTenantId}' with a well known Guid of '{wellKnownChildTenantGuid}' already exists.", nameof(wellKnownChildTenantGuid));
-        }
+            (ITenant parentTenant, BlobContainerClient container) = await this.GetContainerAndTenantForChildTenantsOfAsync(parentTenantId).ConfigureAwait(false);
 
-        return child;
+            // We need to copy blob storage settings for the Tenancy container definition from the parent to the new child
+            // to support the tenant blob store provider. We would expect this to be overridden by clients that wanted to
+            // establish their own settings.
+            bool configIsInV3 = true;
+            LegacyV2BlobStorageConfiguration? v2TenancyStorageConfiguration = null;
+            if (!parentTenant.Properties.TryGet(TenancyV3ConfigKey, out BlobContainerConfiguration tenancyStorageConfiguration))
+            {
+                configIsInV3 = false;
+                if (!parentTenant.Properties.TryGet(TenancyV2ConfigKey, out v2TenancyStorageConfiguration))
+                {
+                    throw new InvalidOperationException($"No configuration found for ${TenancyV3ConfigKey} or ${TenancyV2ConfigKey}");
+                }
+            }
+
+            IPropertyBag childProperties;
+            if (parentTenantId == this.Root.Id && this.propagateRootStorageConfigAsV2)
+            {
+                configIsInV3 = false;
+                v2TenancyStorageConfiguration = new LegacyV2BlobStorageConfiguration
+                {
+                    Container = tenancyStorageConfiguration.Container,
+                };
+                if (tenancyStorageConfiguration.ConnectionStringPlainText != null)
+                {
+                    v2TenancyStorageConfiguration.AccountName = tenancyStorageConfiguration.ConnectionStringPlainText;
+                }
+                else if (tenancyStorageConfiguration.AccountName != null)
+                {
+                    v2TenancyStorageConfiguration.AccountName = tenancyStorageConfiguration.AccountName;
+                    v2TenancyStorageConfiguration.KeyVaultName = tenancyStorageConfiguration.AccessKeyInKeyVault?.VaultName;
+                    v2TenancyStorageConfiguration.AccountKeySecretName = tenancyStorageConfiguration.AccessKeyInKeyVault?.SecretName;
+                }
+            }
+
+            if (configIsInV3)
+            {
+                childProperties = this.propertyBagFactory.Create(values =>
+                    values.Append(new KeyValuePair<string, object>(TenancyV3ConfigKey, tenancyStorageConfiguration)));
+            }
+            else
+            {
+                childProperties = this.propertyBagFactory.Create(values =>
+                    values.Append(new KeyValuePair<string, object>(TenancyV2ConfigKey, v2TenancyStorageConfiguration!)));
+            }
+
+            var child = new Tenant(
+                parentTenantId.CreateChildId(wellKnownChildTenantGuid),
+                name,
+                childProperties);
+
+            // TODO: this needs thinking through.
+            BlobContainerClient newTenantBlobContainer = await this.GetBlobContainer(child).ConfigureAwait(false);
+            await newTenantBlobContainer.CreateIfNotExistsAsync().ConfigureAwait(false);
+
+            // As we create the new blob, we need to ensure there isn't already a tenant with the same Id. We do this by
+            // providing an If-None-Match header passing a "*", which will cause a storage exception with a 409 status
+            // code if a blob with the same Id already exists.
+            BlockBlobClient blob = GetLiveTenantBlockBlobReference(child.Id, container);
+            var content = new MemoryStream();
+
+            // TODO: Hack: Figure out how this should be done properly. HvR 2025-06-11
+            using (var sw = new StreamWriter(content, UTF8WithoutBom, leaveOpen: true))
+            {
+                await JsonSerializer.SerializeAsync(sw.BaseStream, child, this.jsonSerializerOptions);
+            }
+
+            content.Position = 0;
+            try
+            {
+                Response<BlobContentInfo> response = await blob.UploadAsync(
+                        content,
+                        new BlobUploadOptions { Conditions = new BlobRequestConditions { IfNoneMatch = ETag.All } })
+                    .ConfigureAwait(false);
+                child.ETag = response.Value.ETag.ToString("H");
+
+                // Record successful operation metrics
+                BlobSizeHistogram.Record(content.Length);
+                TenantOperationsCounter.Add(
+                    1,
+                    new KeyValuePair<string, object?>(TelemetryConstants.AttributeKeys.OperationType, TelemetryConstants.OperationTypes.Create),
+                    new KeyValuePair<string, object?>("status", "success"));
+                TenantOperationDuration.Record(stopwatch.Elapsed.TotalMilliseconds);
+
+                activity?.SetStatus(ActivityStatusCode.Ok);
+                this.logger.LogInformation(
+                    "Successfully created child tenant {TenantId} with name {TenantName}",
+                    child.Id,
+                    name);
+
+                return child;
+            }
+            catch (global::Azure.RequestFailedException x) when (x.ErrorCode == "BlobAlreadyExists")
+            {
+                activity?.SetStatus(ActivityStatusCode.Error, "Tenant already exists");
+                StorageErrorsCounter.Add(
+                    1,
+                    new KeyValuePair<string, object?>(TelemetryConstants.AttributeKeys.OperationType, TelemetryConstants.OperationTypes.Create),
+                    new KeyValuePair<string, object?>("error.type", "conflict"));
+                TenantOperationsCounter.Add(
+                    1,
+                    new KeyValuePair<string, object?>(TelemetryConstants.AttributeKeys.OperationType, TelemetryConstants.OperationTypes.Create),
+                    new KeyValuePair<string, object?>("status", "error"));
+
+                this.logger.LogError(
+                    "Failed to create child tenant {ChildTenantGuid} under parent {ParentTenantId}: tenant already exists",
+                    wellKnownChildTenantGuid,
+                    parentTenantId);
+
+                // This exception is thrown because there's already a tenant with the same Id. This should never happen when
+                // this method has been called from CreateChildTenantAsync as the Guid will have been generated and the
+                // chances of it matching one previously generated are miniscule. However, it could happen when calling this
+                // method directly with a wellKnownChildTenantGuid that's already in use. In this case, the fault is with
+                // the client code - creating tenants with well known Ids is something one would expect to happen under
+                // controlled conditions, so it's only likely that a conflict will occur when either the client code has made
+                // a mistake or someone is actively trying to cause problems.
+                throw new ArgumentException($"A child tenant of '{parentTenantId}' with a well known Guid of '{wellKnownChildTenantGuid}' already exists.", nameof(wellKnownChildTenantGuid));
+            }
+            catch (Exception ex)
+            {
+                activity?.SetStatus(ActivityStatusCode.Error, ex.Message);
+                StorageErrorsCounter.Add(
+                    1,
+                    new KeyValuePair<string, object?>(TelemetryConstants.AttributeKeys.OperationType, TelemetryConstants.OperationTypes.Create),
+                    new KeyValuePair<string, object?>("error.type", ex.GetType().Name));
+                TenantOperationsCounter.Add(
+                    1,
+                    new KeyValuePair<string, object?>(TelemetryConstants.AttributeKeys.OperationType, TelemetryConstants.OperationTypes.Create),
+                    new KeyValuePair<string, object?>("status", "error"));
+
+                this.logger.LogError(
+                    ex,
+                    "Failed to create child tenant {ChildTenantGuid} under parent {ParentTenantId}",
+                    wellKnownChildTenantGuid,
+                    parentTenantId);
+                throw;
+            }
+        }
+        catch (Exception ex)
+        {
+            activity?.SetStatus(ActivityStatusCode.Error, ex.Message);
+            StorageErrorsCounter.Add(
+                1,
+                new KeyValuePair<string, object?>(TelemetryConstants.AttributeKeys.OperationType, TelemetryConstants.OperationTypes.Create),
+                new KeyValuePair<string, object?>("error.type", ex.GetType().Name));
+            TenantOperationsCounter.Add(
+                1,
+                new KeyValuePair<string, object?>(TelemetryConstants.AttributeKeys.OperationType, TelemetryConstants.OperationTypes.Create),
+                new KeyValuePair<string, object?>("status", "error"));
+
+            this.logger.LogError(
+                ex,
+                "Failed to create child tenant {ChildTenantGuid} under parent {ParentTenantId}",
+                wellKnownChildTenantGuid,
+                parentTenantId);
+            throw;
+        }
     }
 
     /// <inheritdoc/>
     public async Task DeleteTenantAsync(string tenantId)
     {
-        string parentTenantId = TenantExtensions.GetRequiredParentId(tenantId);
-        (_, BlobContainerClient parentContainer) = await this.GetContainerAndTenantForChildTenantsOfAsync(parentTenantId).ConfigureAwait(false);
-        (_, BlobContainerClient tenantContainer) = await this.GetContainerAndTenantForChildTenantsOfAsync(tenantId).ConfigureAwait(false);
+        using Activity? activity = ActivitySource.StartActivity("storage.tenant.delete");
+        activity?.SetStorageOperationTags(TelemetryConstants.OperationTypes.Delete, tenantId, TenancyContainerName);
 
-        // Check it's not empty first.
-        AsyncPageable<BlobItem> pageable = tenantContainer.GetBlobsAsync(prefix: LiveTenantsPrefix);
-        IAsyncEnumerable<Page<BlobItem>> pages = pageable.AsPages(pageSizeHint: 1);
-        await using IAsyncEnumerator<Page<BlobItem>> page = pages.GetAsyncEnumerator();
+        var stopwatch = System.Diagnostics.Stopwatch.StartNew();
 
-        if (await page.MoveNextAsync() && page.Current.Values.Count > 0)
+        this.logger.LogInformation("Deleting tenant {TenantId}", tenantId);
+
+        try
         {
-            throw new ArgumentException($"Cannot delete tenant {tenantId} because it has children");
+            string parentTenantId = TenantExtensions.GetRequiredParentId(tenantId);
+            (_, BlobContainerClient parentContainer) = await this.GetContainerAndTenantForChildTenantsOfAsync(parentTenantId).ConfigureAwait(false);
+            (_, BlobContainerClient tenantContainer) = await this.GetContainerAndTenantForChildTenantsOfAsync(tenantId).ConfigureAwait(false);
+
+            // Check it's not empty first.
+            AsyncPageable<BlobItem> pageable = tenantContainer.GetBlobsAsync(prefix: LiveTenantsPrefix);
+            IAsyncEnumerable<Page<BlobItem>> pages = pageable.AsPages(pageSizeHint: 1);
+            await using IAsyncEnumerator<Page<BlobItem>> page = pages.GetAsyncEnumerator();
+
+            if (await page.MoveNextAsync() && page.Current.Values.Count > 0)
+            {
+                throw new ArgumentException($"Cannot delete tenant {tenantId} because it has children");
+            }
+
+            BlockBlobClient blob = GetLiveTenantBlockBlobReference(tenantId, parentContainer);
+            Response<BlobDownloadResult> response = await blob.DownloadContentAsync().ConfigureAwait(false);
+            using var blobContent = response.Value.Content.ToStream();
+            BlockBlobClient? deletedBlob = parentContainer.GetBlockBlobClient(DeletedTenantsPrefix + tenantId);
+            await deletedBlob.UploadAsync(blobContent).ConfigureAwait(false);
+            await blob.DeleteIfExistsAsync().ConfigureAwait(false);
+
+            await tenantContainer.DeleteAsync().ConfigureAwait(false);
+
+            // Record successful operation
+            TenantOperationsCounter.Add(
+                1,
+                new KeyValuePair<string, object?>(TelemetryConstants.AttributeKeys.OperationType, TelemetryConstants.OperationTypes.Delete),
+                new KeyValuePair<string, object?>("status", "success"));
+            TenantOperationDuration.Record(stopwatch.Elapsed.TotalMilliseconds);
+
+            activity?.SetStatus(ActivityStatusCode.Ok);
+            this.logger.LogInformation("Successfully deleted tenant {TenantId}", tenantId);
         }
+        catch (Exception ex)
+        {
+            activity?.SetStatus(ActivityStatusCode.Error, ex.Message);
+            StorageErrorsCounter.Add(
+                1,
+                new KeyValuePair<string, object?>(TelemetryConstants.AttributeKeys.OperationType, TelemetryConstants.OperationTypes.Delete),
+                new KeyValuePair<string, object?>("error.type", ex.GetType().Name));
+            TenantOperationsCounter.Add(
+                1,
+                new KeyValuePair<string, object?>(TelemetryConstants.AttributeKeys.OperationType, TelemetryConstants.OperationTypes.Delete),
+                new KeyValuePair<string, object?>("status", "error"));
 
-        BlockBlobClient blob = GetLiveTenantBlockBlobReference(tenantId, parentContainer);
-        Response<BlobDownloadResult> response = await blob.DownloadContentAsync().ConfigureAwait(false);
-        using var blobContent = response.Value.Content.ToStream();
-        BlockBlobClient? deletedBlob = parentContainer.GetBlockBlobClient(DeletedTenantsPrefix + tenantId);
-        await deletedBlob.UploadAsync(blobContent).ConfigureAwait(false);
-        await blob.DeleteIfExistsAsync().ConfigureAwait(false);
-
-        await tenantContainer.DeleteAsync().ConfigureAwait(false);
+            this.logger.LogError(ex, "Failed to delete tenant {TenantId}", tenantId);
+            throw;
+        }
     }
 
     /// <inheritdoc/>
     public async Task<TenantCollectionResult> GetChildrenAsync(string tenantId, int limit, string? continuationToken)
     {
-        (ITenant _, BlobContainerClient container) = await this.GetContainerAndTenantForChildTenantsOfAsync(tenantId).ConfigureAwait(false);
+        using Activity? activity = ActivitySource.StartActivity("storage.tenant.list-children");
+        activity?.SetStorageOperationTags(TelemetryConstants.OperationTypes.List, tenantId, TenancyContainerName);
 
-        string? blobContinuationToken = DecodeUrlEncodedContinuationToken(continuationToken);
+        var stopwatch = System.Diagnostics.Stopwatch.StartNew();
 
-        AsyncPageable<BlobItem> pageable = container.GetBlobsAsync(prefix: LiveTenantsPrefix);
-        IAsyncEnumerable<Page<BlobItem>> pages = pageable.AsPages(blobContinuationToken, limit);
+        this.logger.LogDebug("Getting children for tenant {TenantId}, limit: {Limit}", tenantId, limit);
 
-        await using IAsyncEnumerator<Page<BlobItem>> page = pages.GetAsyncEnumerator();
+        try
+        {
+            (ITenant _, BlobContainerClient container) = await this.GetContainerAndTenantForChildTenantsOfAsync(tenantId).ConfigureAwait(false);
 
-        Page<BlobItem>? p = await page.MoveNextAsync()
-            ? page.Current
-            : null;
+            string? blobContinuationToken = DecodeUrlEncodedContinuationToken(continuationToken);
 
-        IEnumerable<BlobItem> items = p?.Values ?? Enumerable.Empty<BlobItem>();
+            AsyncPageable<BlobItem> pageable = container.GetBlobsAsync(prefix: LiveTenantsPrefix);
+            IAsyncEnumerable<Page<BlobItem>> pages = pageable.AsPages(blobContinuationToken, limit);
 
-        return new TenantCollectionResult(items.Select(s => s.Name[LiveTenantsPrefix.Length..]).ToList(), GenerateContinuationToken(p?.ContinuationToken));
+            await using IAsyncEnumerator<Page<BlobItem>> page = pages.GetAsyncEnumerator();
+
+            Page<BlobItem>? p = await page.MoveNextAsync()
+                ? page.Current
+                : null;
+
+            IEnumerable<BlobItem> items = p?.Values ?? Enumerable.Empty<BlobItem>();
+            TenantCollectionResult result = new(items.Select(s => s.Name[LiveTenantsPrefix.Length..]).ToList(), GenerateContinuationToken(p?.ContinuationToken));
+
+            // Record successful operation
+            TenantOperationsCounter.Add(
+                1,
+                new KeyValuePair<string, object?>(TelemetryConstants.AttributeKeys.OperationType, TelemetryConstants.OperationTypes.List),
+                new KeyValuePair<string, object?>("status", "success"));
+            TenantOperationDuration.Record(stopwatch.Elapsed.TotalMilliseconds);
+            activity?.SetTag("result.count", result.Tenants.Count);
+            activity?.SetStatus(ActivityStatusCode.Ok);
+
+            this.logger.LogDebug("Successfully retrieved {Count} children for tenant {TenantId}", result.Tenants.Count, tenantId);
+            return result;
+        }
+        catch (Exception ex)
+        {
+            activity?.SetStatus(ActivityStatusCode.Error, ex.Message);
+            StorageErrorsCounter.Add(
+                1,
+                new KeyValuePair<string, object?>(TelemetryConstants.AttributeKeys.OperationType, TelemetryConstants.OperationTypes.List),
+                new KeyValuePair<string, object?>("error.type", ex.GetType().Name));
+            TenantOperationsCounter.Add(
+                1,
+                new KeyValuePair<string, object?>(TelemetryConstants.AttributeKeys.OperationType, TelemetryConstants.OperationTypes.List),
+                new KeyValuePair<string, object?>("status", "error"));
+
+            this.logger.LogError(ex, "Failed to get children for tenant {TenantId}", tenantId);
+            throw;
+        }
     }
 
     /// <inheritdoc/>
     public async Task<ITenant> GetTenantAsync(string tenantId, string? eTag = null)
     {
-        if (tenantId == RootTenant.RootTenantId)
+        using Activity? activity = ActivitySource.StartActivity("storage.tenant.get");
+        activity?.SetStorageOperationTags(TelemetryConstants.OperationTypes.Get, tenantId, TenancyContainerName);
+        if (!string.IsNullOrEmpty(eTag))
         {
-            (ITenant result, _) = await this.GetContainerAndTenantForChildTenantsOfAsync(tenantId)
-                .ConfigureAwait(false);
-            return result;
+            activity?.SetTag("etag", eTag);
         }
 
-        string parentTenantId;
+        var stopwatch = System.Diagnostics.Stopwatch.StartNew();
+
+        this.logger.LogDebug("Getting tenant {TenantId}, eTag: {ETag}", tenantId, eTag);
+
         try
         {
-            parentTenantId = TenantExtensions.GetRequiredParentId(tenantId);
-        }
-        catch (FormatException)
-        {
-            throw new TenantNotFoundException();
-        }
+            if (tenantId == RootTenant.RootTenantId)
+            {
+                (ITenant result, _) = await this.GetContainerAndTenantForChildTenantsOfAsync(tenantId)
+                    .ConfigureAwait(false);
 
-        (ITenant _, BlobContainerClient container) = await this.GetContainerAndTenantForChildTenantsOfAsync(parentTenantId).ConfigureAwait(false);
-        return await this.GetTenantFromContainerAsync(tenantId, container, eTag).ConfigureAwait(false);
+                // Record successful operation
+                TenantOperationsCounter.Add(
+                    1,
+                    new KeyValuePair<string, object?>(TelemetryConstants.AttributeKeys.OperationType, TelemetryConstants.OperationTypes.Get),
+                    new KeyValuePair<string, object?>("status", "success"));
+                TenantOperationDuration.Record(stopwatch.Elapsed.TotalMilliseconds);
+                activity?.SetStatus(ActivityStatusCode.Ok);
+                this.logger.LogDebug("Successfully retrieved root tenant");
+                return result;
+            }
+
+            string parentTenantId;
+            try
+            {
+                parentTenantId = TenantExtensions.GetRequiredParentId(tenantId);
+            }
+            catch (FormatException)
+            {
+                throw new TenantNotFoundException();
+            }
+
+            (ITenant _, BlobContainerClient container) = await this.GetContainerAndTenantForChildTenantsOfAsync(parentTenantId).ConfigureAwait(false);
+            ITenant tenant = await this.GetTenantFromContainerAsync(tenantId, container, eTag).ConfigureAwait(false);
+
+            // Record successful operation
+            TenantOperationsCounter.Add(
+                1,
+                new KeyValuePair<string, object?>(TelemetryConstants.AttributeKeys.OperationType, TelemetryConstants.OperationTypes.Get),
+                new KeyValuePair<string, object?>("status", "success"));
+            TenantOperationDuration.Record(stopwatch.Elapsed.TotalMilliseconds);
+            activity?.SetStatus(ActivityStatusCode.Ok);
+            this.logger.LogDebug("Successfully retrieved tenant {TenantId}", tenantId);
+            return tenant;
+        }
+        catch (Exception ex)
+        {
+            activity?.SetStatus(ActivityStatusCode.Error, ex.Message);
+            StorageErrorsCounter.Add(
+                1,
+                new KeyValuePair<string, object?>(TelemetryConstants.AttributeKeys.OperationType, TelemetryConstants.OperationTypes.Get),
+                new KeyValuePair<string, object?>("error.type", ex.GetType().Name));
+            TenantOperationsCounter.Add(
+                1,
+                new KeyValuePair<string, object?>(TelemetryConstants.AttributeKeys.OperationType, TelemetryConstants.OperationTypes.Get),
+                new KeyValuePair<string, object?>("status", "error"));
+
+            this.logger.LogError(ex, "Failed to get tenant {TenantId}", tenantId);
+            throw;
+        }
     }
 
     /// <inheritdoc/>
     public async Task<ITenant> UpdateTenantAsync(string tenantId, string? name = null, IEnumerable<KeyValuePair<string, object>>? propertiesToSetOrAdd = null, IEnumerable<string>? propertiesToRemove = null)
     {
-        string parentTenantId = TenantExtensions.GetRequiredParentId(tenantId);
-        (ITenant _, BlobContainerClient parentContainer) = await this.GetContainerAndTenantForChildTenantsOfAsync(parentTenantId).ConfigureAwait(false);
-        Tenant tenant = await this.GetTenantFromContainerAsync(tenantId, parentContainer, null).ConfigureAwait(false);
-        string currentTenantEtag = tenant.ETag ?? throw new InvalidOperationException("Existing tenant does not have ETag");
-
-        IPropertyBag updatedProperties = this.propertyBagFactory.CreateModified(
-            tenant.Properties,
-            propertiesToSetOrAdd,
-            propertiesToRemove);
-
-        var updatedTenant = new Tenant(
-            tenant.Id,
-            name ?? tenant.Name,
-            updatedProperties);
-
-        BlockBlobClient blob = GetLiveTenantBlockBlobReference(tenantId, parentContainer);
-        var content = new MemoryStream();
-        using (var sw = new StreamWriter(content, UTF8WithoutBom, leaveOpen: true))
+        using Activity? activity = ActivitySource.StartActivity("storage.tenant.update");
+        activity?.SetStorageOperationTags(TelemetryConstants.OperationTypes.Update, tenantId, TenancyContainerName);
+        if (!string.IsNullOrEmpty(name))
         {
-            await JsonSerializer.SerializeAsync(sw.BaseStream, updatedTenant, this.jsonSerializerOptions);
+            activity?.SetTag(TelemetryConstants.AttributeKeys.TenantName, name);
         }
 
-        content.Position = 0;
+        var stopwatch = System.Diagnostics.Stopwatch.StartNew();
+
+        this.logger.LogInformation("Updating tenant {TenantId}, name: {TenantName}", tenantId, name);
+
         try
         {
+            string parentTenantId = TenantExtensions.GetRequiredParentId(tenantId);
+            (ITenant _, BlobContainerClient parentContainer) = await this.GetContainerAndTenantForChildTenantsOfAsync(parentTenantId).ConfigureAwait(false);
+            Tenant tenant = await this.GetTenantFromContainerAsync(tenantId, parentContainer, null).ConfigureAwait(false);
+            string currentTenantEtag = tenant.ETag ?? throw new InvalidOperationException("Existing tenant does not have ETag");
+
+            IPropertyBag updatedProperties = this.propertyBagFactory.CreateModified(
+                tenant.Properties,
+                propertiesToSetOrAdd,
+                propertiesToRemove);
+
+            var updatedTenant = new Tenant(
+                tenant.Id,
+                name ?? tenant.Name,
+                updatedProperties);
+
+            BlockBlobClient blob = GetLiveTenantBlockBlobReference(tenantId, parentContainer);
+            var content = new MemoryStream();
+            using (var sw = new StreamWriter(content, UTF8WithoutBom, leaveOpen: true))
+            {
+                await JsonSerializer.SerializeAsync(sw.BaseStream, updatedTenant, this.jsonSerializerOptions);
+            }
+
+            content.Position = 0;
             Response<BlobContentInfo> response = await blob.UploadAsync(
                     content,
                     new BlobUploadOptions { Conditions = new BlobRequestConditions { IfMatch = new ETag(currentTenantEtag) } })
                 .ConfigureAwait(false);
             updatedTenant.ETag = response.Value.ETag.ToString("H");
+
+            // Record successful operation metrics
+            BlobSizeHistogram.Record(content.Length);
+            TenantOperationsCounter.Add(
+                1,
+                new KeyValuePair<string, object?>(TelemetryConstants.AttributeKeys.OperationType, TelemetryConstants.OperationTypes.Update),
+                new KeyValuePair<string, object?>("status", "success"));
+            TenantOperationDuration.Record(stopwatch.Elapsed.TotalMilliseconds);
+
+            activity?.SetStatus(ActivityStatusCode.Ok);
+            this.logger.LogInformation("Successfully updated tenant {TenantId}", tenantId);
+
+            return updatedTenant;
         }
-        catch (RequestFailedException x)
-            when (x.Status == (int)HttpStatusCode.PreconditionFailed)
+        catch (RequestFailedException x) when (x.Status == (int)HttpStatusCode.PreconditionFailed)
         {
+            activity?.SetStatus(ActivityStatusCode.Error, "Concurrent modifications detected");
+            StorageErrorsCounter.Add(
+                1,
+                new KeyValuePair<string, object?>(TelemetryConstants.AttributeKeys.OperationType, TelemetryConstants.OperationTypes.Update),
+                new KeyValuePair<string, object?>("error.type", "conflict"));
+            TenantOperationsCounter.Add(
+                1,
+                new KeyValuePair<string, object?>(TelemetryConstants.AttributeKeys.OperationType, TelemetryConstants.OperationTypes.Update),
+                new KeyValuePair<string, object?>("status", "error"));
+
+            this.logger.LogError("Failed to update tenant {TenantId}: concurrent modifications detected", tenantId);
+
             // This indicates that the blob changed between us reading it and applying the modification.
             // TODO: perform a retry instead of bailing.
             throw new InvalidOperationException("Concurrent modifications detected.");
         }
+        catch (Exception ex)
+        {
+            activity?.SetStatus(ActivityStatusCode.Error, ex.Message);
+            StorageErrorsCounter.Add(
+                1,
+                new KeyValuePair<string, object?>(TelemetryConstants.AttributeKeys.OperationType, TelemetryConstants.OperationTypes.Update),
+                new KeyValuePair<string, object?>("error.type", ex.GetType().Name));
+            TenantOperationsCounter.Add(
+                1,
+                new KeyValuePair<string, object?>(TelemetryConstants.AttributeKeys.OperationType, TelemetryConstants.OperationTypes.Update),
+                new KeyValuePair<string, object?>("status", "error"));
 
-        return updatedTenant;
+            this.logger.LogError(ex, "Failed to update tenant {TenantId}", tenantId);
+            throw;
+        }
     }
 
     private static RootTenant CreateRootTenant(IPropertyBagFactory propertyBagFactory, AzureBlobStorageTenantStoreConfiguration configuration)

@@ -21,6 +21,7 @@
     <PackageReference Include="Corvus.Extensions.Newtonsoft.Json" Version="3.0.2" />
     <!-- OpenTelemetry packages for business logic instrumentation -->
     <PackageReference Include="OpenTelemetry" Version="1.8.1" />
+    <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="[8.0.*,)" />
     <PackageReference Include="Endjin.RecommendedPractices.GitHub" Version="2.1.18">
       <PrivateAssets>all</PrivateAssets>
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>

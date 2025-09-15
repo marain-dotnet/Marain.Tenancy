@@ -9,8 +9,10 @@ using System.Threading.Tasks;
 using Azure.Identity;
 using Marain.Tenancy.Cli.Commands;
 using Marain.Tenancy.Shared.Extensions;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
+using Microsoft.Extensions.Logging;
 using Spectre.Console.Cli;
 
 /// <summary>
@@ -36,8 +38,24 @@ public static class Program
             services.AddCamelCaseConverterForEnums();
             services.AddJsonPropertyBagFactory();
 
-            // Add OpenTelemetry and telemetry for CLI
-            services.AddMarainTelemetry(ctx.Configuration);
+            // Add OpenTelemetry and telemetry for CLI with environment-specific configuration
+            services.AddMarainTelemetry(ctx.Configuration, ctx.HostingEnvironment);
+
+            // Configure structured logging for CLI commands
+            services.AddLogging(logging =>
+            {
+                logging.ClearProviders();
+                logging.AddConsole();
+
+                // Add Application Insights logging if connection string is available
+                string? applicationInsightsConnectionString = ctx.Configuration.GetConnectionString("ApplicationInsights");
+                if (!string.IsNullOrEmpty(applicationInsightsConnectionString))
+                {
+                    logging.AddApplicationInsights(
+                        configureTelemetryConfiguration: (config) => config.ConnectionString = applicationInsightsConnectionString,
+                        configureApplicationInsightsLoggerOptions: (options) => { });
+                }
+            });
 
             string tenancyServiceBaseUri = ctx.Configuration["TenancyClient:TenancyServiceBaseUri"]
                 ?? throw new InvalidOperationException("TenancyClient:TenancyServiceBaseUri configuration is required");

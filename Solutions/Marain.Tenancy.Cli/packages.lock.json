@@ -67,6 +67,16 @@
           "Microsoft.Extensions.Options": "8.0.2"
         }
       },
+      "Microsoft.Extensions.Logging.ApplicationInsights": {
+        "type": "Direct",
+        "requested": "[2.22.0, )",
+        "resolved": "2.22.0",
+        "contentHash": "5OmXub+9MyX8FbqgO+hBJRHk1iJ+UZUU20oIU3wo+RbmH6Jtsja79rriHLlzlrkMzWbpCkCzF6f4Yb6iGbsDag==",
+        "dependencies": {
+          "Microsoft.ApplicationInsights": "2.22.0",
+          "Microsoft.Extensions.Logging": "2.1.1"
+        }
+      },
       "OpenTelemetry": {
         "type": "Direct",
         "requested": "[1.8.1, )",
@@ -272,6 +282,14 @@
         "contentHash": "AAD5aVVKTdFYsMpdHft4Q4rPdLaBt/IG4K2ozmB0qkotXpIWBhNUDtguBZCkYvTt0o2UXS5fQDP3os86F03lpw==",
         "dependencies": {
           "Microsoft.Build.Tasks.Git": "1.1.1"
+        }
+      },
+      "Microsoft.ApplicationInsights": {
+        "type": "Transitive",
+        "resolved": "2.22.0",
+        "contentHash": "3AOM9bZtku7RQwHyMEY3tQMrHIgjcfRDa6YQpd/QG2LDGvMydSlL9Di+8LLMt7J2RDdfJ7/2jdYv6yHcMJAnNw==",
+        "dependencies": {
+          "System.Diagnostics.DiagnosticSource": "5.0.0"
         }
       },
       "Microsoft.AspNet.WebApi.Client": {
@@ -1830,6 +1848,7 @@
           "Marain.Tenancy.Client": "[1.0.0, )",
           "Marain.Tenancy.Shared": "[1.0.0, )",
           "Microsoft.AspNetCore.WebUtilities": "[8.0.14, )",
+          "Microsoft.Extensions.Logging.Abstractions": "[8.0.*, )",
           "OpenTelemetry": "[1.8.1, )"
         }
       },
