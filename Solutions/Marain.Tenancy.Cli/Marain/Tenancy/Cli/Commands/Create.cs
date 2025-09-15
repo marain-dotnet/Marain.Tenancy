@@ -23,8 +23,6 @@ public class Create(ITenantStore tenantStore) : AsyncCommand<CreateSettings>
     /// <returns>A <see cref="Task"/> representing the asynchronous operation.</returns>
     public override async Task<int> ExecuteAsync(CommandContext context, CreateSettings settings)
     {
-        using Activity? activity = ActivitySource.StartActivity("cli.create-tenant");
-
         string tenantId = string.IsNullOrEmpty(settings.TenantId)
             ? tenantStore.Root.Id
             : settings.TenantId;
