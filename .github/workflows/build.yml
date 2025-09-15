@@ -87,10 +87,10 @@ jobs:
     secrets:
       compilePhaseAzureCredentials: ${{ secrets.AZURE_READER_CREDENTIALS }}
       testPhaseAzureCredentials: ${{ secrets.TESTS_KV_READER_CREDENTIALS }}
-      packagePhaseAzureCredentials: ${{ secrets.AZURE_PUBLISH_CREDENTIALS }}
-      # publishPhaseAzureCredentials: ${{ secrets.AZURE_PUBLISH_CREDENTIALS }}
+      packagePhaseAzureCredentials: ${{ secrets.AZURE_PUBLISHER_CREDENTIALS }}
+      # publishPhaseAzureCredentials: ${{ secrets.AZURE_PUBLISHER_CREDENTIALS }}
       # compilePhaseSecrets: ${{ needs.prepareConfig.outputs.RESOLVED_SECRETS }}
       testPhaseSecrets: ${{ needs.prepareConfig.outputs.RESOLVED_SECRETS }}
-      # packagePhaseSecrets: ${{ needs.prepareConfig.outputs.RESOLVED_SECRETS }}
+      packagePhaseSecrets: ${{ needs.prepareConfig.outputs.RESOLVED_SECRETS }}
       publishPhaseSecrets: ${{ needs.prepareConfig.outputs.RESOLVED_SECRETS }}
       secretsEncryptionKey: ${{ secrets.SHARED_WORKFLOW_KEY }}
