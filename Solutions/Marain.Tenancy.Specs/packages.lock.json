@@ -99,15 +99,6 @@
           "Castle.Core": "5.1.1"
         }
       },
-      "NSubstitute": {
-        "type": "Direct",
-        "requested": "[5.1.*, )",
-        "resolved": "5.1.0",
-        "contentHash": "ZCqOP3Kpp2ea7QcLyjMU4wzE+0wmrMN35PQMsdPOHYc2IrvjmusG9hICOiqiOTPKN0gJon6wyCn6ZuGHdNs9hQ==",
-        "dependencies": {
-          "Castle.Core": "5.1.1"
-        }
-      },
       "Roslynator.Analyzers": {
         "type": "Direct",
         "requested": "[4.13.1, )",
@@ -1560,6 +1551,19 @@
         "resolved": "1.4.2",
         "contentHash": "yjj+3zgz8zgXpiiC3ZdF/iyTBbz2fFvMxZFEBPUcwZjIvXOf37Ylm+K58hqMfIBt5JgU/Z2uoUS67JmTLe973A=="
       },
+      "Spectre.Console": {
+        "type": "Transitive",
+        "resolved": "0.49.1",
+        "contentHash": "USV+pdu49OJ3nCjxNuw1K9Zw/c1HCBbwbjXZp0EOn6wM99tFdAtN34KEBZUMyRuJuXlUMDqhd8Yq9obW2MslYA=="
+      },
+      "Spectre.Console.Cli": {
+        "type": "Transitive",
+        "resolved": "0.49.1",
+        "contentHash": "wBZzyEbKqfPFFUPhV5E7/k4Kwy4UDO42IVzvzk0C4Pkjjw+NSd0EOBkIutYET4vJY4X81pD9ooQO9gfBGXj4+g==",
+        "dependencies": {
+          "Spectre.Console": "0.49.1"
+        }
+      },
       "SSH.NET": {
         "type": "Transitive",
         "resolved": "2023.0.0",
@@ -1875,6 +1879,22 @@
           "Microsoft.Extensions.DependencyInjection.Abstractions": "[8.0.*, )",
           "Microsoft.Extensions.Logging.Abstractions": "[8.0.*, )",
           "OpenTelemetry": "[1.8.1, )"
+        }
+      },
+      "tenancy": {
+        "type": "Project",
+        "dependencies": {
+          "Azure.Monitor.OpenTelemetry.Exporter": "[1.2.0, )",
+          "Corvus.Identity.Azure": "[4.0.2, )",
+          "Marain.Tenancy.ClientTenantProvider": "[1.0.0, )",
+          "Marain.Tenancy.Shared": "[1.0.0, )",
+          "Microsoft.Extensions.Hosting": "[8.0.*, )",
+          "Microsoft.Extensions.Logging.ApplicationInsights": "[2.22.0, )",
+          "OpenTelemetry": "[1.8.1, )",
+          "OpenTelemetry.Extensions.Hosting": "[1.8.1, )",
+          "OpenTelemetry.Instrumentation.Http": "[1.8.1, )",
+          "Spectre.Console": "[0.49.1, )",
+          "Spectre.Console.Cli": "[0.49.1, )"
         }
       }
     }

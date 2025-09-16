@@ -9,6 +9,7 @@ using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Diagnostics;
 using System.Net;
+using System.Threading;
 using System.Threading.Tasks;
 using Corvus.Json;
 using Corvus.Tenancy;
@@ -21,8 +22,7 @@ using Marain.Tenancy.Mappers;
 using Marain.Tenancy.Shared.Telemetry;
 using Marain.Tenancy.Shared.Testing;
 using Microsoft.Extensions.Logging.Abstractions;
-using NSubstitute;
-using NSubstitute.ExceptionExtensions;
+using Moq;
 using NUnit.Framework;
 
 /// <summary>
@@ -36,9 +36,9 @@ public class BusinessLogicTelemetryTests
     private TelemetryTestScope? telemetryScope;
     private ClientTenantProvider? tenantProvider;
     private ClientTenantStore? tenantStore;
-    private ITenancyClient mockApiClient = null!;
-    private ITenantMapper mockTenantMapper = null!;
-    private IPropertyBagFactory mockPropertyBagFactory = null!;
+    private Mock<ITenancyClient> mockApiClient = null!;
+    private Mock<ITenantMapper> mockTenantMapper = null!;
+    private Mock<IPropertyBagFactory> mockPropertyBagFactory = null!;
     private RootTenant rootTenant = null!;
 
     /// <summary>
@@ -50,25 +50,25 @@ public class BusinessLogicTelemetryTests
         this.telemetryScope = TelemetryTestHelpers.CreateTelemetryTestScope();
 
         // Create mock dependencies
-        this.mockApiClient = Substitute.For<ITenancyClient>();
-        this.mockTenantMapper = Substitute.For<ITenantMapper>();
-        this.mockPropertyBagFactory = Substitute.For<IPropertyBagFactory>();
+        this.mockApiClient = new();
+        this.mockTenantMapper = new();
+        this.mockPropertyBagFactory = new();
 
         // Create root tenant
-        this.rootTenant = new RootTenant(this.mockPropertyBagFactory);
+        this.rootTenant = new RootTenant(this.mockPropertyBagFactory.Object);
 
         // Create systems under test with telemetry
         this.tenantProvider = new ClientTenantProvider(
             this.rootTenant,
-            this.mockApiClient,
-            this.mockTenantMapper,
+            this.mockApiClient.Object,
+            this.mockTenantMapper.Object,
             NullLogger<ClientTenantProvider>.Instance);
 
         this.tenantStore = new ClientTenantStore(
             this.rootTenant,
-            this.mockApiClient,
-            this.mockTenantMapper,
-            this.mockPropertyBagFactory,
+            this.mockApiClient.Object,
+            this.mockTenantMapper.Object,
+            this.mockPropertyBagFactory.Object,
             NullLogger<ClientTenantStore>.Instance);
     }
 
@@ -137,11 +137,11 @@ public class BusinessLogicTelemetryTests
             new Dictionary<string, string?> { ["etag"] = eTag }.ToImmutableDictionary(),
             new TenantResource { Id = tenantId, Name = "Test Tenant" });
 
-        ITenant mockTenant = Substitute.For<ITenant>();
-        mockTenant.Id.Returns(tenantId);
+        Mock<ITenant> mockTenant = new();
+        mockTenant.SetupGet(x => x.Id).Returns(tenantId);
 
-        this.mockApiClient.GetTenantAsync(tenantId, eTag).Returns(Task.FromResult(mockResponse));
-        this.mockTenantMapper.MapTenant(mockResponse.Body, eTag).Returns(mockTenant);
+        this.mockApiClient.Setup(x => x.GetTenantAsync(tenantId, eTag, It.IsAny<CancellationToken>())).Returns(Task.FromResult(mockResponse));
+        this.mockTenantMapper.Setup(x => x.MapTenant(mockResponse.Body, eTag)).Returns(mockTenant.Object);
 
         // Act
         ITenant result = await this.tenantProvider!.GetTenantAsync(tenantId, eTag);
@@ -184,8 +184,8 @@ public class BusinessLogicTelemetryTests
         // Arrange
         const string tenantId = "nonexistent-tenant-123";
 
-        this.mockApiClient.GetTenantAsync(tenantId, null)
-            .ThrowsForAnyArgs(new MarainApiException("Tenant not found") { StatusCode = HttpStatusCode.NotFound });
+        this.mockApiClient.Setup(x => x.GetTenantAsync(It.IsAny<string>(), It.IsAny<string?>(), It.IsAny<CancellationToken>()))
+            .Throws(new MarainApiException("Tenant not found") { StatusCode = HttpStatusCode.NotFound });
 
         // Act & Assert
         Assert.ThrowsAsync<TenantNotFoundException>(
@@ -241,12 +241,12 @@ public class BusinessLogicTelemetryTests
             new Dictionary<string, string?> { ["etag"] = "new-etag" }.ToImmutableDictionary(),
             new TenantResource { Id = newTenantId, Name = tenantName });
 
-        ITenant mockTenant = Substitute.For<ITenant>();
-        mockTenant.Id.Returns(newTenantId);
+        Mock<ITenant> mockTenant = new();
+        mockTenant.SetupGet(x => x.Id).Returns(newTenantId);
 
-        this.mockApiClient.CreateChildTenantAsync(parentTenantId, tenantName, Arg.Any<string>())
+        this.mockApiClient.Setup(x => x.CreateChildTenantAsync(parentTenantId, tenantName, It.IsAny<string>(), It.IsAny<CancellationToken>()))
             .Returns(Task.FromResult(mockResponse));
-        this.mockTenantMapper.MapTenant(mockResponse.Body, "new-etag").Returns(mockTenant);
+        this.mockTenantMapper.Setup(x => x.MapTenant(mockResponse.Body, "new-etag")).Returns(mockTenant.Object);
 
         // Act
         ITenant result = await this.tenantStore!.CreateChildTenantAsync(parentTenantId, tenantName);
@@ -290,8 +290,8 @@ public class BusinessLogicTelemetryTests
         const string parentTenantId = "parent-tenant-456";
         const string tenantName = "Conflicting Tenant";
 
-        this.mockApiClient.CreateChildTenantAsync(parentTenantId, tenantName, Arg.Any<string>())
-            .ThrowsForAnyArgs(new MarainApiException("Tenant already exists") { StatusCode = HttpStatusCode.Conflict });
+        this.mockApiClient.Setup(x => x.CreateChildTenantAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<CancellationToken>()))
+            .Throws(new MarainApiException("Tenant already exists") { StatusCode = HttpStatusCode.Conflict });
 
         // Act & Assert
         Assert.ThrowsAsync<TenantConflictException>(
