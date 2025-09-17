@@ -19,7 +19,10 @@ using Spectre.Console.Cli;
 /// </summary>
 public class Create(ITenantStore tenantStore, ILogger<Create> logger) : AsyncCommand<CreateSettings>
 {
-    private static readonly ActivitySource ActivitySource = new(TelemetryConstants.CliActivitySource);
+    /// <summary>
+    /// Gets the <see cref="ActivitySource" /> for the command.
+    /// </summary>
+    public static ActivitySource ActivitySource { get; } = new(TelemetryConstants.CliActivitySource);
 
     /// <summary>
     /// Executes the command.

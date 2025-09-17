@@ -23,7 +23,10 @@ using Spectre.Console.Cli;
 /// </summary>
 public class List(ITenantStore tenantStore, IJsonSerializerOptionsProvider serializationSettingsProvider, ILogger<List> logger) : AsyncCommand<ListSettings>
 {
-    private static readonly ActivitySource ActivitySource = new(TelemetryConstants.CliActivitySource);
+    /// <summary>
+    /// Gets the <see cref="ActivitySource" /> for the command.
+    /// </summary>
+    public static ActivitySource ActivitySource { get; } = new(TelemetryConstants.CliActivitySource);
 
     /// <summary>
     /// Executes the command.

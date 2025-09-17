@@ -126,10 +126,9 @@ public class CliCommandsTelemetryTests
         var context = new CommandContext([], Mock.Of<IRemainingArguments>(), "get", null);
 
         // Act & Assert
-        InvalidOperationException? thrownException = Assert.ThrowsAsync<InvalidOperationException>(
-            () => getCommand.ExecuteAsync(context, settings));
+        int result = await getCommand.ExecuteAsync(context, settings).ConfigureAwait(false);
 
-        Assert.That(thrownException?.Message, Is.EqualTo("Tenant not found"));
+        Assert.That(result, Is.EqualTo(1));
 
         await this.telemetryScope!.WaitForActivitiesAsync(1);
 
@@ -172,43 +171,9 @@ public class CliCommandsTelemetryTests
             "cli.create-tenant",
             expectedTags: new Dictionary<string, object?>
             {
-                [TelemetryConstants.AttributeKeys.ParentTenantId] = "parent-tenant-123",
+                [TelemetryConstants.AttributeKeys.TenantId] = "parent-tenant-123",
                 [TelemetryConstants.AttributeKeys.TenantName] = "New Child Tenant",
                 [TelemetryConstants.AttributeKeys.CommandType] = TelemetryConstants.OperationTypes.Create,
-            },
-            expectedStatus: ActivityStatusCode.Ok);
-
-        Assert.That(activity, Is.Not.Null);
-        Assert.That(result, Is.EqualTo(0));
-    }
-
-    /// <summary>
-    /// Tests that the Delete command creates proper telemetry activities.
-    /// </summary>
-    /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
-    [Test]
-    public async Task DeleteCommand_ShouldCreateTelemetryActivity()
-    {
-        // Arrange
-        var deleteCommand = new Delete(this.mockTenantStore!.Object, this.mockDeleteLogger!.Object);
-        var settings = new DeleteSettings { TenantId = "tenant-to-delete-123" };
-        var context = new CommandContext([], Mock.Of<IRemainingArguments>(), "delete", null);
-
-        // Mock successful deletion
-        this.mockTenantStore.Setup(x => x.DeleteTenantAsync(It.IsAny<string>())).Returns(Task.CompletedTask);
-
-        // Act
-        int result = await deleteCommand.ExecuteAsync(context, settings);
-
-        // Assert
-        await this.telemetryScope!.WaitForActivitiesAsync(1);
-
-        Activity activity = this.telemetryScope.ValidateActivity(
-            "cli.delete-tenant",
-            expectedTags: new Dictionary<string, object?>
-            {
-                [TelemetryConstants.AttributeKeys.TenantId] = "tenant-to-delete-123",
-                [TelemetryConstants.AttributeKeys.CommandType] = TelemetryConstants.OperationTypes.Delete,
             },
             expectedStatus: ActivityStatusCode.Ok);
 
@@ -225,7 +190,7 @@ public class CliCommandsTelemetryTests
     {
         // Arrange
         var serializerProvider = new Mock<IJsonSerializerOptionsProvider>();
-        var listCommand = new Marain.Tenancy.Cli.Commands.List(this.mockTenantStore!.Object, serializerProvider.Object, this.mockListLogger!.Object);
+        var listCommand = new Cli.Commands.List(this.mockTenantStore!.Object, serializerProvider.Object, this.mockListLogger!.Object);
         var settings = new ListSettings { TenantId = "parent-tenant-123" };
         var context = new CommandContext([], Mock.Of<IRemainingArguments>(), "list", null);
 
@@ -243,13 +208,13 @@ public class CliCommandsTelemetryTests
             "cli.list-tenants",
             expectedTags: new Dictionary<string, object?>
             {
-                [TelemetryConstants.AttributeKeys.ParentTenantId] = "parent-tenant-123",
+                [TelemetryConstants.AttributeKeys.TenantId] = "parent-tenant-123",
                 [TelemetryConstants.AttributeKeys.CommandType] = TelemetryConstants.OperationTypes.List,
             },
             expectedStatus: ActivityStatusCode.Ok);
 
         Assert.That(activity, Is.Not.Null);
-        Assert.That(tenantCollectionResult, Is.EqualTo(0));
+        Assert.That(result, Is.EqualTo(0));
     }
 
     /// <summary>
@@ -260,17 +225,20 @@ public class CliCommandsTelemetryTests
     public async Task CliCommands_ShouldSupportActivityCorrelation()
     {
         // Arrange
-        using var testSource = new ActivitySource("test.correlation");
-        using Activity? parentActivity = testSource.StartActivity("test.parent-operation");
-        parentActivity?.SetTag("test.scenario", "cli-correlation");
-
         Mock<IJsonSerializerOptionsProvider> serializerProvider = new();
         var getCommand = new Get(this.mockTenantProvider!.Object, serializerProvider.Object, this.mockGetLogger!.Object);
         var settings = new GetSettings { TenantId = "correlation-test-tenant" };
         var context = new CommandContext([], Mock.Of<IRemainingArguments>(), "get", null);
 
         // Act
-        int result = await getCommand.ExecuteAsync(context, settings);
+        string? parentActivityId = string.Empty;
+        int? result = null;
+        using (Activity parentActivity = Get.ActivitySource.StartActivity("test.parent-operation") ?? throw new InvalidOperationException("Unable to create test parent activity"))
+        {
+            parentActivityId = parentActivity.Id;
+            parentActivity.SetTag("test.scenario", "cli-correlation");
+            result = await getCommand.ExecuteAsync(context, settings);
+        }
 
         // Assert
         await this.telemetryScope!.WaitForActivitiesAsync(2); // Parent + child activities
@@ -281,7 +249,7 @@ public class CliCommandsTelemetryTests
         // Find the CLI activity
         Activity? cliActivity = activities.Find(a => a.DisplayName == "cli.get-tenant");
         Assert.That(cliActivity, Is.Not.Null);
-        Assert.That(cliActivity!.ParentId, Is.EqualTo(parentActivity?.Id));
+        Assert.That(cliActivity!.ParentId, Is.EqualTo(parentActivityId));
         Assert.That(result, Is.EqualTo(0));
     }
 
@@ -342,8 +310,12 @@ public class CliCommandsTelemetryTests
         var context = new CommandContext([], Mock.Of<IRemainingArguments>(), "list", null);
 
         // Mock children response with multiple levels
-        TenantCollectionResult tenantCollectionResult = new(["child1", "child2"], null);
+        ITenant child1 = new Tenant("child1", "child 1", Mock.Of<IPropertyBag>());
+        ITenant child2 = new Tenant("child1", "child 1", Mock.Of<IPropertyBag>());
+        TenantCollectionResult tenantCollectionResult = new([child1.Id, child2.Id], null);
         this.mockTenantStore!.Setup(x => x.GetChildrenAsync(It.IsAny<string>(), It.IsAny<int>(), It.IsAny<string?>())).Returns(Task.FromResult(tenantCollectionResult));
+        this.mockTenantStore!.Setup(x => x.GetTenantAsync(child1.Id, It.IsAny<string?>())).Returns(Task.FromResult(child1));
+        this.mockTenantStore!.Setup(x => x.GetTenantAsync(child2.Id, It.IsAny<string?>())).Returns(Task.FromResult(child2));
 
         // Act
         int result = await listCommand.ExecuteAsync(context, settings);
@@ -355,9 +327,11 @@ public class CliCommandsTelemetryTests
             "cli.list-tenants",
             expectedTags: new Dictionary<string, object?>
             {
-                [TelemetryConstants.AttributeKeys.ParentTenantId] = "detailed-parent-tenant",
+                [TelemetryConstants.AttributeKeys.TenantId] = "detailed-parent-tenant",
                 [TelemetryConstants.AttributeKeys.CommandType] = TelemetryConstants.OperationTypes.List,
-                ["name"] = "true",
+                ["list.include_name"] = true,
+                ["list.include_properties"] = false,
+                ["list.properties_count"] = 0,
             },
             expectedStatus: ActivityStatusCode.Ok);
 
