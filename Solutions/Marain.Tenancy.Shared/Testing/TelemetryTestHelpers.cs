@@ -29,7 +29,8 @@ public static class TelemetryTestHelpers
 
         return new ActivityListener
         {
-            ShouldListenTo = source => source.Name.StartsWith("Marain.Tenancy", StringComparison.Ordinal),
+            ShouldListenTo = source => source.Name.StartsWith("Marain.Tenancy", StringComparison.Ordinal) ||
+                                      source.Name.StartsWith("test.", StringComparison.Ordinal),
             Sample = (ref ActivityCreationOptions<ActivityContext> options) => ActivitySamplingResult.AllData,
             ActivityStarted = activity => { /* Activity started - no action needed for testing */ },
             ActivityStopped = activity => capturedActivities.Add(activity),

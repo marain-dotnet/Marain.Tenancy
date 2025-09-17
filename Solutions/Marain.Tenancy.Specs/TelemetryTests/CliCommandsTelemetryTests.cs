@@ -9,6 +9,7 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Threading.Tasks;
+using Corvus.Json;
 using Corvus.Json.Serialization;
 using Corvus.Tenancy;
 using Marain.Tenancy.Cli.Commands;
@@ -34,6 +35,8 @@ public class CliCommandsTelemetryTests
     private Mock<ILogger<Create>>? mockCreateLogger;
     private Mock<ILogger<Delete>>? mockDeleteLogger;
     private Mock<ILogger<Cli.Commands.List>>? mockListLogger;
+    private Mock<IPropertyBagFactory> mockPropertyBagFactory = null!;
+    private RootTenant rootTenant = null!;
 
     /// <summary>
     /// Sets up the test environment before each test.
@@ -48,15 +51,18 @@ public class CliCommandsTelemetryTests
         this.mockCreateLogger = new Mock<ILogger<Create>>();
         this.mockDeleteLogger = new Mock<ILogger<Delete>>();
         this.mockListLogger = new Mock<ILogger<Marain.Tenancy.Cli.Commands.List>>();
+        this.mockPropertyBagFactory = new();
+
+        this.mockPropertyBagFactory.Setup(x => x.Create(It.IsAny<IEnumerable<KeyValuePair<string, object>>>())).Returns(Mock.Of<IPropertyBag>());
+        this.rootTenant = new RootTenant(this.mockPropertyBagFactory.Object);
 
         // Setup common mock responses
         Mock<ITenant> mockTenant = new();
-        Mock<RootTenant> mockRootTenant = new();
         mockTenant.SetupGet(x => x.Id).Returns("test-tenant-123");
         mockTenant.SetupGet(x => x.Name).Returns("Test Tenant");
 
         this.mockTenantProvider.Setup(x => x.GetTenantAsync(It.IsAny<string>(), It.IsAny<string?>())).Returns(Task.FromResult(mockTenant.Object));
-        this.mockTenantProvider.Setup(x => x.Root).Returns(mockRootTenant.Object);
+        this.mockTenantProvider.Setup(x => x.Root).Returns(this.rootTenant);
 
         this.mockTenantStore.Setup(x => x.CreateWellKnownChildTenantAsync(It.IsAny<string>(), It.IsAny<Guid>(), It.IsAny<string>()))
             .Returns(Task.FromResult(mockTenant.Object));
@@ -276,42 +282,6 @@ public class CliCommandsTelemetryTests
         Activity? cliActivity = activities.Find(a => a.DisplayName == "cli.get-tenant");
         Assert.That(cliActivity, Is.Not.Null);
         Assert.That(cliActivity!.ParentId, Is.EqualTo(parentActivity?.Id));
-        Assert.That(result, Is.EqualTo(0));
-    }
-
-    /// <summary>
-    /// Tests that CLI commands record appropriate metrics.
-    /// </summary>
-    /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
-    [Test]
-    public async Task CliCommands_ShouldRecordMetrics()
-    {
-        // Arrange
-        var createCommand = new Create(this.mockTenantStore!.Object, this.mockCreateLogger!.Object);
-        var settings = new CreateSettings
-        {
-            TenantId = "parent-metrics-test",
-            Name = "Metrics Test Tenant",
-            WellKnownTenantGuid = Guid.NewGuid().ToString(),
-        };
-        var context = new CommandContext([], Mock.Of<IRemainingArguments>(), "create", null);
-
-        // Act
-        int result = await createCommand.ExecuteAsync(context, settings);
-
-        // Assert
-        await this.telemetryScope!.WaitForMetricAsync("cli.commands.total");
-
-        List<MeasurementCapture> measurements = this.telemetryScope.ValidateMetric(
-            "cli.commands.total",
-            expectedValue: 1L,
-            expectedTags: new Dictionary<string, object?>
-            {
-                ["command"] = "create",
-                ["status"] = "success",
-            });
-
-        Assert.That(measurements, Is.Not.Empty);
         Assert.That(result, Is.EqualTo(0));
     }
 

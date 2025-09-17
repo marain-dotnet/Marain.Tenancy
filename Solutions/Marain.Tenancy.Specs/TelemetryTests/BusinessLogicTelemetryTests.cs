@@ -54,6 +54,8 @@ public class BusinessLogicTelemetryTests
         this.mockTenantMapper = new();
         this.mockPropertyBagFactory = new();
 
+        this.mockPropertyBagFactory.Setup(x => x.Create(It.IsAny<IEnumerable<KeyValuePair<string, object>>>())).Returns(Mock.Of<IPropertyBag>());
+
         // Create root tenant
         this.rootTenant = new RootTenant(this.mockPropertyBagFactory.Object);
 
@@ -150,7 +152,7 @@ public class BusinessLogicTelemetryTests
         await this.telemetryScope!.WaitForActivitiesAsync(1, TimeSpan.FromSeconds(2));
 
         // Assert
-        Assert.That(result, Is.EqualTo(mockTenant));
+        Assert.That(result, Is.EqualTo(mockTenant.Object));
 
         Activity activity = this.telemetryScope.ValidateActivity(
             "business.tenant.get",
@@ -255,7 +257,7 @@ public class BusinessLogicTelemetryTests
         await this.telemetryScope!.WaitForActivitiesAsync(1, TimeSpan.FromSeconds(2));
 
         // Assert
-        Assert.That(result, Is.EqualTo(mockTenant));
+        Assert.That(result, Is.EqualTo(mockTenant.Object));
 
         Activity activity = this.telemetryScope.ValidateActivity(
             "store.tenant.create-child",

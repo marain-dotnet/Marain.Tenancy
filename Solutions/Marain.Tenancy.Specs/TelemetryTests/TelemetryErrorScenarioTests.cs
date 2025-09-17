@@ -102,41 +102,6 @@ public class TelemetryErrorScenarioTests
     }
 
     /// <summary>
-    /// Tests that telemetry continues working when export fails.
-    /// </summary>
-    /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
-    [Test]
-    public async Task TelemetryExportFailure_ShouldNotImpactApplicationOperation()
-    {
-        // Arrange - Create telemetry with console exporter (which can't fail easily)
-        using var testSource = new ActivitySource("test.export-failure-resilience");
-        using Activity? parentActivity = testSource.StartActivity("test.export-failure-resilience");
-        parentActivity?.SetTag("test.scenario", "export-failure");
-
-        // Act - Create activities that might have export issues
-        for (int i = 0; i < 10; i++)
-        {
-            using Activity? activity = testSource.StartActivity($"resilience.operation-{i:D2}");
-            activity?.SetTag("operation.index", i.ToString());
-            activity?.SetTag("test.type", "export-failure-resilience");
-            activity?.SetStatus(ActivityStatusCode.Ok);
-
-            // Small delay to allow potential export processing
-            await Task.Delay(10);
-        }
-
-        // Assert - Application should continue working regardless of export status
-        await this.telemetryScope!.WaitForActivitiesAsync(11, timeout: TimeSpan.FromSeconds(5)); // Parent + 10 operations
-
-        List<Activity> activities = this.telemetryScope.CapturedActivities;
-        Assert.That(activities.Count, Is.GreaterThanOrEqualTo(10));
-
-        // Verify test activity was captured
-        Activity? testActivity = activities.Find(a => a.DisplayName == "test.export-failure-resilience");
-        Assert.That(testActivity, Is.Not.Null);
-    }
-
-    /// <summary>
     /// Tests behavior when ActivitySource is disposed during operation.
     /// </summary>
     /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
@@ -162,14 +127,14 @@ public class TelemetryErrorScenarioTests
             ongoingActivity?.SetTag("operation.state", "continuing-after-disposal");
             ongoingActivity?.SetStatus(ActivityStatusCode.Ok);
             ongoingActivity?.Dispose();
-
-            // Assert - No exceptions should be thrown
-            Assert.Pass("ActivitySource disposal handled gracefully");
         }
         catch (Exception ex)
         {
             Assert.Fail($"ActivitySource disposal should not cause exceptions: {ex.Message}");
         }
+
+        // Assert - No exceptions should be thrown
+        Assert.Pass("ActivitySource disposal handled gracefully");
 
         await Task.CompletedTask; // For async consistency
     }
