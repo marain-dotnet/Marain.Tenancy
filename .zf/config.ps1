@@ -33,37 +33,15 @@ $SkipPackage = $false
 #
 $SolutionToBuild = (Resolve-Path (Join-Path $here ".\Solutions\Marain.Tenancy.sln")).Path
 $ProjectsToPublish = @(
-    "Solutions/Marain.Tenancy.Host.AspNetCore/Marain.Tenancy.Host.AspNetCore.csproj"
-    "Solutions/Marain.Tenancy.Host.Functions/Marain.Tenancy.Host.Functions.csproj"
+    "Solutions/Marain.Tenancy.Api/Marain.Tenancy.Api.csproj"
 )
 $NuSpecFilesToPackage = @()
 $NugetPublishSource = property ZF_NUGET_PUBLISH_SOURCE "$here/_local-nuget-feed"
-$IncludeAssembliesInCodeCoverage = "arain.Tenancy*"
+$IncludeAssembliesInCodeCoverage = "Marain.Tenancy*"
 $ExcludeAssembliesInCodeCoverage = ""
 
 
-# Customise the build process
-task installAzureFunctionsSDK {
-    
-    $existingVersion = ""
-    if ((Get-Command func -ErrorAction Ignore)) {
-        $existingVersion = exec { & func --version }
-    }
-
-    if (!$existingVersion -or $existingVersion -notlike "4.*") {
-        Write-Build White "Installing/updating Azure Functions Core Tools..."
-        if ($IsWindows) {
-            exec { & npm install -g azure-functions-core-tools@ --unsafe-perm true }
-        }
-        else {
-            Write-Build Yellow "NOTE: May require 'sudo' on Linux/MacOS"
-            exec { & sudo npm install -g azure-functions-core-tools@ --unsafe-perm true }
-        }
-    } 
-}
-
 task . FullBuild
-
 
 #
 # Build Process Extensibility Points - uncomment and implement as required
@@ -76,7 +54,7 @@ task . FullBuild
 # task PostVersion {}
 # task PreBuild {}
 # task PostBuild {}
-task PreTest Init,installAzureFunctionsSDK
+task PreTest Init
 # task PostTest {}
 # task PreTestReport {}
 # task PostTestReport {}
