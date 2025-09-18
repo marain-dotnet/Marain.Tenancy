@@ -20,7 +20,7 @@ using Testcontainers.Azurite;
 /// <summary>
 /// Custom WebApplicationFactory that can create the API application for testing.
 /// </summary>
-internal class ApiWebApplicationFactory : WebApplicationFactory<Program>, IDisposable
+internal class ApiWebApplicationFactory : WebApplicationFactory<Api.Program>, IDisposable
 {
     private AzuriteContainer azuriteContainer;
     private HttpClient? client;
