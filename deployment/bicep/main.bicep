@@ -15,6 +15,7 @@ param tenancyServiceName string
 param tenancyServiceContainerImageName string
 param tenancyServiceContainerImageTag string = 'latest'
 param tenancyServiceManagedIdentityName string
+param tenancyServiceAppRegistrationName string = tenancyServiceName
 param tenancyStorageAccountName string
 
 param location string = resourceGroup().location
@@ -52,8 +53,9 @@ var fullDiagsConfig = [
 
 
 // Existing resources
+var _acrName = split(acrName, '.')[0]   // convenience feature to handle when the ACR name is supplied as an FQDN
 resource acr 'Microsoft.ContainerRegistry/registries@2025-04-01' existing = {
-  name: acrName
+  name: _acrName
   scope: resourceGroup(acrSubscriptionId, acrResourceGroupName)
 }
 
@@ -153,20 +155,19 @@ module managed_identity 'br/public:avm/res/managed-identity/user-assigned-identi
 
 // When we first create the app registration we don't know the values for the following settings:
 // - IdentifierUris: Given the restrictions on the values for this, we need to use the AppId which we can't know until it's created
-// - RedirectUris: We can't know this until the Container App is created and we can't create the container app until we know the app registration's ClientId
 //
 // NOTE: On subsequent deployments (i.e. the app registration is already fully setup), then this module will briefly reset the above properties, until the
 //       the stage2 runs. TODO: Investigate whether the 'onlyIfNotExists' experimental feature could be used to mitigate this.
 module tenancy_app_registration_stage1 'app-registration.bicep' = {
   params: {
-    tenancyServiceName: tenancyServiceName
+    appRegistrationName: tenancyServiceAppRegistrationName
   }
 }
 
 // This will update the app registration created above and its dependencies will ensure it runs at the correct time.
 module tenancy_app_registration_stage2 'app-registration.bicep' = {
   params: {
-    tenancyServiceName: tenancy_service_app.outputs.name
+    appRegistrationName: tenancyServiceAppRegistrationName
     identifierUris: [
       'api://${tenancy_app_registration_stage1.outputs.clientId}'
     ]
