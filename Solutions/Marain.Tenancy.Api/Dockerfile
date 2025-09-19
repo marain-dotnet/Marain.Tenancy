@@ -9,3 +9,6 @@ ARG Configuration=Debug
 ARG SrcDir=./bin/${Configuration}/net9.0/publish
 COPY ${SrcDir} .
 ENTRYPOINT ["dotnet", "Marain.Tenancy.Api.dll"]
+LABEL org.opencontainers.image.source=https://github.com/marain-dotnet/Marain.Tenancy
+LABEL org.opencontainers.image.description="Marain Tenancy API Service (ASP.NET Core 8)"
+LABEL org.opencontainers.image.licenses=AGPLv3
