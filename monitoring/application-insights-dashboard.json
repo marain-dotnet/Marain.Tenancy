@@ -1,0 +1,231 @@
+{
+  "$schema": "https://github.com/Microsoft/Application-Insights-Workbooks/blob/master/schema/workbook.json",
+  "version": "Notebook/1.0",
+  "items": [
+    {
+      "type": 1,
+      "content": {
+        "json": "# Marain.Tenancy - Operational Dashboard\n\nThis dashboard provides real-time insights into the Marain Tenancy service performance and health.\n\n## Key Metrics Overview\n- Tenant operation rates and success rates\n- Performance latencies (P50, P95, P99)\n- Error tracking and categorization\n- Storage operation health\n- Business KPIs and SLA tracking"
+      },
+      "name": "text - title"
+    },
+    {
+      "type": 9,
+      "content": {
+        "version": "KqlParameterItem/1.0",
+        "parameters": [
+          {
+            "id": "timeRange",
+            "version": "KqlParameterItem/1.0",
+            "name": "TimeRange",
+            "type": 4,
+            "value": {
+              "durationMs": 1800000
+            },
+            "typeSettings": {
+              "selectableValues": [
+                {
+                  "durationMs": 300000
+                },
+                {
+                  "durationMs": 900000
+                },
+                {
+                  "durationMs": 1800000
+                },
+                {
+                  "durationMs": 3600000
+                },
+                {
+                  "durationMs": 14400000
+                },
+                {
+                  "durationMs": 43200000
+                },
+                {
+                  "durationMs": 86400000
+                }
+              ]
+            }
+          }
+        ]
+      },
+      "name": "parameters - time range"
+    },
+    {
+      "type": 10,
+      "content": {
+        "chartId": "tenant-operations-overview",
+        "version": "MetricsItem/2.0",
+        "size": 1,
+        "chartType": 2,
+        "metricScope": 0,
+        "resourceIds": [
+          "/subscriptions/{subscription-id}/resourceGroups/{resource-group}/providers/Microsoft.Insights/components/{app-insights-name}"
+        ],
+        "timeContext": {
+          "durationMs": 0
+        },
+        "timeContextFromParameter": "TimeRange",
+        "metrics": [
+          {
+            "namespace": "microsoft.insights/components/kusto",
+            "metric": "customMetrics/tenant.operations.total",
+            "aggregation": {
+              "aggregationType": 1
+            },
+            "splitBy": [
+              {
+                "property": "operation.type",
+                "sortOrder": 2
+              }
+            ]
+          }
+        ],
+        "title": "Tenant Operations by Type",
+        "gridSettings": {
+          "rowLimit": 10000
+        }
+      },
+      "customWidth": "50",
+      "name": "metric - tenant operations by type"
+    },
+    {
+      "type": 10,
+      "content": {
+        "chartId": "operation-success-rate",
+        "version": "MetricsItem/2.0",
+        "size": 1,
+        "chartType": 2,
+        "metricScope": 0,
+        "resourceIds": [
+          "/subscriptions/{subscription-id}/resourceGroups/{resource-group}/providers/Microsoft.Insights/components/{app-insights-name}"
+        ],
+        "timeContext": {
+          "durationMs": 0
+        },
+        "timeContextFromParameter": "TimeRange",
+        "metrics": [
+          {
+            "namespace": "microsoft.insights/components/kusto",
+            "metric": "customMetrics/tenant.operations.total",
+            "aggregation": {
+              "aggregationType": 1
+            },
+            "splitBy": [
+              {
+                "property": "status",
+                "sortOrder": 2
+              }
+            ]
+          }
+        ],
+        "title": "Operation Success Rate",
+        "gridSettings": {
+          "rowLimit": 10000
+        }
+      },
+      "customWidth": "50",
+      "name": "metric - operation success rate"
+    },
+    {
+      "type": 3,
+      "content": {
+        "version": "KqlItem/1.0",
+        "query": "customMetrics\n| where name == \"tenant.operation.duration\" or name == \"tenant.storage.operation.duration\" or name == \"tenant.business.operation.duration\"\n| summarize \n    P50 = percentile(value, 50),\n    P95 = percentile(value, 95), \n    P99 = percentile(value, 99),\n    Avg = avg(value)\n    by name, bin(timestamp, 5m)\n| order by timestamp desc",
+        "size": 1,
+        "title": "Operation Duration Percentiles (ms)",
+        "timeContext": {
+          "durationMs": 0
+        },
+        "timeContextFromParameter": "TimeRange",
+        "queryType": 0,
+        "resourceType": "microsoft.insights/components",
+        "visualization": "timechart",
+        "chartSettings": {
+          "yAxis": [
+            "P50",
+            "P95", 
+            "P99"
+          ]
+        }
+      },
+      "name": "query - operation duration percentiles"
+    },
+    {
+      "type": 3,
+      "content": {
+        "version": "KqlItem/1.0",
+        "query": "customMetrics\n| where name contains \"errors.total\"\n| extend ErrorType = tostring(customDimensions[\"error.type\"])\n| extend OperationType = tostring(customDimensions[\"operation.type\"])\n| summarize ErrorCount = sum(value) by ErrorType, OperationType, bin(timestamp, 10m)\n| order by timestamp desc, ErrorCount desc",
+        "size": 1,
+        "title": "Error Analysis by Type and Operation",
+        "timeContext": {
+          "durationMs": 0
+        },
+        "timeContextFromParameter": "TimeRange",
+        "queryType": 0,
+        "resourceType": "microsoft.insights/components",
+        "visualization": "table"
+      },
+      "name": "query - error analysis"
+    },
+    {
+      "type": 3,
+      "content": {
+        "version": "KqlItem/1.0",
+        "query": "customMetrics\n| where name == \"tenant.storage.blob.size\"\n| summarize \n    AvgBlobSize = avg(value),\n    MaxBlobSize = max(value),\n    TotalDataVolume = sum(value)\n    by bin(timestamp, 30m)\n| order by timestamp desc",
+        "size": 1,
+        "title": "Storage Utilization Metrics",
+        "timeContext": {
+          "durationMs": 0
+        },
+        "timeContextFromParameter": "TimeRange",
+        "queryType": 0,
+        "resourceType": "microsoft.insights/components",
+        "visualization": "timechart"
+      },
+      "customWidth": "50",
+      "name": "query - storage utilization"
+    },
+    {
+      "type": 3,
+      "content": {
+        "version": "KqlItem/1.0",
+        "query": "requests\n| where name contains \"tenant\"\n| extend TenantId = tostring(customDimensions[\"tenant.id\"])\n| summarize \n    RequestCount = count(),\n    AvgDuration = avg(duration),\n    SuccessRate = (countif(success == true) * 100.0) / count()\n    by TenantId\n| order by RequestCount desc\n| limit 20",
+        "size": 1,
+        "title": "Top 20 Most Active Tenants",
+        "timeContext": {
+          "durationMs": 0
+        },
+        "timeContextFromParameter": "TimeRange",
+        "queryType": 0,
+        "resourceType": "microsoft.insights/components",
+        "visualization": "table"
+      },
+      "customWidth": "50",
+      "name": "query - top active tenants"
+    },
+    {
+      "type": 3,
+      "content": {
+        "version": "KqlItem/1.0",
+        "query": "traces\n| where message contains \"Failed\" or severityLevel >= 3\n| extend TenantId = tostring(customDimensions[\"tenant.id\"])\n| extend OperationType = tostring(customDimensions[\"operation.type\"])\n| summarize ErrorCount = count() by severityLevel, OperationType, bin(timestamp, 15m)\n| order by timestamp desc, ErrorCount desc",
+        "size": 1,
+        "title": "Error Logs Trend",
+        "timeContext": {
+          "durationMs": 0
+        },
+        "timeContextFromParameter": "TimeRange",
+        "queryType": 0,
+        "resourceType": "microsoft.insights/components",
+        "visualization": "timechart"
+      },
+      "name": "query - error logs trend"
+    }
+  ],
+  "styleSettings": {},
+  "isLocked": false,
+  "fallbackResourceIds": [
+    "Azure Monitor"
+  ]
+}

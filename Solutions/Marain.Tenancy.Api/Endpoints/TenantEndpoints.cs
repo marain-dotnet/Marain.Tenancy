@@ -12,7 +12,7 @@ using System.Threading.Tasks;
 using Corvus.Json;
 using Corvus.Tenancy;
 using Corvus.Tenancy.Exceptions;
-using Marain.Tenancy.Api.ErrorHandling;
+using Marain.Tenancy.Api.Extensions.ErrorHandling;
 using Marain.Tenancy.Api.Models;
 using Marain.Tenancy.Api.Telemetry;
 using Marain.Tenancy.Api.Validation;

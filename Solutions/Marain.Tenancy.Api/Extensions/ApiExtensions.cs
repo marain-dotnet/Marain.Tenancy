@@ -9,7 +9,7 @@ using System.Text.Json.Serialization;
 using Corvus.Json.Serialization;
 using FluentValidation;
 using Marain.Tenancy.Api.Endpoints;
-using Marain.Tenancy.Api.ErrorHandling;
+using Marain.Tenancy.Api.Extensions.ErrorHandling;
 using Marain.Tenancy.Api.Telemetry;
 using Marain.Tenancy.Api.Validation;
 using Microsoft.OpenApi.Models;

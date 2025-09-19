@@ -1,0 +1,273 @@
+{
+  "lenses": {
+    "0": {
+      "order": 0,
+      "parts": {
+        "0": {
+          "position": {
+            "x": 0,
+            "y": 0,
+            "colSpan": 6,
+            "rowSpan": 4
+          },
+          "metadata": {
+            "inputs": [
+              {
+                "name": "resourceTypeMode",
+                "isOptional": true
+              },
+              {
+                "name": "ComponentId",
+                "value": "/subscriptions/{subscription-id}/resourceGroups/{resource-group}/providers/Microsoft.Insights/components/{app-insights-name}",
+                "isOptional": true
+              },
+              {
+                "name": "Scope",
+                "value": {
+                  "resourceIds": [
+                    "/subscriptions/{subscription-id}/resourceGroups/{resource-group}/providers/Microsoft.Insights/components/{app-insights-name}"
+                  ]
+                },
+                "isOptional": true
+              },
+              {
+                "name": "Dimensions",
+                "value": {
+                  "xAxis": {
+                    "name": "timestamp",
+                    "type": "datetime"
+                  },
+                  "yAxis": [
+                    {
+                      "name": "count_",
+                      "type": "long"
+                    }
+                  ],
+                  "splitBy": [
+                    {
+                      "name": "customDimensions_operation_type",
+                      "type": "string"
+                    }
+                  ],
+                  "aggregation": {
+                    "displayName": "Sum",
+                    "id": "sum"
+                  }
+                },
+                "isOptional": true
+              },
+              {
+                "name": "Query",
+                "value": "traces\n| where timestamp >= ago(1h)\n| where customDimensions[\"service.name\"] == \"Marain.Tenancy\"\n| where customDimensions[\"operation.type\"] in (\"create\", \"get\", \"delete\", \"list\")\n| summarize count() by bin(timestamp, 5m), tostring(customDimensions[\"operation.type\"])\n| order by timestamp asc",
+                "isOptional": true
+              },
+              {
+                "name": "PartTitle",
+                "value": "Tenant Operations Rate",
+                "isOptional": true
+              }
+            ],
+            "type": "Extension/Microsoft_OperationsManagementSuite_Workspace/PartType/LogsDashboardPart",
+            "settings": {
+              "content": {
+                "Query": "traces\n| where timestamp >= ago(1h)\n| where customDimensions[\"service.name\"] == \"Marain.Tenancy\"\n| where customDimensions[\"operation.type\"] in (\"create\", \"get\", \"delete\", \"list\")\n| summarize count() by bin(timestamp, 5m), tostring(customDimensions[\"operation.type\"])\n| order by timestamp asc",
+                "ControlType": "FrameControlChart",
+                "SpecificChart": "Line",
+                "PartTitle": "Tenant Operations Rate",
+                "Dimensions": {
+                  "xAxis": {
+                    "name": "timestamp",
+                    "type": "datetime"
+                  },
+                  "yAxis": [
+                    {
+                      "name": "count_",
+                      "type": "long"
+                    }
+                  ],
+                  "splitBy": [
+                    {
+                      "name": "customDimensions_operation_type",
+                      "type": "string"
+                    }
+                  ],
+                  "aggregation": {
+                    "displayName": "Sum",
+                    "id": "sum"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "1": {
+          "position": {
+            "x": 6,
+            "y": 0,
+            "colSpan": 6,
+            "rowSpan": 4
+          },
+          "metadata": {
+            "inputs": [
+              {
+                "name": "Query",
+                "value": "requests\n| where timestamp >= ago(1h)\n| where name contains \"tenant\"\n| summarize \n    SuccessRate = round(100.0 * countif(success == true) / count(), 2),\n    TotalRequests = count(),\n    AvgDuration = round(avg(duration), 2),\n    P95Duration = round(percentile(duration, 95), 2)\n    by bin(timestamp, 5m)\n| order by timestamp asc",
+                "isOptional": true
+              },
+              {
+                "name": "PartTitle",
+                "value": "Tenant API Success Rate & Performance",
+                "isOptional": true
+              }
+            ],
+            "type": "Extension/Microsoft_OperationsManagementSuite_Workspace/PartType/LogsDashboardPart",
+            "settings": {
+              "content": {
+                "Query": "requests\n| where timestamp >= ago(1h)\n| where name contains \"tenant\"\n| summarize \n    SuccessRate = round(100.0 * countif(success == true) / count(), 2),\n    TotalRequests = count(),\n    AvgDuration = round(avg(duration), 2),\n    P95Duration = round(percentile(duration, 95), 2)\n    by bin(timestamp, 5m)\n| order by timestamp asc",
+                "ControlType": "AnalyticsGrid",
+                "PartTitle": "Tenant API Success Rate & Performance"
+              }
+            }
+          }
+        },
+        "2": {
+          "position": {
+            "x": 0,
+            "y": 4,
+            "colSpan": 12,
+            "rowSpan": 4
+          },
+          "metadata": {
+            "inputs": [
+              {
+                "name": "Query",
+                "value": "traces\n| where timestamp >= ago(24h)\n| where customDimensions[\"service.name\"] == \"Marain.Tenancy\"\n| where isnotempty(customDimensions[\"tenant.id\"])\n| summarize \n    Operations = count(),\n    UniqueOperations = dcount(customDimensions[\"operation.type\"]),\n    AvgDuration = round(avg(duration), 2),\n    LastSeen = max(timestamp)\n    by TenantId = tostring(customDimensions[\"tenant.id\"])\n| top 20 by Operations desc",
+                "isOptional": true
+              },
+              {
+                "name": "PartTitle",
+                "value": "Top Active Tenants (24h)",
+                "isOptional": true
+              }
+            ],
+            "type": "Extension/Microsoft_OperationsManagementSuite_Workspace/PartType/LogsDashboardPart",
+            "settings": {
+              "content": {
+                "Query": "traces\n| where timestamp >= ago(24h)\n| where customDimensions[\"service.name\"] == \"Marain.Tenancy\"\n| where isnotempty(customDimensions[\"tenant.id\"])\n| summarize \n    Operations = count(),\n    UniqueOperations = dcount(customDimensions[\"operation.type\"]),\n    AvgDuration = round(avg(duration), 2),\n    LastSeen = max(timestamp)\n    by TenantId = tostring(customDimensions[\"tenant.id\"])\n| top 20 by Operations desc",
+                "ControlType": "AnalyticsGrid",
+                "PartTitle": "Top Active Tenants (24h)"
+              }
+            }
+          }
+        },
+        "3": {
+          "position": {
+            "x": 0,
+            "y": 8,
+            "colSpan": 6,
+            "rowSpan": 4
+          },
+          "metadata": {
+            "inputs": [
+              {
+                "name": "Query",
+                "value": "exceptions\n| where timestamp >= ago(1h)\n| where customDimensions[\"service.name\"] == \"Marain.Tenancy\"\n| summarize ErrorCount = count() by \n    ErrorType = type,\n    OperationType = tostring(customDimensions[\"operation.type\"]),\n    bin(timestamp, 15m)\n| order by timestamp desc",
+                "isOptional": true
+              },
+              {
+                "name": "PartTitle",
+                "value": "Error Trends by Operation",
+                "isOptional": true
+              }
+            ],
+            "type": "Extension/Microsoft_OperationsManagementSuite_Workspace/PartType/LogsDashboardPart",
+            "settings": {
+              "content": {
+                "Query": "exceptions\n| where timestamp >= ago(1h)\n| where customDimensions[\"service.name\"] == \"Marain.Tenancy\"\n| summarize ErrorCount = count() by \n    ErrorType = type,\n    OperationType = tostring(customDimensions[\"operation.type\"]),\n    bin(timestamp, 15m)\n| order by timestamp desc",
+                "ControlType": "FrameControlChart",
+                "SpecificChart": "StackedColumn",
+                "PartTitle": "Error Trends by Operation"
+              }
+            }
+          }
+        },
+        "4": {
+          "position": {
+            "x": 6,
+            "y": 8,
+            "colSpan": 6,
+            "rowSpan": 4
+          },
+          "metadata": {
+            "inputs": [
+              {
+                "name": "Query",
+                "value": "customMetrics\n| where timestamp >= ago(1h)\n| where name in (\"tenant.operations.total\", \"tenant.operation.duration\")\n| summarize \n    TotalOperations = sumif(value, name == \"tenant.operations.total\"),\n    AvgDuration = avgif(value, name == \"tenant.operation.duration\")\n    by bin(timestamp, 5m)\n| order by timestamp asc",
+                "isOptional": true
+              },
+              {
+                "name": "PartTitle",
+                "value": "Custom Tenant Metrics",
+                "isOptional": true
+              }
+            ],
+            "type": "Extension/Microsoft_OperationsManagementSuite_Workspace/PartType/LogsDashboardPart",
+            "settings": {
+              "content": {
+                "Query": "customMetrics\n| where timestamp >= ago(1h)\n| where name in (\"tenant.operations.total\", \"tenant.operation.duration\")\n| summarize \n    TotalOperations = sumif(value, name == \"tenant.operations.total\"),\n    AvgDuration = avgif(value, name == \"tenant.operation.duration\")\n    by bin(timestamp, 5m)\n| order by timestamp asc",
+                "ControlType": "FrameControlChart",
+                "SpecificChart": "Line",
+                "PartTitle": "Custom Tenant Metrics"
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "metadata": {
+    "model": {
+      "timeRange": {
+        "value": {
+          "relative": {
+            "duration": 24,
+            "timeUnit": 1
+          }
+        },
+        "type": "MsPortalFx.Composition.Configuration.ValueTypes.TimeRange"
+      },
+      "filterLocale": {
+        "value": "en-us"
+      },
+      "filters": {
+        "value": {
+          "MsPortalFx_TimeRange": {
+            "model": {
+              "format": "utc",
+              "granularity": "auto",
+              "relative": "24h"
+            },
+            "displayCache": {
+              "name": "UTC Time",
+              "value": "Past 24 hours"
+            },
+            "filteredPartIds": [
+              "StartboardPart-LogsDashboardPart-0",
+              "StartboardPart-LogsDashboardPart-1",
+              "StartboardPart-LogsDashboardPart-2",
+              "StartboardPart-LogsDashboardPart-3",
+              "StartboardPart-LogsDashboardPart-4"
+            ]
+          }
+        }
+      }
+    }
+  },
+  "name": "Tenant Operations Dashboard",
+  "type": "Microsoft.Portal/dashboards",
+  "location": "INSERT LOCATION",
+  "tags": {
+    "hidden-title": "Tenant Operations Dashboard"
+  },
+  "apiVersion": "2015-08-01-preview"
+}

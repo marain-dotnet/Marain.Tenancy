@@ -1,0 +1,341 @@
+// <copyright file="CliCommandsTelemetryTests.cs" company="Endjin Limited">
+// Copyright (c) Endjin Limited. All rights reserved.
+// </copyright>
+
+namespace Marain.Tenancy.Specs.TelemetryTests;
+
+using System;
+using System.Collections.Generic;
+using System.Diagnostics;
+using System.IO;
+using System.Threading.Tasks;
+using Corvus.Json;
+using Corvus.Json.Serialization;
+using Corvus.Tenancy;
+using Marain.Tenancy.Cli.Commands;
+using Marain.Tenancy.Shared.Telemetry;
+using Marain.Tenancy.Shared.Testing;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
+using Moq;
+using NUnit.Framework;
+using Spectre.Console.Cli;
+
+/// <summary>
+/// Unit tests for CLI commands telemetry functionality.
+/// </summary>
+[TestFixture]
+[Category("Telemetry")]
+public class CliCommandsTelemetryTests
+{
+    private TelemetryTestScope? telemetryScope;
+    private Mock<ITenantProvider>? mockTenantProvider;
+    private Mock<ITenantStore>? mockTenantStore;
+    private Mock<ILogger<Get>>? mockGetLogger;
+    private Mock<ILogger<Create>>? mockCreateLogger;
+    private Mock<ILogger<Delete>>? mockDeleteLogger;
+    private Mock<ILogger<Cli.Commands.List>>? mockListLogger;
+    private Mock<IPropertyBagFactory> mockPropertyBagFactory = null!;
+    private RootTenant rootTenant = null!;
+
+    /// <summary>
+    /// Sets up the test environment before each test.
+    /// </summary>
+    [SetUp]
+    public void SetUp()
+    {
+        this.telemetryScope = TelemetryTestHelpers.CreateTelemetryTestScope();
+        this.mockTenantProvider = new Mock<ITenantProvider>();
+        this.mockTenantStore = new Mock<ITenantStore>();
+        this.mockGetLogger = new Mock<ILogger<Get>>();
+        this.mockCreateLogger = new Mock<ILogger<Create>>();
+        this.mockDeleteLogger = new Mock<ILogger<Delete>>();
+        this.mockListLogger = new Mock<ILogger<Marain.Tenancy.Cli.Commands.List>>();
+        this.mockPropertyBagFactory = new();
+
+        this.mockPropertyBagFactory.Setup(x => x.Create(It.IsAny<IEnumerable<KeyValuePair<string, object>>>())).Returns(Mock.Of<IPropertyBag>());
+        this.rootTenant = new RootTenant(this.mockPropertyBagFactory.Object);
+
+        // Setup common mock responses
+        Mock<ITenant> mockTenant = new();
+        mockTenant.SetupGet(x => x.Id).Returns("test-tenant-123");
+        mockTenant.SetupGet(x => x.Name).Returns("Test Tenant");
+
+        this.mockTenantProvider.Setup(x => x.GetTenantAsync(It.IsAny<string>(), It.IsAny<string?>())).Returns(Task.FromResult(mockTenant.Object));
+        this.mockTenantProvider.Setup(x => x.Root).Returns(this.rootTenant);
+
+        this.mockTenantStore.Setup(x => x.CreateWellKnownChildTenantAsync(It.IsAny<string>(), It.IsAny<Guid>(), It.IsAny<string>()))
+            .Returns(Task.FromResult(mockTenant.Object));
+    }
+
+    /// <summary>
+    /// Cleans up after each test.
+    /// </summary>
+    [TearDown]
+    public void TearDown()
+    {
+        this.telemetryScope?.Dispose();
+    }
+
+    /// <summary>
+    /// Tests that the Get command creates proper telemetry activities.
+    /// </summary>
+    /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
+    [Test]
+    public async Task GetCommand_ShouldCreateTelemetryActivity()
+    {
+        // Arrange
+        var serializerProvider = new Mock<IJsonSerializerOptionsProvider>();
+        var getCommand = new Get(this.mockTenantProvider!.Object, serializerProvider.Object, this.mockGetLogger!.Object);
+        var settings = new GetSettings { TenantId = "test-tenant-123" };
+        var context = new CommandContext([], Mock.Of<IRemainingArguments>(), "get", null);
+
+        // Act
+        int result = await getCommand.ExecuteAsync(context, settings);
+
+        // Assert
+        await this.telemetryScope!.WaitForActivitiesAsync(1);
+
+        Activity activity = this.telemetryScope.ValidateActivity(
+            "cli.get-tenant",
+            expectedTags: new Dictionary<string, object?>
+            {
+                [TelemetryConstants.AttributeKeys.TenantId] = "test-tenant-123",
+                [TelemetryConstants.AttributeKeys.CommandType] = TelemetryConstants.OperationTypes.Get,
+            },
+            expectedStatus: ActivityStatusCode.Ok);
+
+        Assert.That(activity, Is.Not.Null);
+        Assert.That(result, Is.EqualTo(0));
+    }
+
+    /// <summary>
+    /// Tests that the Get command handles errors properly with telemetry.
+    /// </summary>
+    /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
+    [Test]
+    public async Task GetCommand_Error_ShouldRecordErrorTelemetry()
+    {
+        // Arrange
+        var expectedException = new InvalidOperationException("Tenant not found");
+        this.mockTenantProvider!.Setup(x => x.GetTenantAsync(It.IsAny<string>(), It.IsAny<string?>())).Throws(expectedException);
+
+        Mock<IJsonSerializerOptionsProvider> serializerProvider = new();
+        var getCommand = new Get(this.mockTenantProvider.Object, serializerProvider.Object, this.mockGetLogger!.Object);
+        var settings = new GetSettings { TenantId = "nonexistent-tenant" };
+        var context = new CommandContext([], Mock.Of<IRemainingArguments>(), "get", null);
+
+        // Act & Assert
+        int result = await getCommand.ExecuteAsync(context, settings).ConfigureAwait(false);
+
+        Assert.That(result, Is.EqualTo(1));
+
+        await this.telemetryScope!.WaitForActivitiesAsync(1);
+
+        Activity activity = this.telemetryScope.ValidateActivity(
+            "cli.get-tenant",
+            expectedTags: new Dictionary<string, object?>
+            {
+                [TelemetryConstants.AttributeKeys.TenantId] = "nonexistent-tenant",
+                [TelemetryConstants.AttributeKeys.CommandType] = TelemetryConstants.OperationTypes.Get,
+            },
+            expectedStatus: ActivityStatusCode.Error);
+
+        Assert.That(activity, Is.Not.Null);
+    }
+
+    /// <summary>
+    /// Tests that the Create command creates proper telemetry activities.
+    /// </summary>
+    /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
+    [Test]
+    public async Task CreateCommand_ShouldCreateTelemetryActivity()
+    {
+        // Arrange
+        var createCommand = new Create(this.mockTenantStore!.Object, this.mockCreateLogger!.Object);
+        var settings = new CreateSettings
+        {
+            TenantId = "parent-tenant-123",
+            Name = "New Child Tenant",
+            WellKnownTenantGuid = Guid.NewGuid().ToString(),
+        };
+        var context = new CommandContext([], Mock.Of<IRemainingArguments>(), "create", null);
+
+        // Act
+        int result = await createCommand.ExecuteAsync(context, settings);
+
+        // Assert
+        await this.telemetryScope!.WaitForActivitiesAsync(1);
+
+        Activity activity = this.telemetryScope.ValidateActivity(
+            "cli.create-tenant",
+            expectedTags: new Dictionary<string, object?>
+            {
+                [TelemetryConstants.AttributeKeys.TenantId] = "parent-tenant-123",
+                [TelemetryConstants.AttributeKeys.TenantName] = "New Child Tenant",
+                [TelemetryConstants.AttributeKeys.CommandType] = TelemetryConstants.OperationTypes.Create,
+            },
+            expectedStatus: ActivityStatusCode.Ok);
+
+        Assert.That(activity, Is.Not.Null);
+        Assert.That(result, Is.EqualTo(0));
+    }
+
+    /// <summary>
+    /// Tests that the List command creates proper telemetry activities.
+    /// </summary>
+    /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
+    [Test]
+    public async Task ListCommand_ShouldCreateTelemetryActivity()
+    {
+        // Arrange
+        var serializerProvider = new Mock<IJsonSerializerOptionsProvider>();
+        var listCommand = new Cli.Commands.List(this.mockTenantStore!.Object, serializerProvider.Object, this.mockListLogger!.Object);
+        var settings = new ListSettings { TenantId = "parent-tenant-123" };
+        var context = new CommandContext([], Mock.Of<IRemainingArguments>(), "list", null);
+
+        TenantCollectionResult tenantCollectionResult = new(["child1", "child2"], null);
+
+        this.mockTenantStore!.Setup(x => x.GetChildrenAsync(It.IsAny<string>(), It.IsAny<int>(), It.IsAny<string?>())).Returns(Task.FromResult(tenantCollectionResult));
+
+        // Act
+        int result = await listCommand.ExecuteAsync(context, settings);
+
+        // Assert
+        await this.telemetryScope!.WaitForActivitiesAsync(1);
+
+        Activity activity = this.telemetryScope.ValidateActivity(
+            "cli.list-tenants",
+            expectedTags: new Dictionary<string, object?>
+            {
+                [TelemetryConstants.AttributeKeys.TenantId] = "parent-tenant-123",
+                [TelemetryConstants.AttributeKeys.CommandType] = TelemetryConstants.OperationTypes.List,
+            },
+            expectedStatus: ActivityStatusCode.Ok);
+
+        Assert.That(activity, Is.Not.Null);
+        Assert.That(result, Is.EqualTo(0));
+    }
+
+    /// <summary>
+    /// Tests that CLI commands support activity correlation.
+    /// </summary>
+    /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
+    [Test]
+    public async Task CliCommands_ShouldSupportActivityCorrelation()
+    {
+        // Arrange
+        Mock<IJsonSerializerOptionsProvider> serializerProvider = new();
+        var getCommand = new Get(this.mockTenantProvider!.Object, serializerProvider.Object, this.mockGetLogger!.Object);
+        var settings = new GetSettings { TenantId = "correlation-test-tenant" };
+        var context = new CommandContext([], Mock.Of<IRemainingArguments>(), "get", null);
+
+        // Act
+        string? parentActivityId = string.Empty;
+        int? result = null;
+        using (Activity parentActivity = Get.ActivitySource.StartActivity("test.parent-operation") ?? throw new InvalidOperationException("Unable to create test parent activity"))
+        {
+            parentActivityId = parentActivity.Id;
+            parentActivity.SetTag("test.scenario", "cli-correlation");
+            result = await getCommand.ExecuteAsync(context, settings);
+        }
+
+        // Assert
+        await this.telemetryScope!.WaitForActivitiesAsync(2); // Parent + child activities
+
+        List<Activity> activities = this.telemetryScope.CapturedActivities;
+        Assert.That(activities.Count, Is.EqualTo(2));
+
+        // Find the CLI activity
+        Activity? cliActivity = activities.Find(a => a.DisplayName == "cli.get-tenant");
+        Assert.That(cliActivity, Is.Not.Null);
+        Assert.That(cliActivity!.ParentId, Is.EqualTo(parentActivityId));
+        Assert.That(result, Is.EqualTo(0));
+    }
+
+    /// <summary>
+    /// Tests that CLI commands handle multiple operations with proper telemetry.
+    /// </summary>
+    /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
+    [Test]
+    public async Task CliCommands_MultipleOperations_ShouldCreateSeparateActivities()
+    {
+        // Arrange
+        var serializerProvider = new Mock<IJsonSerializerOptionsProvider>();
+        var getCommand = new Get(this.mockTenantProvider!.Object, serializerProvider.Object, this.mockGetLogger!.Object);
+        var createCommand = new Create(this.mockTenantStore!.Object, this.mockCreateLogger!.Object);
+
+        var getSettings = new GetSettings { TenantId = "multi-op-tenant-1" };
+        var createSettings = new CreateSettings
+        {
+            TenantId = "multi-op-parent",
+            Name = "Multi-Op Child",
+            WellKnownTenantGuid = Guid.NewGuid().ToString(),
+        };
+        var context = new CommandContext([], Mock.Of<IRemainingArguments>(), "command", null);
+
+        // Act
+        int getResult = await getCommand.ExecuteAsync(context, getSettings);
+        int createResult = await createCommand.ExecuteAsync(context, createSettings);
+
+        // Assert
+        await this.telemetryScope!.WaitForActivitiesAsync(2);
+
+        List<Activity> activities = this.telemetryScope.CapturedActivities;
+        Assert.That(activities.Count, Is.EqualTo(2));
+
+        // Verify both activities are present with correct names
+        Assert.That(activities.Exists(a => a.DisplayName == "cli.get-tenant"), Is.True);
+        Assert.That(activities.Exists(a => a.DisplayName == "cli.create-tenant"), Is.True);
+
+        Assert.That(getResult, Is.EqualTo(0));
+        Assert.That(createResult, Is.EqualTo(0));
+    }
+
+    /// <summary>
+    /// Tests that CLI commands properly tag activities with operation details.
+    /// </summary>
+    /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
+    [Test]
+    public async Task CliCommands_ShouldTagActivitiesWithOperationDetails()
+    {
+        // Arrange
+        var serializerProvider = new Mock<IJsonSerializerOptionsProvider>();
+        var listCommand = new Marain.Tenancy.Cli.Commands.List(this.mockTenantStore!.Object, serializerProvider.Object, this.mockListLogger!.Object);
+        var settings = new ListSettings
+        {
+            TenantId = "detailed-parent-tenant",
+            Name = true,
+        };
+        var context = new CommandContext([], Mock.Of<IRemainingArguments>(), "list", null);
+
+        // Mock children response with multiple levels
+        ITenant child1 = new Tenant("child1", "child 1", Mock.Of<IPropertyBag>());
+        ITenant child2 = new Tenant("child1", "child 1", Mock.Of<IPropertyBag>());
+        TenantCollectionResult tenantCollectionResult = new([child1.Id, child2.Id], null);
+        this.mockTenantStore!.Setup(x => x.GetChildrenAsync(It.IsAny<string>(), It.IsAny<int>(), It.IsAny<string?>())).Returns(Task.FromResult(tenantCollectionResult));
+        this.mockTenantStore!.Setup(x => x.GetTenantAsync(child1.Id, It.IsAny<string?>())).Returns(Task.FromResult(child1));
+        this.mockTenantStore!.Setup(x => x.GetTenantAsync(child2.Id, It.IsAny<string?>())).Returns(Task.FromResult(child2));
+
+        // Act
+        int result = await listCommand.ExecuteAsync(context, settings);
+
+        // Assert
+        await this.telemetryScope!.WaitForActivitiesAsync(1);
+
+        Activity activity = this.telemetryScope.ValidateActivity(
+            "cli.list-tenants",
+            expectedTags: new Dictionary<string, object?>
+            {
+                [TelemetryConstants.AttributeKeys.TenantId] = "detailed-parent-tenant",
+                [TelemetryConstants.AttributeKeys.CommandType] = TelemetryConstants.OperationTypes.List,
+                ["list.include_name"] = true,
+                ["list.include_properties"] = false,
+                ["list.properties_count"] = 0,
+            },
+            expectedStatus: ActivityStatusCode.Ok);
+
+        Assert.That(activity, Is.Not.Null);
+        Assert.That(result, Is.EqualTo(0));
+    }
+}

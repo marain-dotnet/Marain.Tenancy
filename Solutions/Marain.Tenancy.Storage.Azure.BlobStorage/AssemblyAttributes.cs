@@ -5,3 +5,4 @@
 using System.Runtime.CompilerServices;
 
 [assembly: InternalsVisibleTo("Marain.Tenancy.Storage.Azure.BlobStorage.Specs")]
+[assembly: InternalsVisibleTo("Marain.Tenancy.Specs")]

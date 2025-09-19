@@ -5,6 +5,7 @@
 namespace Marain.Clients;
 
 using System;
+using System.Net;
 using System.Net.Http;
 using System.Net.Http.Headers;
 using System.Threading;
@@ -32,7 +33,7 @@ public class TokenCredentialHandler(IServiceIdentityAccessTokenSource accessToke
         HttpResponseMessage response = await base.SendAsync(request, cancellationToken);
 
         // Handle 401 by refreshing token and retrying once
-        if (response.StatusCode == System.Net.HttpStatusCode.Unauthorized)
+        if (response.StatusCode == HttpStatusCode.Unauthorized)
         {
             await this.RefreshTokenAsync(cancellationToken);
             request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", this.cachedToken!.Value.AccessToken);

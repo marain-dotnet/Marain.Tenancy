@@ -164,10 +164,3 @@ app.MapCustomSwaggerEndpoint();
 app.MapTenancyEndpoints();
 
 app.Run();
-
-/// <summary>
-/// Program class made available to tests.
-/// </summary>
-public partial class Program
-{
-}
