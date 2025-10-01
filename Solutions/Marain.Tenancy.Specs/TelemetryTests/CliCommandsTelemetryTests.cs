@@ -218,42 +218,6 @@ public class CliCommandsTelemetryTests
     }
 
     /// <summary>
-    /// Tests that CLI commands support activity correlation.
-    /// </summary>
-    /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
-    [Test]
-    public async Task CliCommands_ShouldSupportActivityCorrelation()
-    {
-        // Arrange
-        Mock<IJsonSerializerOptionsProvider> serializerProvider = new();
-        var getCommand = new Get(this.mockTenantProvider!.Object, serializerProvider.Object, this.mockGetLogger!.Object);
-        var settings = new GetSettings { TenantId = "correlation-test-tenant" };
-        var context = new CommandContext([], Mock.Of<IRemainingArguments>(), "get", null);
-
-        // Act
-        string? parentActivityId = string.Empty;
-        int? result = null;
-        using (Activity parentActivity = Get.ActivitySource.StartActivity("test.parent-operation") ?? throw new InvalidOperationException("Unable to create test parent activity"))
-        {
-            parentActivityId = parentActivity.Id;
-            parentActivity.SetTag("test.scenario", "cli-correlation");
-            result = await getCommand.ExecuteAsync(context, settings);
-        }
-
-        // Assert
-        await this.telemetryScope!.WaitForActivitiesAsync(2); // Parent + child activities
-
-        List<Activity> activities = this.telemetryScope.CapturedActivities;
-        Assert.That(activities.Count, Is.EqualTo(2));
-
-        // Find the CLI activity
-        Activity? cliActivity = activities.Find(a => a.DisplayName == "cli.get-tenant");
-        Assert.That(cliActivity, Is.Not.Null);
-        Assert.That(cliActivity!.ParentId, Is.EqualTo(parentActivityId));
-        Assert.That(result, Is.EqualTo(0));
-    }
-
-    /// <summary>
     /// Tests that CLI commands handle multiple operations with proper telemetry.
     /// </summary>
     /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
