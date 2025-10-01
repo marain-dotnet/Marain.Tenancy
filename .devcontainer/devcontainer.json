@@ -48,8 +48,8 @@
 		}
 	},
 	
-	"postCreateCommand": "sudo chsh vscode -s \"$(which pwsh)\" && npm install -g @anthropic-ai/claude-code && dotnet restore Solutions/Marain.Tenancy.sln",
-	
+	"postCreateCommand": "sudo chsh vscode -s \"$(which pwsh)\" && npm install -g @anthropic-ai/claude-code && dotnet restore Solutions/Marain.Tenancy.sln && sudo usermod -aG docker vscode && sudo chmod 666 /var/run/docker.sock",
+
 	// Mount Docker socket for Testcontainers support  
 	"mounts": [
 		"source=/var/run/docker.sock,target=/var/run/docker.sock,type=bind"
@@ -71,7 +71,8 @@
 				"ms-dotnettools.csdevkit",
 				"ms-dotnettools.csharp",
 				"ms-azuretools.vscode-azurestorage",
-				"formulahendry.dotnet-test-explorer"
+				"formulahendry.dotnet-test-explorer",
+				"alexkrechik.cucumberautocomplete"
 			]
 		}
 	}
