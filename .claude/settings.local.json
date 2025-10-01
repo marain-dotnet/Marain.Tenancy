@@ -36,7 +36,8 @@
       "Bash(timeout:*)",
       "WebFetch(domain:mazeez.dev)",
       "Bash(csc:*)",
-      "Bash(./debug_test.exe)"
+      "Bash(./debug_test.exe)",
+      "Bash(export DOTNET_ENVIRONMENT=Development)"
     ],
     "deny": []
   }

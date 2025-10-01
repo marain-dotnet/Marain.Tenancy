@@ -52,7 +52,6 @@ public class AzuriteContainerBinding
 
             Console.WriteLine($"✅ Azurite container started successfully");
             Console.WriteLine($"   Connection string: {this.azuriteFixture.ConnectionString}");
-            Console.WriteLine($"   Blob endpoint: {this.azuriteFixture.BlobServiceEndpoint}");
         }
         catch (ArgumentException ex) when (ex.Message.Contains("Docker"))
         {

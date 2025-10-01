@@ -5,6 +5,7 @@
 namespace Marain.Tenancy.Storage.Azure.BlobStorage.Specs.Bindings;
 
 using System;
+using System.Collections.Generic;
 
 using Corvus.Storage.Azure.BlobStorage;
 using Corvus.Tenancy;
@@ -46,7 +47,27 @@ public class ScenarioDiContainer
         this.PropagateRootTenancyStorageConfigAsV2 = this.SetupMode is
             SetupModes.ViaApiPropagateRootConfigAsV2 or SetupModes.DirectToStoragePropagateRootConfigAsV2;
 
-        this.Configuration = AzuriteConnectionProvider.CreateEnhancedConfiguration();
+        var configBuilder = new ConfigurationBuilder();
+
+        // Add Testcontainers connection string if available
+        try
+        {
+            string testcontainersConnectionString = AzuriteConnectionProvider.GetConnectionString();
+            var dynamicConfig = new Dictionary<string, string?>
+            {
+                ["RootBlobStorageConfiguration:ConnectionStringPlainText"] = testcontainersConnectionString,
+            };
+            configBuilder.AddInMemoryCollection(dynamicConfig);
+        }
+        catch (InvalidOperationException)
+        {
+            // No Testcontainers connection available yet - will be set later
+        }
+
+        configBuilder.AddEnvironmentVariables();
+        configBuilder.AddJsonFile("local.settings.json", optional: true, reloadOnChange: true);
+
+        this.Configuration = configBuilder.Build();
     }
 
     /// <summary>

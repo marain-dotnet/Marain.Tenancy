@@ -40,21 +40,6 @@ public class AzuriteTestFixture : IDisposable
     public string ConnectionString => this.azuriteContainer.GetConnectionString();
 
     /// <summary>
-    /// Gets the blob service endpoint URL.
-    /// </summary>
-    public string BlobServiceEndpoint => $"http://{this.azuriteContainer.Hostname}:{this.azuriteContainer.GetMappedPublicPort(AzuriteBuilder.BlobPort)}";
-
-    /// <summary>
-    /// Gets the queue service endpoint URL.
-    /// </summary>
-    public string QueueServiceEndpoint => $"http://{this.azuriteContainer.Hostname}:{this.azuriteContainer.GetMappedPublicPort(AzuriteBuilder.QueuePort)}";
-
-    /// <summary>
-    /// Gets the table service endpoint URL.
-    /// </summary>
-    public string TableServiceEndpoint => $"http://{this.azuriteContainer.Hostname}:{this.azuriteContainer.GetMappedPublicPort(AzuriteBuilder.TablePort)}";
-
-    /// <summary>
     /// Gets a value indicating whether the Azurite container is running.
     /// </summary>
     public bool IsRunning => this.azuriteContainer.State == DotNet.Testcontainers.Containers.TestcontainersStates.Running;
