@@ -1,26 +1,14 @@
-#See https://aka.ms/customizecontainer to learn how to customize your debug container and how Visual Studio uses this Dockerfile to build your images for faster debugging.
-
-FROM mcr.microsoft.com/dotnet/aspnet:8.0 AS base
-USER app
+ARG BaseImage=aspnet
+FROM mcr.microsoft.com/dotnet/${BaseImage}:8.0
+WORKDIR /app
 EXPOSE 8080
 EXPOSE 8081
-
-FROM mcr.microsoft.com/dotnet/sdk:8.0 AS build
-ARG BUILD_CONFIGURATION=Release
-WORKDIR /src
-COPY ["Solutions/Marain.Tenancy.Api/Marain.Tenancy.Api.csproj", "Solutions/Marain.Tenancy.Api/"]
-COPY ["Solutions/Marain.Tenancy.Storage.Azure.BlobStorage/Marain.Tenancy.Storage.Azure.BlobStorage.csproj", "Solutions/Marain.Tenancy.Storage.Azure.BlobStorage/"]
-COPY ["Solutions/Marain.Tenancy.ClientTenantProvider/Marain.Tenancy.ClientTenantProvider.csproj", "Solutions/Marain.Tenancy.ClientTenantProvider/"]
-RUN dotnet restore "./Solutions/Marain.Tenancy.Api/Marain.Tenancy.Api.csproj"
-COPY . .
-WORKDIR "/src/Solutions/Marain.Tenancy.Api"
-RUN dotnet build "./Marain.Tenancy.Api.csproj" -c $BUILD_CONFIGURATION -o /app/build
-
-FROM build AS publish
-ARG BUILD_CONFIGURATION=Release
-RUN dotnet publish "./Marain.Tenancy.Api.csproj" -c $BUILD_CONFIGURATION -o /app/publish /p:UseAppHost=false
-
-FROM base AS final
-WORKDIR /app
-COPY --from=publish /app/publish .
+ARG Configuration=Debug
+# This default will allow the container to be built locally via 'docker build' following a default manual publish.
+# The build process will override this value and the ContextDir to reflect that it publishes projects to the '_packages' folder.
+ARG SrcDir=./bin/${Configuration}/net9.0/publish
+COPY ${SrcDir} .
 ENTRYPOINT ["dotnet", "Marain.Tenancy.Api.dll"]
+LABEL org.opencontainers.image.source=https://github.com/marain-dotnet/Marain.Tenancy
+LABEL org.opencontainers.image.description="Marain Tenancy API Service (ASP.NET Core 8)"
+LABEL org.opencontainers.image.licenses=AGPLv3

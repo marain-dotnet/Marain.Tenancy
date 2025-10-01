@@ -22,13 +22,16 @@ using Testcontainers.Azurite;
 /// </summary>
 internal sealed class ApiWebApplicationFactory : WebApplicationFactory<Program>, IDisposable
 {
-    private AzuriteContainer azuriteContainer;
+    private readonly AzuriteContainer azuriteContainer;
     private HttpClient? client;
 
     private static ApiWebApplicationFactory? current;
 
     private ApiWebApplicationFactory()
     {
+        // Disable ResourceReaper to avoid timeout issues in container environments
+        Environment.SetEnvironmentVariable("TESTCONTAINERS_RYUK_DISABLED", "true");
+
         // Set up Testcontainer
         this.azuriteContainer = new AzuriteBuilder()
             .WithImage("mcr.microsoft.com/azure-storage/azurite:latest")
@@ -53,9 +56,12 @@ internal sealed class ApiWebApplicationFactory : WebApplicationFactory<Program>,
         }
     }
 
-    public override ValueTask DisposeAsync()
+    public override async ValueTask DisposeAsync()
     {
-        return this.azuriteContainer.DisposeAsync();
+        this.client?.Dispose();
+
+        await this.azuriteContainer.DisposeAsync();
+        await base.DisposeAsync();
     }
 
     /// <inheritdoc/>
@@ -67,7 +73,15 @@ internal sealed class ApiWebApplicationFactory : WebApplicationFactory<Program>,
 
         string connectionString = this.azuriteContainer.GetConnectionString();
 
+        Console.WriteLine($"Azurite connection string: {connectionString}");
         Environment.SetEnvironmentVariable("RootBlobStorageConfiguration:ConnectionStringPlainText", connectionString);
+
+        // Set minimal Azure AD configuration to prevent validation errors
+        Environment.SetEnvironmentVariable("AzureAd:Instance", "https://login.microsoftonline.com/");
+        Environment.SetEnvironmentVariable("AzureAd:Domain", "example.com");
+        Environment.SetEnvironmentVariable("AzureAd:TenantId", "00000000-0000-0000-0000-000000000000");
+        Environment.SetEnvironmentVariable("AzureAd:ClientId", "00000000-0000-0000-0000-000000000000");
+        Environment.SetEnvironmentVariable("AzureAd:AllowWebApiToBeAuthorizedByACL", "true");
 
         builder.UseEnvironment(Environments.Development);
 

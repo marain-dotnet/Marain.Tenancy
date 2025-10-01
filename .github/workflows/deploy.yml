@@ -1,0 +1,64 @@
+on:
+  workflow_call:
+    inputs:
+      environment:
+        type: string
+      imageTag:
+        type: string
+  workflow_dispatch:
+    inputs:
+      environment:
+        type: string
+        description: The environment name
+      imageTag:
+        type: string
+        description: The container image tag to deploy
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    environment: ${{ inputs.environment || 'dev' }}
+    concurrency: ${{ inputs.environment || 'dev' }}
+    permissions:
+      id-token: write
+      contents: read
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+
+      - name: Azure CLI login
+        uses: azure/login@a457da9ea143d694b1b9c7c869ebb04ebe844ef5    # v2.3.0
+        with:
+          client-id: ${{ vars.AZURE_CLIENT_ID }}
+          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+          enable-AzPSSession: true
+
+      - name: 'Run deploy.ps1'
+        uses: azure/powershell@53dd145408794f7e80f97cfcca04155c85234709   # v2.0.0
+        with:
+          inlineScript: |
+            if ('${{ inputs.imageTag }}' -eq '') {
+              # Lookup an image tag
+              & az login -n '${{ vars.BUILD_CONTAINER_REGISTRY_FQDN }}'
+              # Naive attempt to find 'newest' image, relying on sort order of SemVer versions
+              $imageTag = & az acr repository show-tags --name ${{ vars.BUILD_CONTAINER_REGISTRY_FQDN }} --repository marain/tenancy-service -o tsv | sort -desc | select -first 1
+              if (!$imageTag) {
+                throw "No image tag was specified and we were unable to derive one"
+              }
+              Write-Host "Using container image tag: $imageTag" -f Green
+            }
+
+            $deployArgs = @{
+              EnvironmentName = "${{ inputs.environment || 'dev' }}"
+              ImageTag = $imageTag
+            }
+
+            Write-Host "Deploy args: $deployArgs"
+
+            ./deploy.ps1 @deployArgs
+          azPSVersion: "latest"
+        env:
+          AZURE_SUBSCRIPTION_ID: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+          AZURE_TENANT_ID: ${{ secrets.AZURE_TENANT_ID }}
+          BUILD_ACR_RESOURCE_GROUP_NAME: ${{ secrets.BUILD_ACR_RESOURCE_GROUP_NAME }}
+          BUILD_ACR_SUBSCRIPTION_ID: ${{ secrets.BUILD_ACR_SUBSCRIPTION_ID }}
