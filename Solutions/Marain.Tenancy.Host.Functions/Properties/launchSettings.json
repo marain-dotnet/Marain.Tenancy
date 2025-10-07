@@ -1,8 +1,0 @@
-{
-  "profiles": {
-    "Marain.Tenancy.Host.Functions": {
-      "commandName": "Project",
-      "commandLineArgs": "host start -p 7071"
-    }
-  }
-}

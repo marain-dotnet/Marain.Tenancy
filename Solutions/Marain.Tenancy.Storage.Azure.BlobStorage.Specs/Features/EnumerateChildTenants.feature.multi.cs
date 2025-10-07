@@ -2,25 +2,24 @@
 // Copyright (c) Endjin Limited. All rights reserved.
 // </copyright>
 
-namespace Marain.Tenancy.Storage.Azure.BlobStorage.Specs.Features
-{
-    using Marain.Tenancy.Storage.Azure.BlobStorage.Specs.MultiMode;
+namespace Marain.Tenancy.Storage.Azure.BlobStorage.Specs.Features;
 
+using Marain.Tenancy.Storage.Azure.BlobStorage.Specs.MultiMode;
+
+/// <summary>
+/// Adds in multi-host-mode execution.
+/// </summary>
+[MultiSetupTest]
+public partial class EnumerateChildTenantsFeature : MultiSetupTestBase
+{
     /// <summary>
-    /// Adds in multi-host-mode execution.
+    /// Creates a <see cref="EnumerateChildTenantsFeature"/>.
     /// </summary>
-    [MultiSetupTest]
-    public partial class EnumerateChildTenantsFeature : MultiSetupTestBase
+    /// <param name="hostMode">
+    /// Hosting style to test for.
+    /// </param>
+    public EnumerateChildTenantsFeature(SetupModes hostMode)
+        : base(hostMode)
     {
-        /// <summary>
-        /// Creates a <see cref="EnumerateChildTenantsFeature"/>.
-        /// </summary>
-        /// <param name="hostMode">
-        /// Hosting style to test for.
-        /// </param>
-        public EnumerateChildTenantsFeature(SetupModes hostMode)
-            : base(hostMode)
-        {
-        }
     }
 }

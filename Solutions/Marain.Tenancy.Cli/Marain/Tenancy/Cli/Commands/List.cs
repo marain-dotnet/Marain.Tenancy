@@ -2,162 +2,177 @@
 // Copyright (c) Endjin Limited. All rights reserved.
 // </copyright>
 
-namespace Marain.Tenancy.Cli.Commands
+namespace Marain.Tenancy.Cli.Commands;
+
+using System;
+using System.Collections.Generic;
+using System.Diagnostics;
+using System.Linq;
+using System.Text.Json.Nodes;
+using System.Threading.Tasks;
+using Corvus.Json.Serialization;
+using Corvus.Tenancy;
+using Marain.Tenancy.Shared.Extensions;
+using Marain.Tenancy.Shared.Telemetry;
+using Microsoft.Extensions.Logging;
+using Spectre.Console;
+using Spectre.Console.Cli;
+
+/// <summary>
+/// Lists children of the specified tenant.
+/// </summary>
+public class List(ITenantStore tenantStore, IJsonSerializerOptionsProvider serializationSettingsProvider, ILogger<List> logger) : AsyncCommand<ListSettings>
 {
-    using System.Collections.Generic;
-    using System.IO;
-    using System.Linq;
-    using System.Text;
-    using System.Threading.Tasks;
-    using ConsoleTables;
-    using Corvus.Tenancy;
-    using McMaster.Extensions.CommandLineUtils;
+    /// <summary>
+    /// Gets the <see cref="ActivitySource" /> for the command.
+    /// </summary>
+    public static ActivitySource ActivitySource { get; } = new(TelemetryConstants.CliActivitySource);
 
     /// <summary>
-    /// Lists children of the specified tenant.
+    /// Executes the command.
     /// </summary>
-    [Command(Name = "list", Description = "List tenants.")]
-    public class List
+    /// <param name="context">The command context.</param>
+    /// <param name="settings">The command settings.</param>
+    /// <returns>A <see cref="Task"/> representing the asynchronous operation.</returns>
+    public override async Task<int> ExecuteAsync(CommandContext context, ListSettings settings)
     {
-        private readonly ITenantStore tenantStore;
+        using Activity? activity = ActivitySource.StartActivity("cli.list-tenants");
 
-        /// <summary>
-        /// Initializes a new instance of the <see cref="List"/> class.
-        /// </summary>
-        /// <param name="tenantStore">The tenant store that will be used to retrieve the information.</param>
-        public List(ITenantStore tenantStore)
+        string tenantId = string.IsNullOrEmpty(settings.TenantId)
+            ? tenantStore.Root.Id
+            : settings.TenantId;
+
+        activity?.SetCommandOperationTags("list", tenantId);
+        activity?.SetTag("list.include_name", settings.Name);
+        activity?.SetTag("list.include_properties", settings.IncludeProperties?.Length > 0);
+        activity?.SetTag("list.properties_count", settings.IncludeProperties?.Length ?? 0);
+
+        var stopwatch = Stopwatch.StartNew();
+
+        try
         {
-            this.tenantStore = tenantStore;
-        }
-
-        /// <summary>
-        /// Gets or sets the tenant whose children should be retrieved.
-        /// </summary>
-        [Option(
-            CommandOptionType.SingleOrNoValue,
-            ShortName = "t",
-            LongName = "tenant",
-            Description = "The Id of the tenant to retrieve children for. Leave blank to retrieve children of the root tenant.")]
-        public string? TenantId { get; set; }
-
-        /// <summary>
-        /// Gets or sets a value indicating whether the tenant name should be output.
-        /// </summary>
-        [Option(
-            CommandOptionType.NoValue,
-            ShortName = "n",
-            LongName = "name",
-            Description = "Indicates that the tenant name should be displayed")]
-        public bool Name { get; set; }
-
-        /// <summary>
-        /// Gets or sets a value containing the names of specific properties that should be included in the output.
-        /// </summary>
-        [Option(
-            CommandOptionType.MultipleValue,
-            ShortName = "p",
-            LongName = "property",
-            Description = "The names of tenant properties to include in the output. If omitted, only the tenant Ids will be listed.")]
-        public string[]? IncludeProperties { get; set; }
-
-        /// <summary>
-        /// Executes the command.
-        /// </summary>
-        /// <param name="app">The current <c>CommandLineApplication</c>.</param>
-        /// <returns>A <see cref="Task"/> representing the asynchronous operation.</returns>
-        public async Task OnExecute(CommandLineApplication app)
-        {
-            if (string.IsNullOrEmpty(this.TenantId))
-            {
-                this.TenantId = this.tenantStore.Root.Id;
-            }
+            logger.LogInformation("Listing child tenants for {TenantId}", tenantId);
 
             string? continuationToken = null;
-
-            var childTenantIds = new List<string>();
+            List<string> childTenantIds = [];
+            int totalPages = 0;
 
             do
             {
-                TenantCollectionResult children = await this.tenantStore.GetChildrenAsync(
-                    this.TenantId,
+                totalPages++;
+                TenantCollectionResult children = await tenantStore.GetChildrenAsync(
+                    tenantId,
                     20,
                     continuationToken).ConfigureAwait(false);
 
                 childTenantIds.AddRange(children.Tenants);
-
                 continuationToken = children.ContinuationToken;
             }
             while (!string.IsNullOrEmpty(continuationToken));
 
-            if (this.Name || this.IncludeProperties?.Length > 0)
+            activity?.SetTag("result.total_children", childTenantIds.Count);
+            activity?.SetTag("result.pages_fetched", totalPages);
+
+            logger.LogInformation(
+                "Found {ChildCount} child tenants for {TenantId} across {PageCount} pages",
+                childTenantIds.Count,
+                tenantId,
+                totalPages);
+
+            if (settings.Name || settings.IncludeProperties?.Length > 0)
             {
-                await this.LoadAndOutputTenantDetailsAsync(childTenantIds, app.Out).ConfigureAwait(false);
+                await this.LoadAndOutputTenantDetailsAsync(childTenantIds, settings).ConfigureAwait(false);
             }
             else
             {
-                OutputTenantIds(childTenantIds, app.Out);
+                OutputTenantIds(childTenantIds);
             }
-        }
 
-        private static void OutputTenantIds(List<string> children, TextWriter output)
+            stopwatch.Stop();
+            activity?.SetStatus(ActivityStatusCode.Ok);
+            activity?.SetTag("operation.duration_ms", stopwatch.ElapsedMilliseconds);
+
+            logger.LogInformation(
+                "Successfully listed {ChildCount} child tenants for {TenantId} in {Duration}ms",
+                childTenantIds.Count,
+                tenantId,
+                stopwatch.ElapsedMilliseconds);
+
+            return 0;
+        }
+        catch (Exception ex)
         {
-            var builder = new StringBuilder();
+            stopwatch.Stop();
+            activity?.SetStatus(ActivityStatusCode.Error, ex.Message);
+            activity?.SetTag("operation.duration_ms", stopwatch.ElapsedMilliseconds);
 
-            builder.AppendLine("Child Tenant Ids:");
+            logger.LogError(
+                ex,
+                "Failed to list child tenants for {TenantId} after {Duration}ms",
+                tenantId,
+                stopwatch.ElapsedMilliseconds);
 
-            foreach (string current in children)
-            {
-                builder.Append('\t').AppendLine(current);
-            }
-
-            output.WriteLine(builder.ToString());
+            AnsiConsole.WriteException(ex);
+            return 1;
         }
+    }
 
-        private async Task LoadAndOutputTenantDetailsAsync(List<string> children, TextWriter output)
+    private static void OutputTenantIds(List<string> children)
+    {
+        AnsiConsole.MarkupLine("[bold]Child Tenant Ids:[/]");
+
+        foreach (string current in children)
         {
-            IEnumerable<Task<ITenant>> detailsTasks = children.Select(x => this.tenantStore.GetTenantAsync(x));
-
-            ITenant[] tenants = await Task.WhenAll(detailsTasks).ConfigureAwait(false);
-
-            var headings = new List<string> { "Id" };
-
-            if (this.Name)
-            {
-                headings.Add("Name");
-            }
-
-            if (this.IncludeProperties != null)
-            {
-                headings.AddRange(this.IncludeProperties);
-            }
-
-            var table = new ConsoleTable(headings.ToArray());
-
-            table.Options.OutputTo = output;
-            table.Options.EnableCount = false;
-
-            foreach (ITenant tenant in tenants)
-            {
-                var result = new List<string> { tenant.Id };
-
-                if (this.Name)
-                {
-                    result.Add(tenant.Name);
-                }
-
-                if (this.IncludeProperties != null)
-                {
-                    foreach (string prop in this.IncludeProperties)
-                    {
-                        tenant.Properties.TryGet(prop, out string propValue);
-                        result.Add(propValue ?? "{not set}");
-                    }
-                }
-
-                table.AddRow(result.ToArray());
-            }
-
-            table.Write(Format.Minimal);
+            AnsiConsole.WriteLine($"  {current}");
         }
+    }
+
+    private async Task LoadAndOutputTenantDetailsAsync(List<string> children, ListSettings settings)
+    {
+        IEnumerable<Task<ITenant>> detailsTasks = children.Select(x => tenantStore.GetTenantAsync(x));
+
+        ITenant[] tenants = await Task.WhenAll(detailsTasks).ConfigureAwait(false);
+
+        List<string> headings = ["Id"];
+
+        if (settings.Name)
+        {
+            headings.Add("Name");
+        }
+
+        if (settings.IncludeProperties != null)
+        {
+            headings.AddRange(settings.IncludeProperties);
+        }
+
+        var table = new Table();
+
+        foreach (string heading in headings)
+        {
+            table.AddColumn(heading);
+        }
+
+        foreach (ITenant tenant in tenants)
+        {
+            List<string> result = [tenant.Id];
+
+            if (settings.Name)
+            {
+                result.Add(tenant.Name);
+            }
+
+            if (settings.IncludeProperties != null)
+            {
+                foreach (string prop in settings.IncludeProperties)
+                {
+                    tenant.Properties.TryGet(prop, out JsonNode propValue);
+                    result.Add(propValue.ToJsonString(serializationSettingsProvider.Instance) ?? "{not set}");
+                }
+            }
+
+            table.AddRow([.. result]);
+        }
+
+        AnsiConsole.Write(table);
     }
 }

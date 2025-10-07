@@ -2,113 +2,139 @@
 // Copyright (c) Endjin Limited. All rights reserved.
 // </copyright>
 
-namespace Marain.Tenancy.Storage.Azure.BlobStorage.Specs.Bindings
+namespace Marain.Tenancy.Storage.Azure.BlobStorage.Specs.Bindings;
+
+using System;
+using System.Collections.Generic;
+
+using Corvus.Storage.Azure.BlobStorage;
+using Corvus.Tenancy;
+using Corvus.Testing.ReqnRoll;
+
+using Marain.Tenancy.Storage.Azure.BlobStorage.Specs.MultiMode;
+
+using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.DependencyInjection;
+
+using NUnit.Framework.Internal;
+using Reqnroll;
+
+/// <summary>
+/// Sets up the DI container used by tests with the <c>@withBlobStorageTenantProvider</c> tag.
+/// </summary>
+[Binding]
+public class ScenarioDiContainer
 {
-    using System;
-
-    using Corvus.Storage.Azure.BlobStorage;
-    using Corvus.Tenancy;
-    using Corvus.Testing.SpecFlow;
-
-    using Marain.Tenancy.Storage.Azure.BlobStorage.Specs.MultiMode;
-
-    using Microsoft.Extensions.Configuration;
-    using Microsoft.Extensions.DependencyInjection;
-
-    using NUnit.Framework.Internal;
-
-    using TechTalk.SpecFlow;
+    private readonly ScenarioContext scenarioContext;
+    private ITenantStore? tenantStore;
+    private IServiceProvider? serviceProvider;
+    private BlobContainerConfiguration? rootBlobStorageConfiguration;
 
     /// <summary>
-    /// Sets up the DI container used by tests with the <c>@withBlobStorageTenantProvider</c> tag.
+    /// Creates a <see cref="ScenarioDiContainer"/>.
     /// </summary>
-    [Binding]
-    public class ScenarioDiContainer
+    /// <param name="scenarioContext">The scenario context from SpecFlow.</param>
+    public ScenarioDiContainer(ScenarioContext scenarioContext)
     {
-        private readonly ScenarioContext scenarioContext;
-        private ITenantStore? tenantStore;
-        private IServiceProvider? serviceProvider;
-        private BlobContainerConfiguration? rootBlobStorageConfiguration;
+        this.scenarioContext = scenarioContext;
 
-        /// <summary>
-        /// Creates a <see cref="ScenarioDiContainer"/>.
-        /// </summary>
-        /// <param name="scenarioContext">The scenario context from SpecFlow.</param>
-        public ScenarioDiContainer(ScenarioContext scenarioContext)
+        this.SetupMode = TestExecutionContext.CurrentContext.TestObject switch
         {
-            this.scenarioContext = scenarioContext;
+            IMultiModeTest<SetupModes> multiModeTest => multiModeTest.TestType,
+            _ => SetupModes.ViaApiPropagateRootConfigAsV3,
+        };
 
-            this.SetupMode = TestExecutionContext.CurrentContext.TestObject switch
+        this.PropagateRootTenancyStorageConfigAsV2 = this.SetupMode is
+            SetupModes.ViaApiPropagateRootConfigAsV2 or SetupModes.DirectToStoragePropagateRootConfigAsV2;
+
+        var configBuilder = new ConfigurationBuilder();
+
+        // Add Testcontainers connection string if available
+        try
+        {
+            string testcontainersConnectionString = AzuriteConnectionProvider.GetConnectionString();
+            var dynamicConfig = new Dictionary<string, string?>
             {
-                IMultiModeTest<SetupModes> multiModeTest => multiModeTest.TestType,
-                _ => SetupModes.ViaApiPropagateRootConfigAsV3,
+                ["RootBlobStorageConfiguration:ConnectionStringPlainText"] = testcontainersConnectionString,
             };
-
-            this.PropagateRootTenancyStorageConfigAsV2 = this.SetupMode is
-                    SetupModes.ViaApiPropagateRootConfigAsV2 or SetupModes.DirectToStoragePropagateRootConfigAsV2;
-
-            this.Configuration = new ConfigurationBuilder()
-                .AddEnvironmentVariables()
-                .AddJsonFile("local.settings.json", true, true)
-                .Build();
+            configBuilder.AddInMemoryCollection(dynamicConfig);
         }
-
-        /// <summary>
-        /// Gets the configuration root.
-        /// </summary>
-        public IConfiguration Configuration { get; }
-
-        public IServiceProvider ServiceProvider => this.serviceProvider
-            ?? throw new InvalidOperationException("Not available until DI initialization complete");
-
-        /// <summary>
-        /// Gets the blob storage configuration to use for the root tenant.
-        /// </summary>
-        public BlobContainerConfiguration RootBlobStorageConfiguration => this.rootBlobStorageConfiguration
-            ?? throw new InvalidOperationException("Not available until DI initialization complete");
-
-        /// <summary>
-        /// Gets the mode to use when setting up the containers in tests.
-        /// </summary>
-        public SetupModes SetupMode { get; }
-
-        /// <summary>
-        /// Gets the <c>ITenantStore</c> implementation to test.
-        /// </summary>
-        public ITenantStore TenantStore => this.tenantStore
-            ?? throw new InvalidOperationException("Not available until DI initialization complete");
-
-        /// <summary>
-        /// Gets a value indicating whether the root tenancy configuration is propagated in V2 or
-        /// V3 style.
-        /// </summary>
-        public bool PropagateRootTenancyStorageConfigAsV2 { get; }
-
-        /// <summary>
-        /// Configure the DI container. Called by SpecFlow.
-        /// </summary>
-        [BeforeScenario("@withBlobStorageTenantProvider", Order = ContainerBeforeScenarioOrder.PopulateServiceCollection)]
-        public void ConfigureServices()
+        catch (InvalidOperationException)
         {
-            ContainerBindings.ConfigureServices(this.scenarioContext, services =>
-            {
-                this.rootBlobStorageConfiguration = this.Configuration
-                    .GetSection("RootBlobStorageConfiguration")
-                    .Get<BlobContainerConfiguration>();
-                services.AddTenantStoreOnAzureBlobStorage(
-                    this.rootBlobStorageConfiguration,
-                    this.PropagateRootTenancyStorageConfigAsV2);
-            });
+            // No Testcontainers connection available yet - will be set later
         }
 
-        /// <summary>
-        /// Retrieve initialization services to the DI container. Called by SpecFlow.
-        /// </summary>
-        [BeforeScenario("@withBlobStorageTenantProvider", Order = ContainerBeforeScenarioOrder.ServiceProviderAvailable)]
-        public void InitializeServiceProperties()
+        configBuilder.AddEnvironmentVariables();
+        configBuilder.AddJsonFile("local.settings.json", optional: true, reloadOnChange: true);
+
+        this.Configuration = configBuilder.Build();
+    }
+
+    /// <summary>
+    /// Gets the configuration root.
+    /// </summary>
+    public IConfiguration Configuration { get; }
+
+    public IServiceProvider ServiceProvider => this.serviceProvider
+                                               ?? throw new InvalidOperationException("Not available until DI initialization complete");
+
+    /// <summary>
+    /// Gets the blob storage configuration to use for the root tenant.
+    /// </summary>
+    public BlobContainerConfiguration RootBlobStorageConfiguration => this.rootBlobStorageConfiguration
+                                                                      ?? throw new InvalidOperationException("Not available until DI initialization complete");
+
+    /// <summary>
+    /// Gets the mode to use when setting up the containers in tests.
+    /// </summary>
+    public SetupModes SetupMode { get; }
+
+    /// <summary>
+    /// Gets the <c>ITenantStore</c> implementation to test.
+    /// </summary>
+    public ITenantStore TenantStore => this.tenantStore
+                                       ?? throw new InvalidOperationException("Not available until DI initialization complete");
+
+    /// <summary>
+    /// Gets a value indicating whether the root tenancy configuration is propagated in V2 or
+    /// V3 style.
+    /// </summary>
+    public bool PropagateRootTenancyStorageConfigAsV2 { get; }
+
+    /// <summary>
+    /// Configure the DI container. Called by SpecFlow.
+    /// </summary>
+    [BeforeScenario("@withBlobStorageTenantProvider", Order = ContainerBeforeScenarioOrder.PopulateServiceCollection)]
+    public void ConfigureServices()
+    {
+        ContainerBindings.ConfigureServices(this.scenarioContext, services =>
         {
-            this.serviceProvider = ContainerBindings.GetServiceProvider(this.scenarioContext);
-            this.tenantStore = this.serviceProvider.GetRequiredService<ITenantStore>();
-        }
+            this.rootBlobStorageConfiguration = this.Configuration
+                .GetSection("RootBlobStorageConfiguration")
+                .Get<BlobContainerConfiguration>();
+            services.AddTenantStoreOnAzureBlobStorage(
+                this.RootBlobStorageConfiguration,
+                this.PropagateRootTenancyStorageConfigAsV2);
+            services.AddLogging();
+        });
+    }
+
+    /// <summary>
+    /// Retrieve initialization services to the DI container. Called by SpecFlow.
+    /// </summary>
+    [BeforeScenario("@withBlobStorageTenantProvider", Order = ContainerBeforeScenarioOrder.ServiceProviderAvailable)]
+    public void InitializeServiceProperties()
+    {
+        this.serviceProvider = ContainerBindings.GetServiceProvider(this.scenarioContext);
+        this.tenantStore = this.serviceProvider.GetRequiredService<ITenantStore>();
+    }
+
+    /// <summary>
+    /// Cleans up Testcontainers connection string after scenario completion.
+    /// </summary>
+    [AfterScenario("@withBlobStorageTenantProvider")]
+    public void CleanupConnectionProvider()
+    {
+        AzuriteConnectionProvider.ClearTestcontainersConnectionString();
     }
 }

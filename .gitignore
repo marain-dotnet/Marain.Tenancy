@@ -348,3 +348,9 @@ appsettings.json
 # Local build outputs
 _packages/
 *.sbom.*
+_codeCoverage/
+.zf/extensions/
+
+azurite-data
+
+**/Reqnroll/userid

@@ -2,286 +2,522 @@
 // Copyright (c) Endjin Limited. All rights reserved.
 // </copyright>
 
-namespace Marain.Tenancy
+namespace Marain.Tenancy;
+
+using System;
+using System.Collections.Generic;
+using System.Diagnostics;
+using System.Diagnostics.Metrics;
+using System.Linq;
+using System.Net;
+using System.Threading.Tasks;
+using Corvus.Json;
+using Corvus.Json.Serialization;
+using Corvus.Tenancy;
+using Corvus.Tenancy.Exceptions;
+using Marain.Clients;
+using Marain.Clients.Hal;
+using Marain.Tenancy.Client;
+using Marain.Tenancy.Client.Resources;
+using Marain.Tenancy.Mappers;
+using Marain.Tenancy.Shared.Extensions;
+using Marain.Tenancy.Shared.Telemetry;
+using Microsoft.Extensions.Logging;
+
+/// <summary>
+/// An <see cref="ITenantProvider"/> built over a Marain tenancy instance.
+/// </summary>
+public class ClientTenantStore(
+    RootTenant root,
+    ITenancyClient tenancyApiClient,
+    ITenantMapper tenantMapper,
+    IPropertyBagFactory propertyBagFactory,
+    ILogger<ClientTenantStore>? logger = null) : ClientTenantProvider(root, tenancyApiClient, tenantMapper, logger), ITenantStore
 {
-    using System;
-    using System.Collections.Generic;
-    using System.Linq;
-    using System.Net;
-    using System.Threading.Tasks;
-    using Corvus.Extensions.Json;
-    using Corvus.Tenancy;
-    using Corvus.Tenancy.Exceptions;
-    using Marain.Tenancy.Client;
-    using Marain.Tenancy.Client.Models;
-    using Marain.Tenancy.Mappers;
-    using Microsoft.Rest;
-    using Newtonsoft.Json;
-    using Newtonsoft.Json.Linq;
+    // Telemetry infrastructure for store operations
+    private static readonly ActivitySource StoreActivitySource = new(TelemetryConstants.BusinessActivitySource);
+    private static readonly Meter StoreMeter = new(TelemetryConstants.TenancyMeter);
+    private static readonly Counter<long> TenantStoreOperationsCounter =
+        StoreMeter.CreateCounter<long>("tenant.store.operations.total", "operations", "Total store operations");
 
-    // Note that we do not add a using statment for Marain.Client.Models as this is the "mapping" namespace and could
-    // cause collisions with the types in Marain.Tenancy.
+    private static readonly Histogram<double> TenantStoreOperationDuration =
+        StoreMeter.CreateHistogram<double>("tenant.store.operation.duration", "ms", "Store operation duration");
 
-    /// <summary>
-    /// An <see cref="ITenantProvider"/> built over a Marain tenancy instance.
-    /// </summary>
-    public class ClientTenantStore : ClientTenantProvider, ITenantStore
+    private static readonly Counter<long> TenantStoreErrorsCounter =
+        StoreMeter.CreateCounter<long>("tenant.store.errors.total", "errors", "Total store errors");
+
+    private readonly ILogger<ClientTenantStore>? logger = logger;
+
+    /// <inheritdoc/>
+    public Task<ITenant> CreateChildTenantAsync(string parentTenantId, string name)
     {
-        private readonly IJsonSerializerSettingsProvider jsonSerializerSettingsProvider;
+        return this.CreateChildTenantAsync(parentTenantId, name, null);
+    }
 
-        /// <summary>
-        /// Initializes a new instance of the <see cref="ClientTenantProvider"/> class.
-        /// </summary>
-        /// <param name="root">The Root tenant.</param>
-        /// <param name="tenantService">The tenant service.</param>
-        /// <param name="tenantMapper">The tenant mapper to use.</param>
-        /// <param name="jsonSerializerSettingsProvider">The JSON serializer settings provider.</param>
-        public ClientTenantStore(
-            RootTenant root,
-            ITenancyService tenantService,
-            ITenantMapper tenantMapper,
-            IJsonSerializerSettingsProvider jsonSerializerSettingsProvider)
-            : base(root, tenantService, tenantMapper)
+    /// <inheritdoc/>
+    public Task<ITenant> CreateWellKnownChildTenantAsync(string parentTenantId, Guid wellKnownChildTenantGuid, string name)
+    {
+        return this.CreateChildTenantAsync(parentTenantId, name, wellKnownChildTenantGuid);
+    }
+
+    /// <inheritdoc/>
+    public async Task DeleteTenantAsync(string tenantId)
+    {
+        using Activity? activity = StoreActivitySource.StartActivity("store.tenant.delete");
+        activity?.SetTenantOperationTags(TelemetryConstants.OperationTypes.Delete, tenantId);
+
+        var stopwatch = System.Diagnostics.Stopwatch.StartNew();
+
+        this.logger?.LogInformation("Deleting tenant {TenantId} via store", tenantId);
+
+        try
         {
-            this.jsonSerializerSettingsProvider = jsonSerializerSettingsProvider
-                ?? throw new ArgumentNullException(nameof(jsonSerializerSettingsProvider));
+            // Extract parent tenant ID from the full tenant ID path
+            string parentTenantId = tenantId.GetParentId()
+                ?? throw new InvalidOperationException("Unable to extract parent tenant Id from supplied tenant Id");
+
+            await this.TenantApiClient.DeleteChildTenantAsync(parentTenantId, tenantId).ConfigureAwait(false);
+
+            // Record successful operation
+            TenantStoreOperationsCounter.Add(
+                1,
+                new KeyValuePair<string, object?>(TelemetryConstants.AttributeKeys.OperationType, TelemetryConstants.OperationTypes.Delete),
+                new KeyValuePair<string, object?>("status", "success"));
+            TenantStoreOperationDuration.Record(stopwatch.Elapsed.TotalMilliseconds);
+            activity?.SetStatus(ActivityStatusCode.Ok);
+            this.logger?.LogInformation("Successfully deleted tenant {TenantId}", tenantId);
+        }
+        catch (MarainApiException ex) when (ex.StatusCode == HttpStatusCode.NotFound)
+        {
+            activity?.SetStatus(ActivityStatusCode.Error, "Tenant not found");
+            TenantStoreErrorsCounter.Add(
+                1,
+                new KeyValuePair<string, object?>(TelemetryConstants.AttributeKeys.OperationType, TelemetryConstants.OperationTypes.Delete),
+                new KeyValuePair<string, object?>("error.type", "not_found"));
+            TenantStoreOperationsCounter.Add(
+                1,
+                new KeyValuePair<string, object?>(TelemetryConstants.AttributeKeys.OperationType, TelemetryConstants.OperationTypes.Delete),
+                new KeyValuePair<string, object?>("status", "error"));
+
+            this.logger?.LogWarning("Tenant not found for deletion: {TenantId}", tenantId);
+            throw new TenantNotFoundException(ex.Message, ex);
+        }
+        catch (MarainApiException ex) when (ex.StatusCode == HttpStatusCode.BadRequest)
+        {
+            activity?.SetStatus(ActivityStatusCode.Error, "Bad request");
+            TenantStoreErrorsCounter.Add(
+                1,
+                new KeyValuePair<string, object?>(TelemetryConstants.AttributeKeys.OperationType, TelemetryConstants.OperationTypes.Delete),
+                new KeyValuePair<string, object?>("error.type", "bad_request"));
+            TenantStoreOperationsCounter.Add(
+                1,
+                new KeyValuePair<string, object?>(TelemetryConstants.AttributeKeys.OperationType, TelemetryConstants.OperationTypes.Delete),
+                new KeyValuePair<string, object?>("status", "error"));
+
+            this.logger?.LogError(
+                ex,
+                "Bad request for tenant deletion {TenantId}: {Message}",
+                tenantId,
+                ex.Message);
+            throw new InvalidOperationException($"Invalid delete tenant request: {ex.Message}", ex);
+        }
+        catch (Exception ex)
+        {
+            activity?.SetStatus(ActivityStatusCode.Error, ex.Message);
+            TenantStoreErrorsCounter.Add(
+                1,
+                new KeyValuePair<string, object?>(TelemetryConstants.AttributeKeys.OperationType, TelemetryConstants.OperationTypes.Delete),
+                new KeyValuePair<string, object?>("error.type", ex.GetType().Name));
+            TenantStoreOperationsCounter.Add(
+                1,
+                new KeyValuePair<string, object?>(TelemetryConstants.AttributeKeys.OperationType, TelemetryConstants.OperationTypes.Delete),
+                new KeyValuePair<string, object?>("status", "error"));
+
+            this.logger?.LogError(ex, "Failed to delete tenant {TenantId}", tenantId);
+            throw;
+        }
+    }
+
+    /// <inheritdoc/>
+    public async Task<TenantCollectionResult> GetChildrenAsync(string tenantId, int limit = 20, string? continuationToken = null)
+    {
+        using Activity? activity = StoreActivitySource.StartActivity("store.tenant.get-children");
+        activity?.SetTenantOperationTags(TelemetryConstants.OperationTypes.List, tenantId);
+        activity?.SetTag("limit", limit);
+
+        var stopwatch = System.Diagnostics.Stopwatch.StartNew();
+
+        this.logger?.LogDebug(
+            "Getting children for tenant {TenantId} via store, limit: {Limit}",
+            tenantId,
+            limit);
+
+        try
+        {
+            ApiResponse<ChildTenantsResource> response = await this.TenantApiClient.GetChildrenAsync(tenantId, continuationToken, limit).ConfigureAwait(false);
+
+            // Extract tenant IDs from the linked tenants
+            List<WebLink> childLinkResponses = response.Body.Links?.GetTenant ?? [];
+            IEnumerable<string> childTenantIds = childLinkResponses
+                .Select(x => x.Href)
+                .Where(x => !string.IsNullOrEmpty(x))
+                .Select(x => this.TenantMapper.ExtractTenantIdFromUrlPath(x!));
+
+            // Use the continuation token from the response for pagination
+            string? nextContinuationToken = response.Body.ContinuationToken;
+
+            TenantCollectionResult result = new(childTenantIds, nextContinuationToken);
+
+            // Record successful operation
+            TenantStoreOperationsCounter.Add(
+                1,
+                new KeyValuePair<string, object?>(TelemetryConstants.AttributeKeys.OperationType, TelemetryConstants.OperationTypes.List),
+                new KeyValuePair<string, object?>("status", "success"));
+            TenantStoreOperationDuration.Record(stopwatch.Elapsed.TotalMilliseconds);
+            activity?.SetTag("result.count", result.Tenants.Count());
+            activity?.SetStatus(ActivityStatusCode.Ok);
+            this.logger?.LogDebug(
+                "Successfully retrieved {Count} children for tenant {TenantId}",
+                result.Tenants.Count(),
+                tenantId);
+
+            return result;
+        }
+        catch (MarainApiException ex) when (ex.StatusCode == HttpStatusCode.NotFound)
+        {
+            activity?.SetStatus(ActivityStatusCode.Error, "Tenant not found");
+            TenantStoreErrorsCounter.Add(
+                1,
+                new KeyValuePair<string, object?>(TelemetryConstants.AttributeKeys.OperationType, TelemetryConstants.OperationTypes.List),
+                new KeyValuePair<string, object?>("error.type", "not_found"));
+            TenantStoreOperationsCounter.Add(
+                1,
+                new KeyValuePair<string, object?>(TelemetryConstants.AttributeKeys.OperationType, TelemetryConstants.OperationTypes.List),
+                new KeyValuePair<string, object?>("status", "error"));
+
+            this.logger?.LogWarning("Tenant not found for get children: {TenantId}", tenantId);
+            throw new TenantNotFoundException(ex.Message, ex);
+        }
+        catch (MarainApiException ex) when (ex.StatusCode == HttpStatusCode.BadRequest)
+        {
+            activity?.SetStatus(ActivityStatusCode.Error, "Bad request");
+            TenantStoreErrorsCounter.Add(
+                1,
+                new KeyValuePair<string, object?>(TelemetryConstants.AttributeKeys.OperationType, TelemetryConstants.OperationTypes.List),
+                new KeyValuePair<string, object?>("error.type", "bad_request"));
+            TenantStoreOperationsCounter.Add(
+                1,
+                new KeyValuePair<string, object?>(TelemetryConstants.AttributeKeys.OperationType, TelemetryConstants.OperationTypes.List),
+                new KeyValuePair<string, object?>("status", "error"));
+
+            this.logger?.LogError(
+                ex,
+                "Bad request for get children {TenantId}: {Message}",
+                tenantId,
+                ex.Message);
+            throw new InvalidOperationException($"Invalid get children request: {ex.Message}", ex);
+        }
+        catch (Exception ex)
+        {
+            activity?.SetStatus(ActivityStatusCode.Error, ex.Message);
+            TenantStoreErrorsCounter.Add(
+                1,
+                new KeyValuePair<string, object?>(TelemetryConstants.AttributeKeys.OperationType, TelemetryConstants.OperationTypes.List),
+                new KeyValuePair<string, object?>("error.type", ex.GetType().Name));
+            TenantStoreOperationsCounter.Add(
+                1,
+                new KeyValuePair<string, object?>(TelemetryConstants.AttributeKeys.OperationType, TelemetryConstants.OperationTypes.List),
+                new KeyValuePair<string, object?>("status", "error"));
+
+            this.logger?.LogError(ex, "Failed to get children for tenant {TenantId}", tenantId);
+            throw;
+        }
+    }
+
+    /// <inheritdoc/>
+    /// <remarks>
+    /// <para>
+    /// The tenancy service uses JSON Patch to describe changes. This means that the body of
+    /// the request is a JSON Array with one entry for each change to be made. For example,
+    /// if you just wish to rename the tenant, your code would just need to do this:
+    /// </para>
+    /// <code><![CDATA[
+    /// await tenantStore.UpdateTenantAsync(tenantId, name: "NewTenantName");
+    /// ]]></code>
+    /// <para>
+    /// This method would then send an HTTP PATCH request to the tenancy service with the
+    /// following content:
+    /// </para>
+    /// <code><![CDATA[
+    ///  [{
+    ///    "path": "/name",
+    ///    "op": "replace",
+    ///    "value": "NewTenantName"
+    ///  }]
+    /// ]]></code>
+    /// <para>
+    /// If you pass a non-null <c>propertiesToSetOrAdd</c> argument, the request will include
+    /// one entry for each property being set or updated, e.g.:
+    /// </para>
+    /// <code><![CDATA[
+    ///  [
+    ///     {
+    ///         "op": "add",
+    ///         "path": "/properties/StorageConfiguration__corvustenancy",
+    ///         "value": {
+    ///            "AccountName": "mardevtenancy",
+    ///            "Container": null,
+    ///            "KeyVaultName": "mardevkv",
+    ///            "AccountKeySecretName": "mardevtenancystore",
+    ///            "DisableTenantIdPrefix": false
+    ///        }
+    ///     },
+    ///     {
+    ///         "op": "add",
+    ///         "path": "/properties/Foo__bar",
+    ///         "value": "Some string"
+    ///     },
+    ///     {
+    ///         "op": "add",
+    ///         "path": "/properties/Foo__spong",
+    ///         "value": 42
+    ///     }
+    ///  ]
+    /// ]]></code>
+    /// <para>
+    /// If the <c>propertiesToRemove</c> argument is non-null, each entry it contains will
+    /// result in an entry in the patch with an <c>op</c> of <c>remove</c>.
+    /// </para>
+    /// <para>
+    /// JSON Patch allows any combination of operations, so a single request may add, change,
+    /// or remove anything.
+    /// </para>
+    /// <para>
+    /// Note that the <c>add</c> semantics in JSON Patch are really add-or-replace, so there
+    /// is no need for this client to check whether properties exist first and to set the
+    /// operation type appropriately. Note however that a tenant always has a name, so we
+    /// always specify <c>replace</c> when asking to change the name.
+    /// </para>
+    /// </remarks>
+    public async Task<ITenant> UpdateTenantAsync(
+        string tenantId,
+        string? name,
+        IEnumerable<KeyValuePair<string, object>>? propertiesToSetOrAdd = null,
+        IEnumerable<string>? propertiesToRemove = null)
+    {
+        using Activity? activity = StoreActivitySource.StartActivity("store.tenant.update");
+        activity?.SetTenantOperationTags(TelemetryConstants.OperationTypes.Update, tenantId);
+        if (!string.IsNullOrEmpty(name))
+        {
+            activity?.SetTag(TelemetryConstants.AttributeKeys.TenantName, name);
         }
 
-        /// <inheritdoc/>
-        public Task<ITenant> CreateChildTenantAsync(string parentTenantId, string name)
+        var stopwatch = System.Diagnostics.Stopwatch.StartNew();
+
+        this.logger?.LogInformation(
+            "Updating tenant {TenantId} via store, name: {TenantName}",
+            tenantId,
+            name);
+
+        IPropertyBag? propertiesToAddOrUpdate = propertiesToSetOrAdd is null
+            ? null
+            : propertyBagFactory.Create(propertiesToSetOrAdd);
+
+        try
         {
-            return this.CreateChildTenantAsync(parentTenantId, name, null);
+            ApiResponse<TenantResource> response = await this.TenantApiClient.UpdateTenantAsync(
+                tenantId,
+                name,
+                propertiesToSetOrAdd,
+                propertiesToRemove).ConfigureAwait(false);
+
+            ITenant result = this.TenantMapper.MapTenant(response.Body);
+
+            // Record successful operation
+            TenantStoreOperationsCounter.Add(
+                1,
+                new KeyValuePair<string, object?>(TelemetryConstants.AttributeKeys.OperationType, TelemetryConstants.OperationTypes.Update),
+                new KeyValuePair<string, object?>("status", "success"));
+            TenantStoreOperationDuration.Record(stopwatch.Elapsed.TotalMilliseconds);
+            activity?.SetStatus(ActivityStatusCode.Ok);
+            this.logger?.LogInformation("Successfully updated tenant {TenantId}", tenantId);
+
+            return result;
+        }
+        catch (MarainApiException ex) when (ex.StatusCode == HttpStatusCode.NotFound)
+        {
+            activity?.SetStatus(ActivityStatusCode.Error, "Tenant not found");
+            TenantStoreErrorsCounter.Add(
+                1,
+                new KeyValuePair<string, object?>(TelemetryConstants.AttributeKeys.OperationType, TelemetryConstants.OperationTypes.Update),
+                new KeyValuePair<string, object?>("error.type", "not_found"));
+            TenantStoreOperationsCounter.Add(
+                1,
+                new KeyValuePair<string, object?>(TelemetryConstants.AttributeKeys.OperationType, TelemetryConstants.OperationTypes.Update),
+                new KeyValuePair<string, object?>("status", "error"));
+
+            this.logger?.LogWarning("Tenant not found for update: {TenantId}", tenantId);
+            throw new TenantNotFoundException(ex.Message, ex);
+        }
+        catch (MarainApiException ex) when (ex.StatusCode == HttpStatusCode.MethodNotAllowed)
+        {
+            activity?.SetStatus(ActivityStatusCode.Error, "Update not allowed");
+            TenantStoreErrorsCounter.Add(
+                1,
+                new KeyValuePair<string, object?>(TelemetryConstants.AttributeKeys.OperationType, TelemetryConstants.OperationTypes.Update),
+                new KeyValuePair<string, object?>("error.type", "not_allowed"));
+            TenantStoreOperationsCounter.Add(
+                1,
+                new KeyValuePair<string, object?>(TelemetryConstants.AttributeKeys.OperationType, TelemetryConstants.OperationTypes.Update),
+                new KeyValuePair<string, object?>("status", "error"));
+
+            this.logger?.LogWarning("Tenant update not allowed: {TenantId}", tenantId);
+            throw new NotSupportedException("This tenant cannot be updated", ex);
+        }
+        catch (MarainApiException ex) when (ex.StatusCode == HttpStatusCode.BadRequest)
+        {
+            activity?.SetStatus(ActivityStatusCode.Error, "Bad request");
+            TenantStoreErrorsCounter.Add(
+                1,
+                new KeyValuePair<string, object?>(TelemetryConstants.AttributeKeys.OperationType, TelemetryConstants.OperationTypes.Update),
+                new KeyValuePair<string, object?>("error.type", "bad_request"));
+            TenantStoreOperationsCounter.Add(
+                1,
+                new KeyValuePair<string, object?>(TelemetryConstants.AttributeKeys.OperationType, TelemetryConstants.OperationTypes.Update),
+                new KeyValuePair<string, object?>("status", "error"));
+
+            this.logger?.LogError(
+                ex,
+                "Bad request for tenant update {TenantId}: {Message}",
+                tenantId,
+                ex.Message);
+            throw new ArgumentException($"Invalid update tenant request: {ex.Message}", ex);
+        }
+        catch (Exception ex)
+        {
+            activity?.SetStatus(ActivityStatusCode.Error, ex.Message);
+            TenantStoreErrorsCounter.Add(
+                1,
+                new KeyValuePair<string, object?>(TelemetryConstants.AttributeKeys.OperationType, TelemetryConstants.OperationTypes.Update),
+                new KeyValuePair<string, object?>("error.type", ex.GetType().Name));
+            TenantStoreOperationsCounter.Add(
+                1,
+                new KeyValuePair<string, object?>(TelemetryConstants.AttributeKeys.OperationType, TelemetryConstants.OperationTypes.Update),
+                new KeyValuePair<string, object?>("status", "error"));
+
+            this.logger?.LogError(ex, "Failed to update tenant {TenantId}", tenantId);
+            throw;
+        }
+    }
+
+    private async Task<ITenant> CreateChildTenantAsync(string parentTenantId, string name, Guid? wellKnownChildTenantGuid)
+    {
+        using Activity? activity = StoreActivitySource.StartActivity("store.tenant.create-child");
+        activity?.SetTenantOperationTags(TelemetryConstants.OperationTypes.Create, parentTenantId);
+        activity?.SetTag(TelemetryConstants.AttributeKeys.TenantName, name);
+        if (wellKnownChildTenantGuid.HasValue)
+        {
+            activity?.SetTag(TelemetryConstants.AttributeKeys.ChildTenantGuid, wellKnownChildTenantGuid.Value.ToString());
         }
 
-        /// <inheritdoc/>
-        public Task<ITenant> CreateWellKnownChildTenantAsync(string parentTenantId, Guid wellKnownChildTenantGuid, string name)
+        var stopwatch = System.Diagnostics.Stopwatch.StartNew();
+
+        this.logger?.LogInformation(
+            "Creating child tenant under {ParentTenantId} via store, name: {TenantName}, wellKnownGuid: {WellKnownGuid}",
+            parentTenantId,
+            name,
+            wellKnownChildTenantGuid);
+
+        try
         {
-            return this.CreateChildTenantAsync(parentTenantId, name, wellKnownChildTenantGuid);
+            ApiResponse<TenantResource> response = await this.TenantApiClient.CreateChildTenantAsync(
+                parentTenantId,
+                name,
+                wellKnownChildTenantGuid?.ToString()).ConfigureAwait(false);
+
+            response.Headers.TryGetValue("etag", out string? etag);
+            ITenant result = this.TenantMapper.MapTenant(response.Body, etag);
+
+            // Record successful operation
+            TenantStoreOperationsCounter.Add(
+                1,
+                new KeyValuePair<string, object?>(TelemetryConstants.AttributeKeys.OperationType, TelemetryConstants.OperationTypes.Create),
+                new KeyValuePair<string, object?>("status", "success"));
+            TenantStoreOperationDuration.Record(stopwatch.Elapsed.TotalMilliseconds);
+            activity?.SetStatus(ActivityStatusCode.Ok);
+            this.logger?.LogInformation(
+                "Successfully created child tenant {TenantId} under parent {ParentTenantId}",
+                result.Id,
+                parentTenantId);
+
+            return result;
         }
-
-        /// <inheritdoc/>
-        public async Task DeleteTenantAsync(string tenantId)
+        catch (MarainApiException ex) when (ex.StatusCode == HttpStatusCode.NotFound)
         {
-            HttpOperationResponse result = await this.TenantService.DeleteChildTenantWithHttpMessagesAsync(tenantId.GetParentId(), tenantId).ConfigureAwait(false);
-            if (result.Response.StatusCode == HttpStatusCode.NotFound)
-            {
-                throw new TenantNotFoundException();
-            }
+            activity?.SetStatus(ActivityStatusCode.Error, "Parent tenant not found");
+            TenantStoreErrorsCounter.Add(
+                1,
+                new KeyValuePair<string, object?>(TelemetryConstants.AttributeKeys.OperationType, TelemetryConstants.OperationTypes.Create),
+                new KeyValuePair<string, object?>("error.type", "not_found"));
+            TenantStoreOperationsCounter.Add(
+                1,
+                new KeyValuePair<string, object?>(TelemetryConstants.AttributeKeys.OperationType, TelemetryConstants.OperationTypes.Create),
+                new KeyValuePair<string, object?>("status", "error"));
 
-            if (result.Response.StatusCode == HttpStatusCode.BadRequest)
-            {
-                throw new InvalidOperationException();
-            }
-
-            if (!result.Response.IsSuccessStatusCode)
-            {
-                throw new Exception(result.Response.ReasonPhrase);
-            }
+            this.logger?.LogWarning("Parent tenant not found for child creation: {ParentTenantId}", parentTenantId);
+            throw new TenantNotFoundException(ex.Message, ex);
         }
-
-        /// <inheritdoc/>
-        public async Task<TenantCollectionResult> GetChildrenAsync(string tenantId, int limit = 20, string? continuationToken = null)
+        catch (MarainApiException ex) when (ex.StatusCode == HttpStatusCode.Conflict)
         {
-            HttpOperationResponse<object> result = await this.TenantService.GetChildrenWithHttpMessagesAsync(tenantId, continuationToken, limit).ConfigureAwait(false);
+            activity?.SetStatus(ActivityStatusCode.Error, "Tenant conflict");
+            TenantStoreErrorsCounter.Add(
+                1,
+                new KeyValuePair<string, object?>(TelemetryConstants.AttributeKeys.OperationType, TelemetryConstants.OperationTypes.Create),
+                new KeyValuePair<string, object?>("error.type", "conflict"));
+            TenantStoreOperationsCounter.Add(
+                1,
+                new KeyValuePair<string, object?>(TelemetryConstants.AttributeKeys.OperationType, TelemetryConstants.OperationTypes.Create),
+                new KeyValuePair<string, object?>("status", "error"));
 
-            if (result.Response.StatusCode == HttpStatusCode.NotFound)
-            {
-                throw new TenantNotFoundException();
-            }
-
-            if (result.Response.StatusCode == HttpStatusCode.BadRequest)
-            {
-                throw new InvalidOperationException();
-            }
-
-            if (!result.Response.IsSuccessStatusCode)
-            {
-                throw new Exception(result.Response.ReasonPhrase);
-            }
-
-            var haldoc = (JObject)result.Body;
-
-            JToken? getTenantLinks = haldoc["_links"]?["getTenant"];
-
-            IEnumerable<string> tenantIds;
-
-            if (getTenantLinks is null)
-            {
-                tenantIds = Array.Empty<string>();
-            }
-            else if (getTenantLinks is JArray)
-            {
-                tenantIds = getTenantLinks.Cast<JObject>().Select(link => this.TenantMapper.ExtractTenantIdFrom(this.TenantService.BaseUri, (string)link["href"]!));
-            }
-            else
-            {
-                tenantIds = new string[]
-                {
-                    this.TenantMapper.ExtractTenantIdFrom(this.TenantService.BaseUri, (string)getTenantLinks["href"]!),
-                };
-            }
-
-            string? ct = this.TenantMapper.ExtractContinationTokenFrom(this.TenantService.BaseUri, (string)haldoc.SelectToken("_links.next.href")!);
-            return new TenantCollectionResult(tenantIds.ToList(), ct);
+            this.logger?.LogWarning(
+                "Tenant conflict during child creation: {ParentTenantId}, wellKnownGuid: {WellKnownGuid}",
+                parentTenantId,
+                wellKnownChildTenantGuid);
+            throw new TenantConflictException(ex.Message, ex);
         }
-
-        /// <inheritdoc/>
-        /// <remarks>
-        /// <para>
-        /// The tenancy service uses JSON Patch to describe changes. This means that the body of
-        /// the request is a JSON Array with one entry for each change to be made. For example,
-        /// if you just wish to rename the tenant, your code would just need to do this:
-        /// </para>
-        /// <code><![CDATA[
-        /// await tenantStore.UpdateTenantAsync(tenantId, name: "NewTenantName");
-        /// ]]></code>
-        /// <para>
-        /// This method would then send an HTTP PATCH request to the tenancy service with the
-        /// following content:
-        /// </para>
-        /// <code><![CDATA[
-        ///  [{
-        ///    "path": "/name",
-        ///    "op": "replace",
-        ///    "value": "NewTenantName"
-        ///  }]
-        /// ]]></code>
-        /// <para>
-        /// If you pass a non-null <c>propertiesToSetOrAdd</c> argument, the request will include
-        /// one entry for each property being set or updated, e.g.:
-        /// </para>
-        /// <code><![CDATA[
-        ///  [
-        ///     {
-        ///         "op": "add",
-        ///         "path": "/properties/StorageConfiguration__corvustenancy",
-        ///         "value": {
-        ///            "AccountName": "mardevtenancy",
-        ///            "Container": null,
-        ///            "KeyVaultName": "mardevkv",
-        ///            "AccountKeySecretName": "mardevtenancystore",
-        ///            "DisableTenantIdPrefix": false
-        ///        }
-        ///     },
-        ///     {
-        ///         "op": "add",
-        ///         "path": "/properties/Foo__bar",
-        ///         "value": "Some string"
-        ///     },
-        ///     {
-        ///         "op": "add",
-        ///         "path": "/properties/Foo__spong",
-        ///         "value": 42
-        ///     }
-        ///  ]
-        /// ]]></code>
-        /// <para>
-        /// If the <c>propertiesToRemove</c> argument is non-null, each entry it contains will
-        /// result in an entry in the patch with an <c>op</c> of <c>remove</c>.
-        /// </para>
-        /// <para>
-        /// JSON Patch allows any combination of operations, so a single request may add, change,
-        /// or remove anything.
-        /// </para>
-        /// <para>
-        /// Note that the <c>add</c> semantics in JSON Patch are really add-or-replace, so there
-        /// is no need for this client to check whether properties exist first and to set the
-        /// operation type appropriately. Note however that a tenant always has a name, so we
-        /// always specify <c>replace</c> when asking to change the name.
-        /// </para>
-        /// </remarks>
-        public async Task<ITenant> UpdateTenantAsync(
-            string tenantId,
-            string? name,
-            IEnumerable<KeyValuePair<string, object>>? propertiesToSetOrAdd = null,
-            IEnumerable<string>? propertiesToRemove = null)
+        catch (MarainApiException ex) when (ex.StatusCode == HttpStatusCode.BadRequest)
         {
-            var patch = new List<UpdateTenantJsonPatchEntry>();
+            activity?.SetStatus(ActivityStatusCode.Error, "Bad request");
+            TenantStoreErrorsCounter.Add(
+                1,
+                new KeyValuePair<string, object?>(TelemetryConstants.AttributeKeys.OperationType, TelemetryConstants.OperationTypes.Create),
+                new KeyValuePair<string, object?>("error.type", "bad_request"));
+            TenantStoreOperationsCounter.Add(
+                1,
+                new KeyValuePair<string, object?>(TelemetryConstants.AttributeKeys.OperationType, TelemetryConstants.OperationTypes.Create),
+                new KeyValuePair<string, object?>("status", "error"));
 
-            if (name is not null)
-            {
-                patch.Add(new UpdateTenantJsonPatchEntry("/name", "replace", name));
-            }
-
-            if (propertiesToSetOrAdd is not null)
-            {
-                // When adding new values, we convert them to JTokens here so that we can use our own serializer
-                // settings. Once we send things into the generated TenantService class, we lose control of
-                // serialization. This is especially dangerous because the SafeJsonConvert class used internally
-                // doesn't serialize read-only properties, and we tend to make extensive use of read-only properties
-                // when nullable reference types are enabled.
-                // I haven't found any explicit mention of this behaviour in the docs, but it is mentioned as being
-                // by design in this autorest issue: https://github.com/Azure/autorest/issues/1904
-                var serializer = JsonSerializer.Create(this.jsonSerializerSettingsProvider.Instance);
-
-                foreach (KeyValuePair<string, object> kv in propertiesToSetOrAdd)
-                {
-                    patch.Add(
-                        new UpdateTenantJsonPatchEntry(
-                            "/properties/" + kv.Key,
-                            "add",
-                            JToken.FromObject(kv.Value, serializer)));
-                }
-            }
-
-            if (propertiesToRemove is not null)
-            {
-                foreach (string propertyName in propertiesToRemove)
-                {
-                    patch.Add(new UpdateTenantJsonPatchEntry("/properties/" + propertyName, "remove"));
-                }
-            }
-
-            var headers = new Dictionary<string, List<string>>
-            {
-                {
-                    "Cache-Control",
-                    new List<string> { "no-store" }
-                },
-            };
-            HttpOperationResponse<object> result = await this.TenantService.UpdateTenantWithHttpMessagesAsync(tenantId, patch, headers).ConfigureAwait(false);
-
-            if (result.Response.StatusCode == HttpStatusCode.NotFound)
-            {
-                throw new TenantNotFoundException();
-            }
-
-            if (result.Response.StatusCode == HttpStatusCode.MethodNotAllowed)
-            {
-                throw new NotSupportedException("This tenant cannot be updated");
-            }
-
-            result.Response.EnsureSuccessStatusCode();
-
-            return this.TenantMapper.MapTenant(result.Body);
+            this.logger?.LogError(
+                ex,
+                "Bad request for child tenant creation {ParentTenantId}: {Message}",
+                parentTenantId,
+                ex.Message);
+            throw new ArgumentException($"Invalid create child tenant request: {ex.Message}", ex);
         }
-
-        private async Task<ITenant> CreateChildTenantAsync(string parentTenantId, string name, Guid? wellKnownChildTenantGuid)
+        catch (Exception ex)
         {
-            HttpOperationHeaderResponse<Client.Models.CreateChildTenantHeaders> result =
-                await this.TenantService.CreateChildTenantWithHttpMessagesAsync(parentTenantId, name, wellKnownChildTenantGuid).ConfigureAwait(false);
+            activity?.SetStatus(ActivityStatusCode.Error, ex.Message);
+            TenantStoreErrorsCounter.Add(
+                1,
+                new KeyValuePair<string, object?>(TelemetryConstants.AttributeKeys.OperationType, TelemetryConstants.OperationTypes.Create),
+                new KeyValuePair<string, object?>("error.type", ex.GetType().Name));
+            TenantStoreOperationsCounter.Add(
+                1,
+                new KeyValuePair<string, object?>(TelemetryConstants.AttributeKeys.OperationType, TelemetryConstants.OperationTypes.Create),
+                new KeyValuePair<string, object?>("status", "error"));
 
-            if (result.Response.StatusCode == HttpStatusCode.NotFound)
-            {
-                throw new TenantNotFoundException();
-            }
-
-            // TODO: How do we determine a duplicate Id?
-            // See https://github.com/marain-dotnet/Marain.Tenancy/issues/237
-            if (result.Response.StatusCode == HttpStatusCode.Conflict)
-            {
-                throw new TenantConflictException();
-            }
-
-            if (!result.Response.IsSuccessStatusCode)
-            {
-                throw new InvalidOperationException(result.Response.ReasonPhrase);
-            }
-
-            object tenant = await this.TenantService.GetTenantAsync(
-                this.TenantMapper.ExtractTenantIdFrom(this.TenantService.BaseUri, result.Headers.Location)).ConfigureAwait(false);
-
-            return this.TenantMapper.MapTenant(tenant);
+            this.logger?.LogError(ex, "Failed to create child tenant under {ParentTenantId}", parentTenantId);
+            throw new InvalidOperationException("Failed to create child tenant", ex);
         }
     }
 }

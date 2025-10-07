@@ -1,0 +1,12 @@
+{
+  "$schema": "https://schemas.reqnroll.net/reqnroll-config-latest.json",
+  "language": {
+    "feature": "en-GB"
+  },
+  "trace": {
+    "coloredOutput": true
+  },
+  "stepAssemblies": [
+    { "assembly": "Corvus.Testing.ReqnRoll" }
+  ]
+}

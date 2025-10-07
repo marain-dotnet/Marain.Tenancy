@@ -2,81 +2,160 @@
 // Copyright (c) Endjin Limited. All rights reserved.
 // </copyright>
 
-namespace Marain.Tenancy
-{
-    using System;
-    using System.Net;
-    using System.Threading.Tasks;
-    using Corvus.Tenancy;
-    using Corvus.Tenancy.Exceptions;
-    using Marain.Tenancy.Client;
-    using Marain.Tenancy.Mappers;
-    using Microsoft.Rest;
+namespace Marain.Tenancy;
 
-    // Note that we do not add a using statment for Marain.Client.Models as this is the "mapping" namespace and could
-    // cause collisions with the types in Marain.Tenancy.
+using System;
+using System.Collections.Generic;
+using System.Diagnostics;
+using System.Diagnostics.Metrics;
+using System.Net;
+using System.Threading.Tasks;
+using Corvus.Tenancy;
+using Corvus.Tenancy.Exceptions;
+using Marain.Clients;
+using Marain.Tenancy.Client;
+using Marain.Tenancy.Client.Resources;
+using Marain.Tenancy.Mappers;
+using Marain.Tenancy.Shared.Extensions;
+using Marain.Tenancy.Shared.Telemetry;
+using Microsoft.Extensions.Logging;
+
+/// <summary>
+/// An <see cref="ITenantProvider"/> built over a Marain tenancy instance.
+/// </summary>
+public class ClientTenantProvider(RootTenant root, ITenancyClient apiClient, ITenantMapper tenantMapper, ILogger<ClientTenantProvider>? logger = null) : ITenantProvider
+{
+    // Telemetry infrastructure
+    private static readonly ActivitySource ActivitySource = new(TelemetryConstants.BusinessActivitySource);
+    private static readonly Meter Meter = new(TelemetryConstants.TenancyMeter);
+    private static readonly Counter<long> TenantOperationsCounter =
+        Meter.CreateCounter<long>("tenant.business.operations.total", "operations", "Total business operations");
+
+    private static readonly Histogram<double> TenantOperationDuration =
+        Meter.CreateHistogram<double>("tenant.business.operation.duration", "ms", "Business operation duration");
+
+    private static readonly Counter<long> TenantErrorsCounter =
+        Meter.CreateCounter<long>("tenant.business.errors.total", "errors", "Total business errors");
+
+    private readonly ILogger<ClientTenantProvider>? logger = logger;
 
     /// <summary>
-    /// An <see cref="ITenantProvider"/> built over a Marain tenancy instance.
+    /// Gets the root tenant.
     /// </summary>
-    public class ClientTenantProvider : ITenantProvider
+    public RootTenant Root { get; } = root ?? throw new ArgumentNullException(nameof(root));
+
+    /// <summary>
+    /// Gets the tenancy service.
+    /// </summary>
+    protected ITenancyClient TenantApiClient { get; } = apiClient ?? throw new ArgumentNullException(nameof(apiClient));
+
+    /// <summary>
+    /// Gets the tenant mapper.
+    /// </summary>
+    protected ITenantMapper TenantMapper { get; } = tenantMapper ?? throw new ArgumentNullException(nameof(tenantMapper));
+
+    /// <inheritdoc/>
+    public async Task<ITenant> GetTenantAsync(string tenantId, string? eTag = null)
     {
-        /// <summary>
-        /// Initializes a new instance of the <see cref="ClientTenantProvider"/> class.
-        /// </summary>
-        /// <param name="root">The Root tenant.</param>
-        /// <param name="tenantService">The tenant service.</param>
-        /// <param name="tenantMapper">The tenant mapper to use.</param>
-        public ClientTenantProvider(RootTenant root, ITenancyService tenantService, ITenantMapper tenantMapper)
+        using Activity? activity = ActivitySource.StartActivity("business.tenant.get");
+        activity?.SetTenantOperationTags(TelemetryConstants.OperationTypes.Get, tenantId);
+        if (!string.IsNullOrEmpty(eTag))
         {
-            this.Root = root ?? throw new ArgumentNullException(nameof(root));
-            this.TenantService = tenantService ?? throw new ArgumentNullException(nameof(tenantService));
-            this.TenantMapper = tenantMapper ?? throw new ArgumentNullException(nameof(tenantMapper));
+            activity?.SetTag("etag", eTag);
         }
 
-        /// <inheritdoc/>
-        public RootTenant Root { get; }
+        var stopwatch = System.Diagnostics.Stopwatch.StartNew();
 
-        /// <summary>
-        /// Gets the tenancy service.
-        /// </summary>
-        protected ITenancyService TenantService { get; }
+        this.logger?.LogDebug("Getting tenant {TenantId}, eTag: {ETag}", tenantId, eTag);
 
-        /// <summary>
-        /// Gets the tenant mapper.
-        /// </summary>
-        protected ITenantMapper TenantMapper { get; }
-
-        /// <inheritdoc/>
-        public async Task<ITenant> GetTenantAsync(string tenantId, string? eTag = null)
+        try
         {
             // The root tenant is a special case - it lives just in memory. This is because
             // services use it to configure service-specific defaults.
             if (tenantId == this.Root.Id)
             {
+                // Record successful operation
+                TenantOperationsCounter.Add(
+                    1,
+                    new KeyValuePair<string, object?>(TelemetryConstants.AttributeKeys.OperationType, TelemetryConstants.OperationTypes.Get),
+                    new KeyValuePair<string, object?>("status", "success"));
+                TenantOperationDuration.Record(stopwatch.Elapsed.TotalMilliseconds);
+                activity?.SetStatus(ActivityStatusCode.Ok);
+                this.logger?.LogDebug("Successfully retrieved root tenant");
                 return this.Root;
             }
 
-            HttpOperationResponse<object, Client.Models.GetTenantHeaders> tenant = await this.TenantService.GetTenantWithHttpMessagesAsync(tenantId, eTag).ConfigureAwait(false);
+            ApiResponse<TenantResource> tenantResponse = await this.TenantApiClient.GetTenantAsync(tenantId, eTag).ConfigureAwait(false);
 
-            if (tenant.Response.StatusCode == HttpStatusCode.NotFound)
-            {
-                throw new TenantNotFoundException();
-            }
+            tenantResponse.Headers.TryGetValue("etag", out string? etagValue);
+            ITenant result = this.TenantMapper.MapTenant(tenantResponse.Body, etagValue);
 
-            if (tenant.Response.StatusCode == HttpStatusCode.NotModified)
-            {
-                throw new TenantNotModifiedException();
-            }
+            // Record successful operation
+            TenantOperationsCounter.Add(
+                1,
+                new KeyValuePair<string, object?>(TelemetryConstants.AttributeKeys.OperationType, TelemetryConstants.OperationTypes.Get),
+                new KeyValuePair<string, object?>("status", "success"));
+            TenantOperationDuration.Record(stopwatch.Elapsed.TotalMilliseconds);
+            activity?.SetStatus(ActivityStatusCode.Ok);
+            this.logger?.LogDebug("Successfully retrieved tenant {TenantId} via API client", tenantId);
 
-            // It's possible that if caching is enabled, we'll have a response containing the same etag as specified in
-            // the parameters. In this case, for the sake of consistency, we'll throw the TenantNotModifiedException.
-            if (tenant.Response.StatusCode == HttpStatusCode.OK && !string.IsNullOrEmpty(eTag) && eTag == tenant.Headers.ETag)
-            {
-                throw new TenantNotModifiedException();
-            }
+            return result;
+        }
+        catch (MarainApiException ex) when (ex.StatusCode == HttpStatusCode.NotFound)
+        {
+            activity?.SetStatus(ActivityStatusCode.Error, "Tenant not found");
+            TenantErrorsCounter.Add(
+                1,
+                new KeyValuePair<string, object?>(TelemetryConstants.AttributeKeys.OperationType, TelemetryConstants.OperationTypes.Get),
+                new KeyValuePair<string, object?>("error.type", "not_found"));
+            TenantOperationsCounter.Add(
+                1,
+                new KeyValuePair<string, object?>(TelemetryConstants.AttributeKeys.OperationType, TelemetryConstants.OperationTypes.Get),
+                new KeyValuePair<string, object?>("status", "error"));
 
-            return this.TenantMapper.MapTenant(tenant.Body);
+            this.logger?.LogWarning("Tenant not found: {TenantId}", tenantId);
+            throw new TenantNotFoundException();
+        }
+        catch (MarainApiException ex) when (ex.StatusCode == HttpStatusCode.BadRequest)
+        {
+            activity?.SetStatus(ActivityStatusCode.Error, "Invalid tenant request");
+            TenantErrorsCounter.Add(
+                1,
+                new KeyValuePair<string, object?>(TelemetryConstants.AttributeKeys.OperationType, TelemetryConstants.OperationTypes.Get),
+                new KeyValuePair<string, object?>("error.type", "bad_request"));
+            TenantOperationsCounter.Add(
+                1,
+                new KeyValuePair<string, object?>(TelemetryConstants.AttributeKeys.OperationType, TelemetryConstants.OperationTypes.Get),
+                new KeyValuePair<string, object?>("status", "error"));
+
+            this.logger?.LogError(ex, "Bad request for tenant {TenantId}: {Message}", tenantId, ex.Message);
+            throw new ArgumentException($"Invalid tenant request: {ex.Message}");
+        }
+        catch (MarainApiException ex) when (ex.StatusCode == HttpStatusCode.NotModified)
+        {
+            activity?.SetStatus(ActivityStatusCode.Ok, "Not modified");
+            TenantOperationsCounter.Add(
+                1,
+                new KeyValuePair<string, object?>(TelemetryConstants.AttributeKeys.OperationType, TelemetryConstants.OperationTypes.Get),
+                new KeyValuePair<string, object?>("status", "not_modified"));
+
+            this.logger?.LogDebug("Tenant {TenantId} not modified", tenantId);
+            throw new TenantNotModifiedException();
+        }
+        catch (Exception ex)
+        {
+            activity?.SetStatus(ActivityStatusCode.Error, ex.Message);
+            TenantErrorsCounter.Add(
+                1,
+                new KeyValuePair<string, object?>(TelemetryConstants.AttributeKeys.OperationType, TelemetryConstants.OperationTypes.Get),
+                new KeyValuePair<string, object?>("error.type", ex.GetType().Name));
+            TenantOperationsCounter.Add(
+                1,
+                new KeyValuePair<string, object?>(TelemetryConstants.AttributeKeys.OperationType, TelemetryConstants.OperationTypes.Get),
+                new KeyValuePair<string, object?>("status", "error"));
+
+            this.logger?.LogError(ex, "Failed to get tenant {TenantId}", tenantId);
+            throw;
         }
     }
 }

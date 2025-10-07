@@ -1,0 +1,12 @@
+{
+  "profiles": {
+    "Marain.Tenancy.Specs": {
+      "commandName": "Project",
+      "launchBrowser": true,
+      "environmentVariables": {
+        "ASPNETCORE_ENVIRONMENT": "Development"
+      },
+      "applicationUrl": "https://localhost:59006;http://localhost:59007"
+    }
+  }
+}

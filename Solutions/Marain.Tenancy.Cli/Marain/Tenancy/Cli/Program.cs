@@ -2,62 +2,115 @@
 // Copyright (c) Endjin Limited. All rights reserved.
 // </copyright>
 
-namespace Marain.Tenancy.Cli
+namespace Marain.Tenancy.Cli;
+
+using System;
+using System.Threading.Tasks;
+using Azure.Identity;
+using Marain.Tenancy.Cli.Commands;
+using Marain.Tenancy.Shared.Extensions;
+using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Hosting;
+using Microsoft.Extensions.Logging;
+using Spectre.Console.Cli;
+
+/// <summary>
+/// The entry point for the application. Configures the commands.
+/// </summary>
+public static class Program
 {
-    using System;
-    using System.Threading.Tasks;
-
-    using Corvus.Identity.ClientAuthentication.Azure;
-
-    using Marain.Tenancy.Client;
-    using Microsoft.Extensions.DependencyInjection;
-    using Microsoft.Extensions.Hosting;
-    using Newtonsoft.Json;
-    using Newtonsoft.Json.Converters;
-    using Newtonsoft.Json.Serialization;
-
     /// <summary>
-    /// The entry point for the application. Configures the commands.
+    /// The entry point method.
     /// </summary>
-    public static class Program
+    /// <param name="args">The arguments.</param>
+    /// <returns>A <see cref="Task"/> representing the asynchronous operation.</returns>
+    public static async Task Main(string[] args)
     {
-        /// <summary>
-        /// The entry point method.
-        /// </summary>
-        /// <param name="args">The arguments.</param>
-        /// <returns>A <see cref="Task"/> representing the asynchronous operation.</returns>
-        public static async Task Main(string[] args)
+        IHostBuilder builder = Host.CreateDefaultBuilder();
+
+        builder.ConfigureServices((ctx, services) =>
         {
-            IHostBuilder builder = Host.CreateDefaultBuilder();
+            services.AddJsonSerializerOptionsProvider((_, options) => options.WriteIndented = true);
 
-            builder.ConfigureServices((ctx, services) =>
+            services.AddJsonCultureInfoConverter();
+            services.AddJsonDateTimeOffsetToIso8601AndUnixTimeConverter();
+            services.AddCamelCaseConverterForEnums();
+            services.AddJsonPropertyBagFactory();
+
+            // Add OpenTelemetry and telemetry for CLI with environment-specific configuration
+            services.AddMarainTelemetry(ctx.Configuration, ctx.HostingEnvironment);
+
+            // Configure structured logging for CLI commands
+            services.AddLogging(logging =>
             {
-                services.AddJsonNetSerializerSettingsProvider();
-                services.AddJsonNetPropertyBag();
-                services.AddJsonNetCultureInfoConverter();
-                services.AddJsonNetDateTimeOffsetToIso8601AndUnixTimeConverter();
-                services.AddSingleton<JsonConverter>(new StringEnumConverter(new CamelCaseNamingStrategy()));
+                logging.ClearProviders();
+                logging.AddConsole();
 
-                var msiTokenSourceOptions = new LegacyAzureServiceTokenProviderOptions
+                // Add Application Insights logging if connection string is available
+                string? applicationInsightsConnectionString = ctx.Configuration.GetConnectionString("ApplicationInsights");
+                if (!string.IsNullOrEmpty(applicationInsightsConnectionString))
                 {
-                    AzureServicesAuthConnectionString = ctx.Configuration["AzureServicesAuthConnectionString"],
-                };
-
-                services.AddServiceIdentityAzureTokenCredentialSourceFromLegacyConnectionString(msiTokenSourceOptions);
-                services.AddMicrosoftRestAdapterForServiceIdentityAccessTokenSource();
-
-                var tenancyClientOptions = new TenancyClientOptions
-                {
-                    TenancyServiceBaseUri = new Uri(ctx.Configuration["TenancyClient:TenancyServiceBaseUri"]),
-                    ResourceIdForMsiAuthentication = ctx.Configuration["TenancyClient:ResourceIdForMsiAuthentication"],
-                };
-
-                services.AddSingleton(tenancyClientOptions);
-
-                services.AddTenantProviderServiceClient();
+                    logging.AddApplicationInsights(
+                        configureTelemetryConfiguration: (config) => config.ConnectionString = applicationInsightsConnectionString,
+                        configureApplicationInsightsLoggerOptions: (options) => { });
+                }
             });
 
-            await builder.RunCommandLineApplicationAsync<TenancyCliCommand>(args).ConfigureAwait(false);
-        }
+            string tenancyServiceBaseUri = ctx.Configuration["TenancyClient:TenancyServiceBaseUri"]
+                ?? throw new InvalidOperationException("TenancyClient:TenancyServiceBaseUri configuration is required");
+            string? tenancyServiceResourceIdForMsiAuthentication = ctx.Configuration["TenancyClient:ResourceIdForMsiAuthentication"];
+
+            string? azureServicesAuthConnectionString = ctx.Configuration["AzureServicesAuthConnectionString"];
+
+            if (!string.IsNullOrEmpty(azureServicesAuthConnectionString))
+            {
+                services.AddServiceIdentityAzureTokenCredentialSourceFromLegacyConnectionString(azureServicesAuthConnectionString);
+            }
+            else
+            {
+                services.AddServiceIdentityAzureTokenCredentialSourceFromAzureCoreTokenCredential(new DefaultAzureCredential());
+            }
+
+            services.AddTenancyClient(
+                sp =>
+                {
+                    return new()
+                    {
+                        BaseUri = tenancyServiceBaseUri,
+                        ResourceIdForMsiAuthentication = tenancyServiceResourceIdForMsiAuthentication,
+                    };
+                });
+
+            services.AddTenantProviderServiceClient();
+
+            // Register CLI commands
+            services.AddTransient<Get>();
+            services.AddTransient<List>();
+            services.AddTransient<Create>();
+            services.AddTransient<Delete>();
+        });
+
+        IHost host = builder.Build();
+        IServiceProvider services = host.Services;
+
+        var app = new CommandApp(new TypeRegistrar(services));
+
+        app.Configure(config =>
+        {
+            config.AddCommand<Get>("get")
+                  .WithDescription("Gets tenant details");
+
+            config.AddCommand<List>("list")
+                  .WithDescription("List tenants");
+
+            config.AddCommand<Create>("create")
+                  .WithDescription("Create a new tenant");
+
+            config.AddCommand<Delete>("delete")
+                  .WithDescription("Deletes a tenant");
+        });
+
+        await app.RunAsync(args).ConfigureAwait(false);
     }
 }

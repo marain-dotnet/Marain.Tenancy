@@ -1,0 +1,79 @@
+{
+	"name": "Marain Tenancy Development with Claude Code",
+	"image": "mcr.microsoft.com/devcontainers/dotnet:1-8.0-bookworm",
+	"workspaceFolder": "/workspaces/Marain.Tenancy",
+
+	// Forward ports for MinimalApi development
+	"forwardPorts": [5138, 7124, 8080, 8081],
+	"portsAttributes": {
+		"5138": {
+			"label": "MinimalApi HTTP",
+			"onAutoForward": "notify"
+		},
+		"7124": {
+			"label": "MinimalApi HTTPS",
+			"onAutoForward": "notify"
+		},
+		"8080": {
+			"label": "MinimalApi Docker HTTP",
+			"onAutoForward": "notify"
+		},
+		"8081": {
+			"label": "MinimalApi Docker HTTPS",
+			"onAutoForward": "notify"
+		}
+	},
+
+	// Container environment variables
+	"containerEnv": {
+		"ASPNETCORE_ENVIRONMENT": "Development",
+		"ASPNETCORE_URLS": "http://+:5138;https://+:7124",
+		"ASPNETCORE_HTTP_PORTS": "5138;8080",
+		"ASPNETCORE_HTTPS_PORTS": "7124;8081",
+		"TESTCONTAINERS_RYUK_DISABLED": "true"
+	},
+
+	"features": {
+		"ghcr.io/devcontainers/features/node:1": {},
+		"ghcr.io/devcontainers/features/powershell:1": {},
+		"ghcr.io/devcontainers/features/docker-in-docker:2": {
+			"version": "latest",
+			"enableNonRootDocker": "true"
+		},
+		"ghcr.io/devcontainers/features/common-utils:2": {
+			"installZsh": "true",
+			"username": "vscode",
+			"upgradePackages": "false",
+			"nonFreePackages": "true"
+		}
+	},
+	
+	"postCreateCommand": "sudo chsh vscode -s \"$(which pwsh)\" && npm install -g @anthropic-ai/claude-code && dotnet restore Solutions/Marain.Tenancy.sln && sudo usermod -aG docker vscode && sudo chmod 666 /var/run/docker.sock",
+
+	// Mount Docker socket for Testcontainers support  
+	"mounts": [
+		"source=/var/run/docker.sock,target=/var/run/docker.sock,type=bind"
+	],
+	
+	"customizations": {
+		"vscode": {
+			"settings": { 
+				"terminal.integrated.defaultProfile.linux": "pwsh",
+				"dotnet.defaultSolution": "Solutions/Marain.Tenancy.sln",
+				"files.exclude": {
+					"**/bin": true,
+					"**/obj": true
+				}
+			},
+			"extensions": [
+				"ms-vscode.powershell",
+				"anthropic.claude-code",
+				"ms-dotnettools.csdevkit",
+				"ms-dotnettools.csharp",
+				"ms-azuretools.vscode-azurestorage",
+				"formulahendry.dotnet-test-explorer",
+				"alexkrechik.cucumberautocomplete"
+			]
+		}
+	}
+}

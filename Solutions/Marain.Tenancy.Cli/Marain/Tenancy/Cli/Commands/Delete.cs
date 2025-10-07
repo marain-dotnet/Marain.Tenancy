@@ -2,65 +2,111 @@
 // Copyright (c) Endjin Limited. All rights reserved.
 // </copyright>
 
-namespace Marain.Tenancy.Cli.Commands
+namespace Marain.Tenancy.Cli.Commands;
+
+using System;
+using System.Diagnostics;
+using System.Threading.Tasks;
+using Corvus.Tenancy;
+using Marain.Tenancy.Shared.Extensions;
+using Marain.Tenancy.Shared.Telemetry;
+using Microsoft.Extensions.Logging;
+using Spectre.Console;
+using Spectre.Console.Cli;
+
+/// <summary>
+/// Deletes a tenant.
+/// </summary>
+public class Delete(ITenantStore tenantStore, ILogger<Delete> logger) : AsyncCommand<DeleteSettings>
 {
-    using System;
-    using System.Threading.Tasks;
-    using Corvus.Tenancy;
-    using McMaster.Extensions.CommandLineUtils;
+    /// <summary>
+    /// Gets the <see cref="ActivitySource" /> for the command.
+    /// </summary>
+    public static ActivitySource ActivitySource { get; } = new(TelemetryConstants.CliActivitySource);
 
     /// <summary>
-    /// Deletes a tenant.
+    /// Executes the command.
     /// </summary>
-    [Command(Name = "delete", Description = "Deletes a tenant.")]
-    public class Delete
+    /// <param name="context">The command context.</param>
+    /// <param name="settings">The command settings.</param>
+    /// <returns>A <see cref="Task"/> representing the asynchronous operation.</returns>
+    public override async Task<int> ExecuteAsync(CommandContext context, DeleteSettings settings)
     {
-        private readonly ITenantStore tenantStore;
+        using Activity? activity = ActivitySource.StartActivity("cli.delete-tenant");
 
-        /// <summary>
-        /// Initializes a new instance of the <see cref="Delete"/> class.
-        /// </summary>
-        /// <param name="tenantStore">The tenant store that will be used to delete the tenant.</param>
-        public Delete(ITenantStore tenantStore)
+        activity?.SetCommandOperationTags("delete", settings.TenantId);
+
+        if (string.IsNullOrEmpty(settings.TenantId))
         {
-            this.tenantStore = tenantStore;
+            activity?.SetStatus(ActivityStatusCode.Error, "Tenant Id must be provided");
+            logger.LogError("Delete tenant command failed: Tenant Id must be provided");
+            AnsiConsole.MarkupLine("[red]Error: Tenant Id must be provided.[/]");
+            return 1;
         }
 
-        /// <summary>
-        /// Gets or sets the Id of the tenant to be deleted.
-        /// </summary>
-        [Option(
-            CommandOptionType.SingleValue,
-            ShortName = "t",
-            LongName = "tenant",
-            Description = "The Id of the parent tenant.")]
-        public string? TenantId { get; set; }
+        var stopwatch = Stopwatch.StartNew();
 
-        /// <summary>
-        /// Executes the command.
-        /// </summary>
-        /// <param name="app">The current <c>CommandLineApplication</c>.</param>
-        /// <returns>A <see cref="Task"/> representing the asynchronous operation.</returns>
-        public async Task OnExecute(CommandLineApplication app)
+        try
         {
-            if (string.IsNullOrEmpty(this.TenantId))
-            {
-                throw new ArgumentException("Tenant Id must be provided.");
-            }
+            logger.LogInformation("Checking if tenant {TenantId} has children before deletion", settings.TenantId);
 
-            TenantCollectionResult children = await this.tenantStore.GetChildrenAsync(this.TenantId, 1).ConfigureAwait(false);
+            // Check for children before deletion
+            TenantCollectionResult children = await tenantStore.GetChildrenAsync(settings.TenantId, 1).ConfigureAwait(false);
+
+            activity?.SetTag("tenant.has_children", children.Tenants.Count > 0);
 
             if (children.Tenants.Count > 0)
             {
-                app.Error.WriteLine(
-                    $"Cannot delete tenant with Id {this.TenantId} as it has children. Remove the child tenants first.");
-
-                return;
+                activity?.SetStatus(ActivityStatusCode.Error, "Tenant has children");
+                logger.LogWarning("Cannot delete tenant {TenantId} as it has {ChildCount} children", settings.TenantId, children.Tenants.Count);
+                AnsiConsole.MarkupLine(
+                    $"[red]Cannot delete tenant with Id {settings.TenantId} as it has children. Remove the child tenants first.[/]");
+                return 1;
             }
 
-            await this.tenantStore.DeleteTenantAsync(this.TenantId).ConfigureAwait(false);
+            // Confirmation prompt
+            bool confirmed = AnsiConsole.Confirm($"Are you sure you want to delete tenant '{settings.TenantId}'?", false);
+            activity?.SetTag("user.confirmed", confirmed);
 
-            app.Out.WriteLine("Deleted tenant with Id " + this.TenantId);
+            if (!confirmed)
+            {
+                activity?.SetStatus(ActivityStatusCode.Ok, "Deletion cancelled by user");
+                logger.LogInformation("Deletion of tenant {TenantId} cancelled by user", settings.TenantId);
+                AnsiConsole.MarkupLine("[yellow]Deletion cancelled.[/]");
+                return 0;
+            }
+
+            logger.LogInformation("Deleting tenant {TenantId}", settings.TenantId);
+
+            await tenantStore.DeleteTenantAsync(settings.TenantId).ConfigureAwait(false);
+
+            stopwatch.Stop();
+            activity?.SetStatus(ActivityStatusCode.Ok);
+            activity?.SetTag("operation.duration_ms", stopwatch.ElapsedMilliseconds);
+
+            logger.LogInformation(
+                "Successfully deleted tenant {TenantId} in {Duration}ms",
+                settings.TenantId,
+                stopwatch.ElapsedMilliseconds);
+
+            AnsiConsole.MarkupLine($"[green]Deleted tenant with Id {settings.TenantId}[/]");
+
+            return 0;
+        }
+        catch (Exception ex)
+        {
+            stopwatch.Stop();
+            activity?.SetStatus(ActivityStatusCode.Error, ex.Message);
+            activity?.SetTag("operation.duration_ms", stopwatch.ElapsedMilliseconds);
+
+            logger.LogError(
+                ex,
+                "Failed to delete tenant {TenantId} after {Duration}ms",
+                settings.TenantId,
+                stopwatch.ElapsedMilliseconds);
+
+            AnsiConsole.WriteException(ex);
+            return 1;
         }
     }
 }

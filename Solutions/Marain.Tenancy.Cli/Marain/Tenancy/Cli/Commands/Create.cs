@@ -2,90 +2,106 @@
 // Copyright (c) Endjin Limited. All rights reserved.
 // </copyright>
 
-namespace Marain.Tenancy.Cli.Commands
+namespace Marain.Tenancy.Cli.Commands;
+
+using System;
+using System.Diagnostics;
+using System.Threading.Tasks;
+using Corvus.Tenancy;
+using Marain.Tenancy.Shared.Extensions;
+using Marain.Tenancy.Shared.Telemetry;
+using Microsoft.Extensions.Logging;
+using Spectre.Console;
+using Spectre.Console.Cli;
+
+/// <summary>
+/// Creates a new tenant.
+/// </summary>
+public class Create(ITenantStore tenantStore, ILogger<Create> logger) : AsyncCommand<CreateSettings>
 {
-    using System;
-    using System.Threading.Tasks;
-    using Corvus.Tenancy;
-    using McMaster.Extensions.CommandLineUtils;
+    /// <summary>
+    /// Gets the <see cref="ActivitySource" /> for the command.
+    /// </summary>
+    public static ActivitySource ActivitySource { get; } = new(TelemetryConstants.CliActivitySource);
 
     /// <summary>
-    /// Creates a new tenant.
+    /// Executes the command.
     /// </summary>
-    [Command(Name = "create", Description = "Create a new tenant.")]
-    public class Create
+    /// <param name="context">The command context.</param>
+    /// <param name="settings">The command settings.</param>
+    /// <returns>A <see cref="Task"/> representing the asynchronous operation.</returns>
+    public override async Task<int> ExecuteAsync(CommandContext context, CreateSettings settings)
     {
-        private readonly ITenantStore tenantStore;
+        using Activity? activity = ActivitySource.StartActivity("cli.create-tenant");
 
-        /// <summary>
-        /// Initializes a new instance of the <see cref="Create"/> class.
-        /// </summary>
-        /// <param name="tenantStore">The tenant store that will be used to create the new tenant.</param>
-        public Create(ITenantStore tenantStore)
+        string tenantId = string.IsNullOrEmpty(settings.TenantId)
+            ? tenantStore.Root.Id
+            : settings.TenantId;
+
+        activity?.SetCommandOperationTags("create", tenantId);
+        activity?.SetTag("tenant.name", settings.Name);
+
+        if (string.IsNullOrEmpty(settings.Name))
         {
-            this.tenantStore = tenantStore;
+            activity?.SetStatus(ActivityStatusCode.Error, "Name must be supplied");
+            logger.LogError("Create tenant command failed: Name must be supplied");
+            AnsiConsole.MarkupLine("[red]Error: Name must be supplied[/]");
+            return 1;
         }
 
-        /// <summary>
-        /// Gets or sets the Id of the tenant that should be the parent of the new tenant.
-        /// </summary>
-        /// <remarks>
-        /// If ommitted, the tenant will be created at the top level, as a child of the root.
-        /// </remarks>
-        [Option(
-            CommandOptionType.SingleOrNoValue,
-            ShortName = "t",
-            LongName = "tenant",
-            Description = "The Id of the parent tenant. Omit if the child should be a parent of the root tenant.")]
-        public string? TenantId { get; set; }
+        Guid wellKnownGuid = string.IsNullOrEmpty(settings.WellKnownTenantGuid)
+            ? Guid.NewGuid()
+            : Guid.Parse(settings.WellKnownTenantGuid);
 
-        /// <summary>
-        /// Gets or sets the name of the new tenant.
-        /// </summary>
-        [Option(
-            CommandOptionType.SingleValue,
-            ShortName = "n",
-            LongName = "name",
-            Description = "The name of the new tenant.")]
-        public string? Name { get; set; }
+        activity?.SetTag("tenant.well_known_guid", wellKnownGuid.ToString());
+        activity?.SetTag("tenant.is_well_known", !string.IsNullOrEmpty(settings.WellKnownTenantGuid));
 
-        /// <summary>
-        /// Gets or sets the well-known GUID of the new tenant.
-        /// </summary>
-        [Option(
-            CommandOptionType.SingleValue,
-            ShortName = "g",
-            LongName = "guid",
-            Description = "The well-known GUID of the new tenant.")]
-        public string? WellKnownTenantGuid { get; set; }
+        var stopwatch = Stopwatch.StartNew();
 
-        /// <summary>
-        /// Executes the command.
-        /// </summary>
-        /// <param name="app">The current <c>CommandLineApplication</c>.</param>
-        /// <returns>A <see cref="Task"/> representing the asynchronous operation.</returns>
-        public async Task OnExecute(CommandLineApplication app)
+        try
         {
-            if (string.IsNullOrEmpty(this.TenantId))
-            {
-                this.TenantId = this.tenantStore.Root.Id;
-            }
+            logger.LogInformation(
+                "Creating child tenant with name {TenantName} under parent {ParentTenantId} (WellKnownGuid: {WellKnownGuid})",
+                settings.Name,
+                tenantId,
+                wellKnownGuid);
 
-            if (string.IsNullOrEmpty(this.Name))
-            {
-                throw new InvalidOperationException("Name must be supplied");
-            }
-
-            Guid wellKnownGuid = string.IsNullOrEmpty(this.WellKnownTenantGuid)
-                ? Guid.NewGuid()
-                : Guid.Parse(this.WellKnownTenantGuid);
-
-            ITenant child = await this.tenantStore.CreateWellKnownChildTenantAsync(
-                this.TenantId,
+            ITenant child = await tenantStore.CreateWellKnownChildTenantAsync(
+                tenantId,
                 wellKnownGuid,
-                this.Name).ConfigureAwait(false);
+                settings.Name).ConfigureAwait(false);
 
-            app.Out.WriteLine($"Created new child tenant with Id {child.Id} and name {child.Name}");
+            stopwatch.Stop();
+            activity?.SetStatus(ActivityStatusCode.Ok);
+            activity?.SetTag("tenant.created_id", child.Id);
+            activity?.SetTag("operation.duration_ms", stopwatch.ElapsedMilliseconds);
+
+            logger.LogInformation(
+                "Successfully created child tenant {TenantId} with name {TenantName} under parent {ParentTenantId} in {Duration}ms",
+                child.Id,
+                settings.Name,
+                tenantId,
+                stopwatch.ElapsedMilliseconds);
+
+            AnsiConsole.MarkupLine($"[green]Created new child tenant with Id {child.Id} and name {child.Name}[/]");
+
+            return 0;
+        }
+        catch (Exception ex)
+        {
+            stopwatch.Stop();
+            activity?.SetStatus(ActivityStatusCode.Error, ex.Message);
+            activity?.SetTag("operation.duration_ms", stopwatch.ElapsedMilliseconds);
+
+            logger.LogError(
+                ex,
+                "Failed to create child tenant {TenantName} under parent {ParentTenantId} after {Duration}ms",
+                settings.Name,
+                tenantId,
+                stopwatch.ElapsedMilliseconds);
+
+            AnsiConsole.WriteException(ex);
+            return 1;
         }
     }
 }

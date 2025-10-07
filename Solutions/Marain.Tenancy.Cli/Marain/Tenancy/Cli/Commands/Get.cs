@@ -2,64 +2,86 @@
 // Copyright (c) Endjin Limited. All rights reserved.
 // </copyright>
 
-namespace Marain.Tenancy.Cli.Commands
+namespace Marain.Tenancy.Cli.Commands;
+
+using System;
+using System.Diagnostics;
+using System.Text.Json;
+using System.Threading.Tasks;
+using Corvus.Json.Serialization;
+using Corvus.Tenancy;
+using Marain.Tenancy.Shared.Extensions;
+using Marain.Tenancy.Shared.Telemetry;
+using Microsoft.Extensions.Logging;
+using Spectre.Console;
+using Spectre.Console.Cli;
+
+/// <summary>
+/// Retrieves all details for the specified tenant.
+/// </summary>
+public class Get(ITenantProvider tenantProvider, IJsonSerializerOptionsProvider serializationSettingsProvider, ILogger<Get> logger) : AsyncCommand<GetSettings>
 {
-    using System.Threading.Tasks;
-    using Corvus.Extensions.Json;
-    using Corvus.Tenancy;
-    using McMaster.Extensions.CommandLineUtils;
-    using Newtonsoft.Json;
+    /// <summary>
+    /// Gets the <see cref="ActivitySource" /> for the command.
+    /// </summary>
+    public static ActivitySource ActivitySource { get; } = new(TelemetryConstants.CliActivitySource);
 
     /// <summary>
-    /// Retrieves all details for the specified tenant.
+    /// Executes the command.
     /// </summary>
-    [Command(Name = "get", Description = "Gets tenant details.")]
-    public class Get
+    /// <param name="context">The command context.</param>
+    /// <param name="settings">The command settings.</param>
+    /// <returns>A <see cref="Task"/> representing the asynchronous operation.</returns>
+    public override async Task<int> ExecuteAsync(CommandContext context, GetSettings settings)
     {
-        private readonly ITenantProvider tenantProvider;
-        private readonly IJsonSerializerSettingsProvider serializationSettingsProvider;
+        using Activity? activity = ActivitySource.StartActivity("cli.get-tenant");
 
-        /// <summary>
-        /// Initializes a new instance of the <see cref="Get"/> class.
-        /// </summary>
-        /// <param name="tenantProvider">The tenant provider that will be used to retrieve the information.</param>
-        /// <param name="serializationSettingsProvider">The serialization settings provider to use when writing output.</param>
-        public Get(ITenantProvider tenantProvider, IJsonSerializerSettingsProvider serializationSettingsProvider)
+        string tenantId = string.IsNullOrEmpty(settings.TenantId)
+            ? tenantProvider.Root.Id
+            : settings.TenantId;
+
+        activity?.SetCommandOperationTags("get", tenantId);
+
+        var stopwatch = Stopwatch.StartNew();
+
+        try
         {
-            this.tenantProvider = tenantProvider;
-            this.serializationSettingsProvider = serializationSettingsProvider;
-        }
+            logger.LogInformation("Getting tenant {TenantId}", tenantId);
 
-        /// <summary>
-        /// Gets or sets the tenant whose details should be retrieved.
-        /// </summary>
-        [Option(
-            CommandOptionType.SingleValue,
-            ShortName = "t",
-            LongName = "tenant",
-            Description = "The Id of the tenant to retrieve details for.")]
-        public string? TenantId { get; set; }
+            ITenant tenant = await tenantProvider.GetTenantAsync(tenantId).ConfigureAwait(false);
 
-        /// <summary>
-        /// Executes the command.
-        /// </summary>
-        /// <param name="app">The current <c>CommandLineApplication</c>.</param>
-        /// <returns>A <see cref="Task"/> representing the asynchronous operation.</returns>
-        public async Task OnExecute(CommandLineApplication app)
-        {
-            if (string.IsNullOrEmpty(this.TenantId))
-            {
-                this.TenantId = this.tenantProvider.Root.Id;
-            }
-
-            ITenant tenant = await this.tenantProvider.GetTenantAsync(this.TenantId).ConfigureAwait(false);
-
-            string result = JsonConvert.SerializeObject(
+            string result = JsonSerializer.Serialize(
                 tenant,
-                Formatting.Indented,
-                this.serializationSettingsProvider.Instance);
+                serializationSettingsProvider.Instance);
 
-            app.Out.WriteLine(result);
+            AnsiConsole.WriteLine(result);
+
+            stopwatch.Stop();
+            activity?.SetStatus(ActivityStatusCode.Ok);
+            activity?.SetTag("tenant.found", true);
+            activity?.SetTag("operation.duration_ms", stopwatch.ElapsedMilliseconds);
+
+            logger.LogInformation(
+                "Successfully retrieved tenant {TenantId} in {Duration}ms",
+                tenantId,
+                stopwatch.ElapsedMilliseconds);
+
+            return 0;
+        }
+        catch (Exception ex)
+        {
+            stopwatch.Stop();
+            activity?.SetStatus(ActivityStatusCode.Error, ex.Message);
+            activity?.SetTag("operation.duration_ms", stopwatch.ElapsedMilliseconds);
+
+            logger.LogError(
+                ex,
+                "Failed to get tenant {TenantId} after {Duration}ms",
+                tenantId,
+                stopwatch.ElapsedMilliseconds);
+
+            AnsiConsole.WriteException(ex);
+            return 1;
         }
     }
 }

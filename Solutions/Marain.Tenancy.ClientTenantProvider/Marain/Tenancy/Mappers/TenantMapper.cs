@@ -2,100 +2,71 @@
 // Copyright (c) Endjin Limited. All rights reserved.
 // </copyright>
 
-namespace Marain.Tenancy.Mappers
+namespace Marain.Tenancy.Mappers;
+
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using Corvus.Json;
+using Corvus.Tenancy;
+using Marain.Tenancy.Client.Resources;
+using Microsoft.AspNetCore.WebUtilities;
+using Microsoft.Extensions.Primitives;
+
+/// <summary>
+/// Maps a client tenant to an API tenant.
+/// </summary>
+public class TenantMapper(IPropertyBagFactory propertyBagFactory) : ITenantMapper
 {
-    using System;
-    using System.Collections.Generic;
-    using System.Linq;
-    using Corvus.Json;
-    using Corvus.Tenancy;
-    using Microsoft.AspNetCore.WebUtilities;
-    using Newtonsoft.Json.Linq;
+    private readonly IPropertyBagFactory propertyBagFactory = propertyBagFactory ?? throw new ArgumentNullException(nameof(propertyBagFactory));
 
-    /// <summary>
-    /// Maps a client tenant to an API tenant.
-    /// </summary>
-    public class TenantMapper : ITenantMapper
+    /// <inheritdoc/>
+    public ITenant MapTenant(TenantResource source, string? etag)
     {
-        private readonly IPropertyBagFactory propertyBagFactory;
-
-        /// <summary>
-        /// Initializes a new instance of the <see cref="TenantMapper"/> class.
-        /// </summary>
-        /// <param name="propertyBagFactory">Enables property bag building.</param>
-        public TenantMapper(
-            IPropertyBagFactory propertyBagFactory)
+        return new Tenant(
+            source.Id ?? string.Empty,
+            source.Name ?? string.Empty,
+            source.Properties ?? this.propertyBagFactory.Create(builder => builder))
         {
-            this.propertyBagFactory = propertyBagFactory ?? throw new ArgumentNullException(nameof(propertyBagFactory));
+            ETag = etag,
+        };
+    }
+
+    /// <inheritdoc/>
+    public string ExtractTenantIdFromUrlPath(string path)
+    {
+        if (!path.StartsWith("/"))
+        {
+            throw new ArgumentException($"Url paths should start with a slash. The supplied path, [{path}], does not.");
         }
 
-        /// <inheritdoc/>
-        public ITenant MapTenant(object source)
+        // Path starts with a slash. The tenant Id is the first element in the path, and will always be followed
+        // by additional elements.
+        return path[1..path.IndexOf('/', 1)];
+    }
+
+    /// <inheritdoc/>
+    public string? ExtractContinationTokenFromUrlPathAndQuery(string pathAndQuery)
+    {
+        ArgumentException.ThrowIfNullOrEmpty(nameof(pathAndQuery));
+        if (!pathAndQuery.StartsWith("/"))
         {
-            Client.Models.Tenant tenantFromService = ((JObject)source).ToObject<Client.Models.Tenant>()!;
-            return new Tenant(
-                tenantFromService.Id,
-                tenantFromService.Name,
-                this.propertyBagFactory.Create(tenantFromService.Properties))
-            {
-                ETag = tenantFromService.ETag,
-            };
+            throw new ArgumentException($"Url paths should start with a slash. The supplied path, [{pathAndQuery}], does not.");
         }
 
-        /// <inheritdoc/>
-        public Client.Models.Tenant MapTenant(ITenant source)
+        int queryIndex = pathAndQuery.IndexOf("/");
+
+        if (queryIndex < 0)
         {
-            var result = new Client.Models.Tenant
-            {
-                Id = source.Id,
-                Name = source.Name,
-                ContentType = source.ContentType,
-                ETag = source.ETag,
-                Properties = ((JObject)source.Properties).ToObject<Dictionary<string, object>>(),
-            };
-            return result;
+            return null;
         }
 
-        /// <inheritdoc/>
-        public string ExtractTenantIdFrom(Uri baseUri, string location)
+        Dictionary<string, StringValues> query = QueryHelpers.ParseQuery(pathAndQuery[(queryIndex + 1)..]);
+        if (!query.TryGetValue("continuationToken", out StringValues value))
         {
-            int offset = 0;
-            string baseUriString = baseUri.AbsoluteUri;
-            if (location.StartsWith(baseUriString))
-            {
-                offset = baseUriString.Length;
-            }
-
-            // Remove the starting slash if present
-            if (location[0] == '/')
-            {
-                offset += 1;
-            }
-
-            return location[offset..location.IndexOf('/', offset)];
+            return null;
         }
 
-        /// <inheritdoc/>
-        public string? ExtractContinationTokenFrom(Uri baseUri, string tokenUri)
-        {
-            if (string.IsNullOrEmpty(tokenUri))
-            {
-                return null;
-            }
-
-            var uri = new Uri(tokenUri, UriKind.RelativeOrAbsolute);
-            if (!uri.IsAbsoluteUri)
-            {
-                uri = new Uri(baseUri, uri);
-            }
-
-            Dictionary<string, Microsoft.Extensions.Primitives.StringValues> query = QueryHelpers.ParseQuery(uri.Query);
-            if (!query.ContainsKey("continuationToken"))
-            {
-                return null;
-            }
-
-            return query["continuationToken"].FirstOrDefault();
-        }
+        return value.FirstOrDefault();
     }
 }
