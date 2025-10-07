@@ -7,6 +7,7 @@ namespace Marain.Tenancy.Client.Resources;
 using System.Collections.Generic;
 using System.Text.Json.Serialization;
 using Marain.Clients.Hal;
+using Marain.Tenancy.Client.Serialization;
 
 /// <summary>
 /// Represents a collection of child tenants from the Tenancy API.
@@ -37,11 +38,13 @@ public record ChildTenantsResource
         /// <summary>
         /// Gets links for deleting child tenants.
         /// </summary>
+        [JsonConverter(typeof(WebLinkListJsonConverter))]
         public List<WebLink>? DeleteTenant { get; init; }
 
         /// <summary>
         /// Gets links for retrieving individual child tenants.
         /// </summary>
+        [JsonConverter(typeof(WebLinkListJsonConverter))]
         public List<WebLink>? GetTenant { get; init; }
 
         /// <summary>
