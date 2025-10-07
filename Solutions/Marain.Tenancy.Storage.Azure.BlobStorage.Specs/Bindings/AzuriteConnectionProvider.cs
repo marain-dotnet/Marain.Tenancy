@@ -79,5 +79,4 @@ public static class AzuriteConnectionProvider
             ConnectionStringPlainText = connectionString,
         };
     }
-
 }
